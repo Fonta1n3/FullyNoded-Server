@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var message = ""
     @State private var services: [Service] = []
     @State private var bitcoinCoreRunning = false
+    @State private var bitcoinCoreInstalled = false
     
     @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
     private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
@@ -86,11 +87,49 @@ struct ContentView: View {
             Home()
         }
         .onAppear(perform: {
+            // Check if bitcoin core installed here.. if not prompt to install bitcoin core. if it is installed check if its running.
             services = [bitcoinCore, coreLightning, joinMarket]
-            runScript(script: .isBitcoindRunning)
+            runScript(script: .checkForBitcoin)
+            //runScript(script: .isBitcoindRunning)
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    func parseBitcoindVersionResponse(result: String) {
+        if result.contains("Bitcoin Core Daemon version") || result.contains("Bitcoin Core version") {
+            bitcoinCoreInstalled = true
+            runScript(script: .isBitcoindRunning)
+//            let tempPath = "/Users/\(NSUserName())/.gordian/installBitcoin.sh"
+//            if FileManager.default.fileExists(atPath: tempPath) {
+//                try? FileManager.default.removeItem(atPath: tempPath)
+//            }
+            
+//            let arr = result.components(separatedBy: "Copyright (C)")
+//            currentVersion = (arr[0]).replacingOccurrences(of: "Bitcoin Core Daemon version ", with: "")
+//            currentVersion = currentVersion.replacingOccurrences(of: "Bitcoin Core version ", with: "")
+//            currentVersion = currentVersion.replacingOccurrences(of: d.existingPrefix, with: "")
+//            currentVersion = currentVersion.replacingOccurrences(of: "\n", with: "")
+//            DispatchQueue.main.async { [weak self] in
+//                guard let self = self else { return }
+//                
+//                self.verifyOutlet.isEnabled = true
+//                self.networkButton.isEnabled = true
+//                self.bitcoinCoreVersionOutlet.stringValue = self.currentVersion
+//                self.bitcoinInstalled = true
+//            }
+//            isBitcoinOn()
+        } else {
+            bitcoinCoreInstalled = false
+//            DispatchQueue.main.async { [weak self] in
+//                guard let self = self else { return }
+//                
+//                self.updateOutlet.title = "Install"
+//                self.updateOutlet.isEnabled = true
+//                self.bitcoinInstalled = false
+//                self.verifyOutlet.isEnabled = false
+//            }
         }
     }
     
@@ -151,8 +190,8 @@ struct ContentView: View {
 //            showBitcoinLog()
 //            startBitcoinParse(result: result)
             
-//        case .checkForBitcoin:
-//            parseBitcoindVersionResponse(result: result)
+        case .checkForBitcoin:
+            parseBitcoindVersionResponse(result: result)
 //
 //        case .checkXcodeSelect:
 //            parseXcodeSelectResult(result: result)
@@ -161,7 +200,6 @@ struct ContentView: View {
 //            parseHasBitcoinShutdownCompleted(result: result)
             
         case .isBitcoindRunning:
-            print("result: \(result)")
             if result.contains("Running") {
                 bitcoinCoreRunning = true
             } else if result.contains("Stopped") {

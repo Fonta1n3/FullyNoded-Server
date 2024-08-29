@@ -33,6 +33,8 @@
 		0AA6926D2C7F8EC700366192 /* Strap.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925B2C7F8EC700366192 /* Strap.command */; };
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
+		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
+		0AA692742C80CF9400366192 /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692732C80CF9400366192 /* BitcoinConf.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +66,8 @@
 		0AA6925B2C7F8EC700366192 /* Strap.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Strap.command; sourceTree = "<group>"; };
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
+		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
+		0AA692732C80CF9400366192 /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +100,7 @@
 		0AA692332C7F831D00366192 /* FullyNoded-Server */ = {
 			isa = PBXGroup;
 			children = (
+				0AA692712C80B01A00366192 /* BitcoinRPC.swift */,
 				0AA6925D2C7F8EC700366192 /* Scripts */,
 				0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */,
 				0AA692362C7F831D00366192 /* Persistence.swift */,
@@ -107,6 +112,7 @@
 				0AA692482C7F874900366192 /* BitcoinCore.swift */,
 				0AA6924A2C7F89E800366192 /* Script.swift */,
 				0AA6926F2C7F962A00366192 /* Home.swift */,
+				0AA692732C80CF9400366192 /* BitcoinConf.swift */,
 			);
 			path = "FullyNoded-Server";
 			sourceTree = "<group>";
@@ -233,10 +239,12 @@
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
+				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
 				0AA692372C7F831D00366192 /* Persistence.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
 				0AA692702C7F962A00366192 /* Home.swift in Sources */,
+				0AA692742C80CF9400366192 /* BitcoinConf.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
