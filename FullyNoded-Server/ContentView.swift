@@ -31,7 +31,9 @@ struct ContentView: View {
     @State private var promptToInstallBitcoin = false
     @State private var startCheckingForInstall = false
     @State private var bitcoinInstallSuccess = false
-    @State var timeRemaining = 90
+    @State private var timeRemaining = 90
+    @State private var promptToInstallBrew = false
+    @State private var promptToInstallLightning = false
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
     
@@ -122,7 +124,17 @@ struct ContentView: View {
             services = [bitcoinCore, coreLightning, joinMarket]
             runScript(script: .checkForBitcoin)
         })
+        .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
+            Button("OK") {
+                runScript(script: .launchLightningInstall)
+            }
+            Button("Cancel", role: .cancel) {}
+            
+        }
         .alert(message, isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        }
+        .alert("Install Brew? Core Lightning installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {}
         }
         .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
@@ -154,6 +166,7 @@ struct ContentView: View {
             if FileManager.default.fileExists(atPath: tempPath) {
                 try? FileManager.default.removeItem(atPath: tempPath)
             }
+            
         } else {
             bitcoinCoreInstalled = false
             promptToInstallBitcoin = true
@@ -225,8 +238,18 @@ struct ContentView: View {
             } else if result.contains("Stopped") {
                 bitcoinCoreRunning = false
             }
+            runScript(script: .checkForBrew)
             // Check lightning here
             // Check JM after
+            //isLightningInstalled
+        case .checkForBrew:
+            if result != "" {
+                // brew is installed
+                promptToInstallLightning = true
+            } else {
+                promptToInstallBrew = true
+            }
+            
             
         default:
             break

@@ -11,6 +11,7 @@ enum LatestBtcCoreRelease {
         
     static func get(completion: @escaping ((dict:NSDictionary?, error:String?)) -> Void) {
         let url = "https://api.github.com/repos/bitcoin/bitcoin/releases"
+        // https://api.github.com/repos/ElementsProject/lightning/releases
         print("fetch latest release from \(url)")
         guard let destination = URL(string: url) else { return }
         let request = URLRequest(url: destination)

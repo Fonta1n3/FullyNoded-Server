@@ -15,6 +15,11 @@
 		0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CF2C89EC3700534A8D /* Extensions.swift */; };
 		0A5CE8D22C89ECB000534A8D /* RPCWhitelist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */; };
 		0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D32C89EE1C00534A8D /* Credentials.swift */; };
+		0A5CE8D62C8A13DC00534A8D /* PythonVersion.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D52C8A13DC00534A8D /* PythonVersion.command */; };
+		0A5CE8D82C8A15EB00534A8D /* LatestLightningRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */; };
+		0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */; };
+		0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */; };
+		0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */; };
 		0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */; };
 		0AA692372C7F831D00366192 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692362C7F831D00366192 /* Persistence.swift */; };
 		0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */; };
@@ -54,6 +59,11 @@
 		0A5CE8CF2C89EC3700534A8D /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCWhitelist.swift; sourceTree = "<group>"; };
 		0A5CE8D32C89EE1C00534A8D /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
+		0A5CE8D52C8A13DC00534A8D /* PythonVersion.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = PythonVersion.command; sourceTree = "<group>"; };
+		0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestLightningRelease.swift; sourceTree = "<group>"; };
+		0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = BrewInstalled.command; sourceTree = "<group>"; };
+		0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallLightning.command; sourceTree = "<group>"; };
+		0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchLightningInstall.command; sourceTree = "<group>"; };
 		0AA692312C7F831D00366192 /* FullyNoded-Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FullyNoded-Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullyNoded_ServerApp.swift; sourceTree = "<group>"; };
 		0AA692362C7F831D00366192 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -137,6 +147,7 @@
 				0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */,
 				0A5CE8CF2C89EC3700534A8D /* Extensions.swift */,
 				0A5CE8D32C89EE1C00534A8D /* Credentials.swift */,
+				0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */,
 			);
 			path = "FullyNoded-Server";
 			sourceTree = "<group>";
@@ -169,6 +180,10 @@
 				0AA6925A2C7F8EC700366192 /* StopBitcoin.command */,
 				0AA6925B2C7F8EC700366192 /* Strap.command */,
 				0AA6925C2C7F8EC700366192 /* Verify.command */,
+				0A5CE8D52C8A13DC00534A8D /* PythonVersion.command */,
+				0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */,
+				0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */,
+				0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -237,14 +252,18 @@
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
+				0A5CE8D62C8A13DC00534A8D /* PythonVersion.command in Resources */,
 				0AA692642C7F8EC700366192 /* LaunchBrewInstall.command in Resources */,
 				0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */,
 				0AA6926D2C7F8EC700366192 /* Strap.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
 				0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */,
+				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
 				0AA692692C7F8EC700366192 /* OpenFile.command in Resources */,
+				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
+				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
@@ -271,6 +290,7 @@
 				0AA692372C7F831D00366192 /* Persistence.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
+				0A5CE8D82C8A15EB00534A8D /* LatestLightningRelease.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
