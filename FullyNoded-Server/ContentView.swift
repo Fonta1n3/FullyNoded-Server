@@ -26,16 +26,19 @@ struct ContentView: View {
     @State private var services: [Service] = []
     @State private var bitcoinCoreRunning = false
     @State private var bitcoinCoreInstalled = false
+    @State private var lightningInstalled = false
     @State private var xcodeSelectInstalled = false
     @State private var promptToInstallXcode = false
     @State private var promptToInstallBitcoin = false
-    @State private var startCheckingForInstall = false
+    @State private var startCheckingForBitcoinInstall = false
+    @State private var startCheckingForLightningInstall = false
     @State private var bitcoinInstallSuccess = false
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
     @State private var promptToInstallLightning = false
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    
+    @State private var isLightningRunning = false
+    let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
     @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
     private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
@@ -89,12 +92,28 @@ struct ContentView: View {
                                 }
                             }
                             
+                            if service.name == "Core Lightning" {
+                                if lightningInstalled {
+                                    if isLightningRunning {
+                                        Image(systemName: "circle.fill")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "circle.fill")
+                                            .foregroundStyle(.red)
+                                    }
+                                        
+                                } else {
+                                    Image(systemName: "circle.fill")
+                                        .foregroundStyle(.red)
+                                }
+                            }
+                            
                             Text(service.name)
                             
                             if service.name == "Join Market" {
-                                if startCheckingForInstall {
+                                if startCheckingForBitcoinInstall {
                                     EmptyView()
-                                    .onReceive(timer) { _ in
+                                    .onReceive(timerForBitcoinInstall) { _ in
                                         // if input exceeds 90 seconds then kill the timer...
                                         if timeRemaining > 0 {
                                             timeRemaining -= 1
@@ -104,6 +123,7 @@ struct ContentView: View {
                                                 //bitcoinInstallSuccess = true
 //                                                startCheckingForInstall = false
                                                 runScript(script: .checkForBitcoin)
+                                                timeRemaining = 90
                                             }
                                         }
                                     }
@@ -119,7 +139,6 @@ struct ContentView: View {
             
            
         }
-        
         .onAppear(perform: {
             services = [bitcoinCore, coreLightning, joinMarket]
             runScript(script: .checkForBitcoin)
@@ -127,6 +146,7 @@ struct ContentView: View {
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
             Button("OK") {
                 runScript(script: .launchLightningInstall)
+                // start timer
             }
             Button("Cancel", role: .cancel) {}
             
@@ -142,7 +162,7 @@ struct ContentView: View {
                 runScript(script: .checkForBitcoin)
             }
         }
-        .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForInstall) {
+        .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }
         .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
@@ -245,16 +265,50 @@ struct ContentView: View {
         case .checkForBrew:
             if result != "" {
                 // brew is installed
-                promptToInstallLightning = true
+                //promptToInstallLightning = true
+                runScript(script: .lightningInstalled)
             } else {
                 promptToInstallBrew = true
             }
+            
+        case .lightningInstalled:
+            if result.contains("core-lightning") {
+                print("lightning already installed?")
+                // check if its running
+                runScript(script: .lightingRunning)
+            } else {
+                promptToInstallLightning = true
+            }
+            
+        case .lightingRunning:
+            parseIsLightningRunningResponse(result: result)
+            
             
             
         default:
             break
         }
     }
+    
+    private func parseIsLightningRunningResponse(result: String) {
+        if result.contains("Running") {
+            isLightningRunning = true
+        } else {
+            isLightningRunning = false
+        }
+    }
+    
+    private func convertStringToDictionary(json: String) -> [String: AnyObject]? {
+            if let data = json.data(using: .utf8) {
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: [.mutableLeaves, .allowFragments]) as? [String: AnyObject]
+                    return json
+                } catch {
+                    return nil
+                }
+            }
+            return nil
+        }
     
     private func parseXcodeSelectResult(result: String) {
         if result.contains("XCode select not installed") {
@@ -270,7 +324,7 @@ struct ContentView: View {
                     print("dict: \(dict!)")
                     InstallBitcoinCore.checkExistingConf()
                     // Set timer to see if install was successful
-                    startCheckingForInstall = true
+                    startCheckingForBitcoinInstall = true
                 }
             }
         }
