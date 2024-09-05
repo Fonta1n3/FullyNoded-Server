@@ -18,7 +18,7 @@ public enum SCRIPT: String {
     case openFile
     case verifyBitcoin
     case checkForBitcoin
-    case standUp
+    case installBitcoin
     case checkXcodeSelect
     case getStrapped
     case launchStrap
@@ -44,8 +44,8 @@ public enum SCRIPT: String {
             return "Verify"
         case .checkForBitcoin:
             return "CheckForBitcoinCore"
-        case .standUp:
-            return "StandUp"
+        case .installBitcoin:
+            return "InstallBitcoin"
         case .checkXcodeSelect:
             return "CheckXCodeSelect"
         case .getStrapped:

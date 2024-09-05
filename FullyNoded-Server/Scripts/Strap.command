@@ -3,7 +3,7 @@
 #/ Install development dependencies on macOS.
 #  Copied from: https://github.com/MikeMcQuaid/strap/blob/master/bin/strap.sh
 #  Strap.command
-#  StandUp
+#  FullyNoded-Server
 #
 #  Created by Peter on 27/05/20.
 #  Copyright © 2020 Peter. All rights reserved.

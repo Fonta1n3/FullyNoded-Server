@@ -94,8 +94,13 @@ struct BitcoinCore: View {
                 Text("Update")
             }
             
-            NavigationLink("bitcoin.conf") {
-                BitcoinConf()
+            Button {
+                let d = Defaults.shared
+                let path = d.dataDir
+                let env = ["FILE":"\(path)/bitcoin.conf"]
+                openConf(script: .openFile, env: env, args: []) { _ in }
+            } label: {
+                Text("bitcoin.conf")
             }
         }
         .padding([.leading, .trailing])
@@ -197,11 +202,16 @@ struct BitcoinCore: View {
         DispatchQueue.main.async {
             if logItems.count > 2 {
                 //self.bitcoinCoreLogOutlet.stringValue = "\(logItems[logItems.count - 2])"
-                logOutput = "\(logItems[logItems.count - 2])"
+                let lastLogItem = "\(logItems[logItems.count - 2])"
+                logOutput = lastLogItem
                 
-                if "\(logItems[logItems.count - 2])".contains("Shutdown: done") {
+                if lastLogItem.contains("Shutdown: done") {
 //                    self.hideSpinner()
 //                    self.bitcoinIsOff()
+                }
+                
+                if lastLogItem.contains("ThreadRPCServer incorrect password") {
+                    showMessage(message: lastLogItem)
                 }
             }
         }
@@ -291,6 +301,35 @@ struct BitcoinCore: View {
             
         default:
             break
+        }
+    }
+    
+    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
+        #if DEBUG
+        print("script: \(script.stringValue)")
+        #endif
+        let resource = script.stringValue
+        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
+            return
+        }
+        let stdOut = Pipe()
+        let task = Process()
+        task.launchPath = path
+        task.environment = env
+        task.arguments = args
+        task.standardOutput = stdOut
+        task.launch()
+        task.waitUntilExit()
+        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
+        var result = ""
+        if let output = String(data: data, encoding: .utf8) {
+            #if DEBUG
+            print("result: \(output)")
+            #endif
+            result += output
+            completion(true)
+        } else {
+            completion(false)
         }
     }
 }

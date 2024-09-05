@@ -26,6 +26,14 @@ struct ContentView: View {
     @State private var services: [Service] = []
     @State private var bitcoinCoreRunning = false
     @State private var bitcoinCoreInstalled = false
+    @State private var xcodeSelectInstalled = false
+    @State private var promptToInstallXcode = false
+    @State private var promptToInstallBitcoin = false
+    @State private var startCheckingForInstall = false
+    @State private var bitcoinInstallSuccess = false
+    @State var timeRemaining = 90
+    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    
     
     @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
     private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
@@ -78,22 +86,63 @@ struct ContentView: View {
                                         .foregroundStyle(.red)
                                 }
                             }
+                            
                             Text(service.name)
+                            
+                            if service.name == "Join Market" {
+                                if startCheckingForInstall {
+                                    EmptyView()
+                                    .onReceive(timer) { _ in
+                                        // if input exceeds 90 seconds then kill the timer...
+                                        if timeRemaining > 0 {
+                                            timeRemaining -= 1
+                                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(envValues.prefix)/bin"
+                                            if FileManager.default.fileExists(atPath: tempPath) {
+                                                showMessage(message: "Bitcoin Core install completed ✓")
+                                                //bitcoinInstallSuccess = true
+//                                                startCheckingForInstall = false
+                                                runScript(script: .checkForBitcoin)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-            //Text("Select a service")
             Home()
+            
+
+            
+           
         }
+        
         .onAppear(perform: {
-            // Check if bitcoin core installed here.. if not prompt to install bitcoin core. if it is installed check if its running.
             services = [bitcoinCore, coreLightning, joinMarket]
             runScript(script: .checkForBitcoin)
-            //runScript(script: .isBitcoindRunning)
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+        .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
+            Button("OK", role: .cancel) {
+                runScript(script: .checkForBitcoin)
+            }
+        }
+        .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForInstall) {
+            Button("OK", role: .cancel) {}
+        }
+        .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
+            Button("OK", role: .cancel) {
+                // check for xcode select first.
+                runScript(script: .checkXcodeSelect)
+            }
+        }
+        .alert("Install XCode command line tools? FullyNoded-Server relies on XCode command line tools to function.", isPresented: $promptToInstallXcode) {
+            Button("OK", role: .cancel) {
+                runScript(script: .installXcode)
+            }
         }
     }
     
@@ -101,35 +150,13 @@ struct ContentView: View {
         if result.contains("Bitcoin Core Daemon version") || result.contains("Bitcoin Core version") {
             bitcoinCoreInstalled = true
             runScript(script: .isBitcoindRunning)
-//            let tempPath = "/Users/\(NSUserName())/.gordian/installBitcoin.sh"
-//            if FileManager.default.fileExists(atPath: tempPath) {
-//                try? FileManager.default.removeItem(atPath: tempPath)
-//            }
-            
-//            let arr = result.components(separatedBy: "Copyright (C)")
-//            currentVersion = (arr[0]).replacingOccurrences(of: "Bitcoin Core Daemon version ", with: "")
-//            currentVersion = currentVersion.replacingOccurrences(of: "Bitcoin Core version ", with: "")
-//            currentVersion = currentVersion.replacingOccurrences(of: d.existingPrefix, with: "")
-//            currentVersion = currentVersion.replacingOccurrences(of: "\n", with: "")
-//            DispatchQueue.main.async { [weak self] in
-//                guard let self = self else { return }
-//                
-//                self.verifyOutlet.isEnabled = true
-//                self.networkButton.isEnabled = true
-//                self.bitcoinCoreVersionOutlet.stringValue = self.currentVersion
-//                self.bitcoinInstalled = true
-//            }
-//            isBitcoinOn()
+            let tempPath = "/Users/\(NSUserName())/.fullynoded/installBitcoin.sh"
+            if FileManager.default.fileExists(atPath: tempPath) {
+                try? FileManager.default.removeItem(atPath: tempPath)
+            }
         } else {
             bitcoinCoreInstalled = false
-//            DispatchQueue.main.async { [weak self] in
-//                guard let self = self else { return }
-//                
-//                self.updateOutlet.title = "Install"
-//                self.updateOutlet.isEnabled = true
-//                self.bitcoinInstalled = false
-//                self.verifyOutlet.isEnabled = false
-//            }
+            promptToInstallBitcoin = true
         }
     }
     
@@ -186,18 +213,11 @@ struct ContentView: View {
     func parseScriptResult(script: SCRIPT, result: String) {
         print("parse \(script.stringValue)")
         switch script {
-//        case .startBitcoin:
-//            showBitcoinLog()
-//            startBitcoinParse(result: result)
-            
         case .checkForBitcoin:
             parseBitcoindVersionResponse(result: result)
-//
-//        case .checkXcodeSelect:
-//            parseXcodeSelectResult(result: result)
-//
-//        case .hasBitcoinShutdownCompleted:
-//            parseHasBitcoinShutdownCompleted(result: result)
+
+        case .checkXcodeSelect:
+            parseXcodeSelectResult(result: result)
             
         case .isBitcoindRunning:
             if result.contains("Running") {
@@ -208,14 +228,33 @@ struct ContentView: View {
             // Check lightning here
             // Check JM after
             
-//        case .didBitcoindStart:
-//            parseDidBitcoinStart(result: result)
-            
         default:
             break
         }
     }
+    
+    private func parseXcodeSelectResult(result: String) {
+        if result.contains("XCode select not installed") {
+            promptToInstallXcode = true
+        } else {
+            promptToInstallXcode = false
+            
+            LatestBtcCoreRelease.get { (dict, error) in                
+                if error != nil {
+                    
+                    print("error: \(error!)")
+                } else {
+                    print("dict: \(dict!)")
+                    InstallBitcoinCore.checkExistingConf()
+                    // Set timer to see if install was successful
+                    startCheckingForInstall = true
+                }
+            }
+        }
+    }
 }
+
+
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()

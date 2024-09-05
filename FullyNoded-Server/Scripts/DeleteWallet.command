@@ -1,10 +1,6 @@
 #!/bin/sh
 
-#  DeleteWallet.command
-#  GordianServer-macOS
-#
-#  Created by Peter on 9/6/20.
-#  Copyright © 2020 Peter. All rights reserved.
+
 MAINNET_DEFAULT="$DATADIR"/wallets/"$WALLET"
 TESTNET_DEFAULT="$DATADIR"/testnet3/"$WALLET"
 TESTNET_POSSIBLE="$DATADIR"/testnet3/wallets/"$WALLET"

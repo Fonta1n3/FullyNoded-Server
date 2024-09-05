@@ -1,11 +1,5 @@
 #!/bin/sh
 
-#  Verify.command
-#  StandUp
-#
-#  Created by Peter on 07/11/19.
-#  Copyright © 2019 Blockchain Commons, LLC
-
 GPG_PATH=""
 
 if [[ $(command -v /opt/homebrew/bin/gpg) != "" ]]; then
@@ -51,14 +45,14 @@ function checkPermissions() {
 }
 
 function verifySigs() {
-  curl https://raw.githubusercontent.com/bitcoin/bitcoin/master/contrib/builder-keys/keys.txt -o ~/.gordian/BitcoinCore/keys.txt
+  curl https://raw.githubusercontent.com/bitcoin/bitcoin/master/contrib/builder-keys/keys.txt -o ~/.fullynoded/BitcoinCore/keys.txt
   
-  sh -c 'while read fingerprint keyholder_name; do sudo -u $(whoami) $GPG_PATH --keyserver hkps://keys.openpgp.org --recv-keys ${fingerprint}; done < ~/.gordian/BitcoinCore/keys.txt'
+  sh -c 'while read fingerprint keyholder_name; do sudo -u $(whoami) $GPG_PATH --keyserver hkps://keys.openpgp.org --recv-keys ${fingerprint}; done < ~/.fullynoded/BitcoinCore/keys.txt'
 
   echo "Verifying Bitcoin Core signatures... (this can take a few moments)"
 
-  export SHASIG=`sudo -u $(whoami) $GPG_PATH --verify ~/.gordian/BitcoinCore/SHA256SUMS.asc ~/.gordian/BitcoinCore/SHA256SUMS 2>&1 | grep "Good signature"`
-  export SHACOUNT=`sudo -u $(whoami) $GPG_PATH --verify ~/.gordian/BitcoinCore/SHA256SUMS.asc ~/.gordian/BitcoinCore/SHA256SUMS 2>&1 | grep "Good signature" | wc -l`
+  export SHASIG=`sudo -u $(whoami) $GPG_PATH --verify ~/.fullynoded/BitcoinCore/SHA256SUMS.asc ~/.fullynoded/BitcoinCore/SHA256SUMS 2>&1 | grep "Good signature"`
+  export SHACOUNT=`sudo -u $(whoami) $GPG_PATH --verify ~/.fullynoded/BitcoinCore/SHA256SUMS.asc ~/.fullynoded/BitcoinCore/SHA256SUMS 2>&1 | grep "Good signature" | wc -l`
   
   echo "SHASIG: $SHASIG"
 
@@ -82,9 +76,9 @@ function checkForGnupg() {
   fi
 }
 
-if [ -d ~/.gordian/BitcoinCore ]; then
+if [ -d ~/.fullynoded/BitcoinCore ]; then
     checkForGnupg
 else
-    echo "No ~/.gordian/BitcoinCore directory, click Install then try again."
+    echo "No ~/.fullynoded/BitcoinCore directory, click Install then try again."
     exit 1
 fi

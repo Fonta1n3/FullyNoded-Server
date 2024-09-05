@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */; };
+		0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */; };
+		0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */; };
+		0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CB2C89EBB300534A8D /* Defaults.swift */; };
+		0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */; };
+		0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CF2C89EC3700534A8D /* Extensions.swift */; };
+		0A5CE8D22C89ECB000534A8D /* RPCWhitelist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */; };
+		0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D32C89EE1C00534A8D /* Credentials.swift */; };
 		0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */; };
 		0AA692372C7F831D00366192 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692362C7F831D00366192 /* Persistence.swift */; };
 		0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */; };
@@ -27,17 +35,25 @@
 		0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692552C7F8EC700366192 /* LaunchVerifier.command */; };
 		0AA692682C7F8EC700366192 /* LaunchXcodeInstall.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692562C7F8EC700366192 /* LaunchXcodeInstall.command */; };
 		0AA692692C7F8EC700366192 /* OpenFile.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692572C7F8EC700366192 /* OpenFile.command */; };
-		0AA6926A2C7F8EC700366192 /* StandUp.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692582C7F8EC700366192 /* StandUp.command */; };
+		0AA6926A2C7F8EC700366192 /* InstallBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692582C7F8EC700366192 /* InstallBitcoin.command */; };
 		0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692592C7F8EC700366192 /* StartBitcoin.command */; };
 		0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925A2C7F8EC700366192 /* StopBitcoin.command */; };
 		0AA6926D2C7F8EC700366192 /* Strap.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925B2C7F8EC700366192 /* Strap.command */; };
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
-		0AA692742C80CF9400366192 /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692732C80CF9400366192 /* BitcoinConf.swift */; };
+		0AA692742C80CF9400366192 /* BitcoinConfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692732C80CF9400366192 /* BitcoinConfView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcCoreRelease.swift; sourceTree = "<group>"; };
+		0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallBtcCore.swift; sourceTree = "<group>"; };
+		0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
+		0A5CE8CB2C89EBB300534A8D /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
+		0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCAuth.swift; sourceTree = "<group>"; };
+		0A5CE8CF2C89EC3700534A8D /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCWhitelist.swift; sourceTree = "<group>"; };
+		0A5CE8D32C89EE1C00534A8D /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
 		0AA692312C7F831D00366192 /* FullyNoded-Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FullyNoded-Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullyNoded_ServerApp.swift; sourceTree = "<group>"; };
 		0AA692362C7F831D00366192 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -60,14 +76,14 @@
 		0AA692552C7F8EC700366192 /* LaunchVerifier.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = LaunchVerifier.command; sourceTree = "<group>"; };
 		0AA692562C7F8EC700366192 /* LaunchXcodeInstall.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = LaunchXcodeInstall.command; sourceTree = "<group>"; };
 		0AA692572C7F8EC700366192 /* OpenFile.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = OpenFile.command; sourceTree = "<group>"; };
-		0AA692582C7F8EC700366192 /* StandUp.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StandUp.command; sourceTree = "<group>"; };
+		0AA692582C7F8EC700366192 /* InstallBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallBitcoin.command; sourceTree = "<group>"; };
 		0AA692592C7F8EC700366192 /* StartBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StartBitcoin.command; sourceTree = "<group>"; };
 		0AA6925A2C7F8EC700366192 /* StopBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StopBitcoin.command; sourceTree = "<group>"; };
 		0AA6925B2C7F8EC700366192 /* Strap.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Strap.command; sourceTree = "<group>"; };
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
-		0AA692732C80CF9400366192 /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
+		0AA692732C80CF9400366192 /* BitcoinConfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConfView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,7 +128,15 @@
 				0AA692482C7F874900366192 /* BitcoinCore.swift */,
 				0AA6924A2C7F89E800366192 /* Script.swift */,
 				0AA6926F2C7F962A00366192 /* Home.swift */,
-				0AA692732C80CF9400366192 /* BitcoinConf.swift */,
+				0AA692732C80CF9400366192 /* BitcoinConfView.swift */,
+				0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */,
+				0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */,
+				0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */,
+				0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */,
+				0A5CE8CB2C89EBB300534A8D /* Defaults.swift */,
+				0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */,
+				0A5CE8CF2C89EC3700534A8D /* Extensions.swift */,
+				0A5CE8D32C89EE1C00534A8D /* Credentials.swift */,
 			);
 			path = "FullyNoded-Server";
 			sourceTree = "<group>";
@@ -140,7 +164,7 @@
 				0AA692552C7F8EC700366192 /* LaunchVerifier.command */,
 				0AA692562C7F8EC700366192 /* LaunchXcodeInstall.command */,
 				0AA692572C7F8EC700366192 /* OpenFile.command */,
-				0AA692582C7F8EC700366192 /* StandUp.command */,
+				0AA692582C7F8EC700366192 /* InstallBitcoin.command */,
 				0AA692592C7F8EC700366192 /* StartBitcoin.command */,
 				0AA6925A2C7F8EC700366192 /* StopBitcoin.command */,
 				0AA6925B2C7F8EC700366192 /* Strap.command */,
@@ -207,7 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0AA6926A2C7F8EC700366192 /* StandUp.command in Resources */,
+				0AA6926A2C7F8EC700366192 /* InstallBitcoin.command in Resources */,
 				0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */,
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
@@ -237,14 +261,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
+				0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */,
+				0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */,
+				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
+				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
 				0AA692372C7F831D00366192 /* Persistence.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
+				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
+				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
+				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
 				0AA692702C7F962A00366192 /* Home.swift in Sources */,
-				0AA692742C80CF9400366192 /* BitcoinConf.swift in Sources */,
+				0AA692742C80CF9400366192 /* BitcoinConfView.swift in Sources */,
+				0A5CE8D22C89ECB000534A8D /* RPCWhitelist.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
