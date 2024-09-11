@@ -9,12 +9,15 @@ import SwiftUI
 
 @main
 struct FullyNoded_ServerApp: App {
-    let persistenceController = PersistenceController.shared
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .onAppear {
+                    if UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as? String == nil {
+                        UserDefaults.standard.setValue(Crypto.privKeyData(), forKey: "encKeyFullyNodedServer")
+                    }
+                }
         }
+        
     }
 }

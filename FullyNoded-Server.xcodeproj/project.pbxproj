@@ -13,7 +13,6 @@
 		0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CB2C89EBB300534A8D /* Defaults.swift */; };
 		0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */; };
 		0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CF2C89EC3700534A8D /* Extensions.swift */; };
-		0A5CE8D22C89ECB000534A8D /* RPCWhitelist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */; };
 		0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D32C89EE1C00534A8D /* Credentials.swift */; };
 		0A5CE8D82C8A15EB00534A8D /* LatestLightningRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */; };
 		0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */; };
@@ -21,8 +20,14 @@
 		0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */; };
 		0A5CE8E02C8A2ADE00534A8D /* CheckForLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */; };
 		0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */; };
+		0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E32C91EA2C00534A8D /* DataManager.swift */; };
+		0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */; };
+		0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */; };
+		0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8ED2C91F9F500534A8D /* Crypto.swift */; };
+		0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */; };
+		0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F12C91FE2A00534A8D /* StartLightning.command */; };
+		0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F52C92013900534A8D /* StopLightning.command */; };
 		0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */; };
-		0AA692372C7F831D00366192 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692362C7F831D00366192 /* Persistence.swift */; };
 		0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */; };
 		0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6923B2C7F831D00366192 /* ContentView.swift */; };
 		0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6923D2C7F831F00366192 /* Assets.xcassets */; };
@@ -48,7 +53,6 @@
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
-		0AA692742C80CF9400366192 /* BitcoinConfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692732C80CF9400366192 /* BitcoinConfView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,7 +62,6 @@
 		0A5CE8CB2C89EBB300534A8D /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCAuth.swift; sourceTree = "<group>"; };
 		0A5CE8CF2C89EC3700534A8D /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCWhitelist.swift; sourceTree = "<group>"; };
 		0A5CE8D32C89EE1C00534A8D /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
 		0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestLightningRelease.swift; sourceTree = "<group>"; };
 		0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = BrewInstalled.command; sourceTree = "<group>"; };
@@ -66,9 +69,15 @@
 		0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchLightningInstall.command; sourceTree = "<group>"; };
 		0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CheckForLightning.command; sourceTree = "<group>"; };
 		0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IsLightningOn.command; sourceTree = "<group>"; };
+		0A5CE8E32C91EA2C00534A8D /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinEnv.swift; sourceTree = "<group>"; };
+		0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLightning.swift; sourceTree = "<group>"; };
+		0A5CE8ED2C91F9F500534A8D /* Crypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crypto.swift; sourceTree = "<group>"; };
+		0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
+		0A5CE8F12C91FE2A00534A8D /* StartLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartLightning.command; sourceTree = "<group>"; };
+		0A5CE8F52C92013900534A8D /* StopLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopLightning.command; sourceTree = "<group>"; };
 		0AA692312C7F831D00366192 /* FullyNoded-Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FullyNoded-Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullyNoded_ServerApp.swift; sourceTree = "<group>"; };
-		0AA692362C7F831D00366192 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		0AA692392C7F831D00366192 /* FullyNoded_Server.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FullyNoded_Server.xcdatamodel; sourceTree = "<group>"; };
 		0AA6923B2C7F831D00366192 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0AA6923D2C7F831F00366192 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -95,7 +104,6 @@
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
-		0AA692732C80CF9400366192 /* BitcoinConfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConfView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +117,51 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A5CE8E92C91F31600534A8D /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0AA6923B2C7F831D00366192 /* ContentView.swift */,
+				0AA692482C7F874900366192 /* BitcoinCore.swift */,
+				0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */,
+				0AA6926F2C7F962A00366192 /* Home.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		0A5CE8EA2C91F32000534A8D /* Core Data */ = {
+			isa = PBXGroup;
+			children = (
+				0A5CE8E32C91EA2C00534A8D /* DataManager.swift */,
+			);
+			path = "Core Data";
+			sourceTree = "<group>";
+		};
+		0A5CE8EB2C91F5FC00534A8D /* Objects */ = {
+			isa = PBXGroup;
+			children = (
+				0A5CE8D32C89EE1C00534A8D /* Credentials.swift */,
+				0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */,
+			);
+			path = Objects;
+			sourceTree = "<group>";
+		};
+		0A5CE8EC2C91F7E900534A8D /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				0AA692712C80B01A00366192 /* BitcoinRPC.swift */,
+				0AA6924A2C7F89E800366192 /* Script.swift */,
+				0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */,
+				0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */,
+				0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */,
+				0A5CE8CB2C89EBB300534A8D /* Defaults.swift */,
+				0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */,
+				0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */,
+				0A5CE8ED2C91F9F500534A8D /* Crypto.swift */,
+				0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
 		0AA692282C7F831D00366192 = {
 			isa = PBXGroup;
 			children = (
@@ -128,28 +181,17 @@
 		0AA692332C7F831D00366192 /* FullyNoded-Server */ = {
 			isa = PBXGroup;
 			children = (
-				0AA692712C80B01A00366192 /* BitcoinRPC.swift */,
+				0A5CE8EC2C91F7E900534A8D /* Helpers */,
 				0AA6925D2C7F8EC700366192 /* Scripts */,
 				0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */,
-				0AA692362C7F831D00366192 /* Persistence.swift */,
-				0AA6923B2C7F831D00366192 /* ContentView.swift */,
+				0A5CE8E92C91F31600534A8D /* Views */,
 				0AA6923D2C7F831F00366192 /* Assets.xcassets */,
 				0AA6923F2C7F831F00366192 /* FullyNoded_Server.entitlements */,
 				0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */,
 				0AA692402C7F831F00366192 /* Preview Content */,
-				0AA692482C7F874900366192 /* BitcoinCore.swift */,
-				0AA6924A2C7F89E800366192 /* Script.swift */,
-				0AA6926F2C7F962A00366192 /* Home.swift */,
-				0AA692732C80CF9400366192 /* BitcoinConfView.swift */,
-				0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */,
-				0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */,
-				0A5CE8D12C89ECB000534A8D /* RPCWhitelist.swift */,
-				0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */,
-				0A5CE8CB2C89EBB300534A8D /* Defaults.swift */,
-				0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */,
 				0A5CE8CF2C89EC3700534A8D /* Extensions.swift */,
-				0A5CE8D32C89EE1C00534A8D /* Credentials.swift */,
-				0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */,
+				0A5CE8EB2C91F5FC00534A8D /* Objects */,
+				0A5CE8EA2C91F32000534A8D /* Core Data */,
 			);
 			path = "FullyNoded-Server";
 			sourceTree = "<group>";
@@ -187,6 +229,8 @@
 				0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */,
 				0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */,
 				0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */,
+				0A5CE8F12C91FE2A00534A8D /* StartLightning.command */,
+				0A5CE8F52C92013900534A8D /* StopLightning.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -263,7 +307,9 @@
 				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
 				0AA692692C7F8EC700366192 /* OpenFile.command in Resources */,
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
+				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
+				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
@@ -288,19 +334,21 @@
 				0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */,
 				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
+				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
+				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
-				0AA692372C7F831D00366192 /* Persistence.swift in Sources */,
+				0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
+				0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D82C8A15EB00534A8D /* LatestLightningRelease.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
+				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
 				0AA692702C7F962A00366192 /* Home.swift in Sources */,
-				0AA692742C80CF9400366192 /* BitcoinConfView.swift in Sources */,
-				0A5CE8D22C89ECB000534A8D /* RPCWhitelist.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,15 +18,10 @@ struct BitcoinCore: View {
     @State private var selectedChain = "Signet"
         
     
-    let bitcoinCoreService: Service
     let env: [String: String]
-    var running: Bool
     
-    init(bitcoinCoreService: Service, env: [String : String], running: Bool) {
-        self.bitcoinCoreService = bitcoinCoreService
+    init(env: [String : String]) {
         self.env = env
-        self.running = running
-        self.isRunning = running
     }
     
     
@@ -54,7 +49,7 @@ struct BitcoinCore: View {
                         .foregroundStyle(.red)
                 }
             }
-            Toggle(bitcoinCoreService.name, isOn: $isRunning)
+            Toggle("Bitcoin Core", isOn: $isRunning)
                 .toggleStyle(.switch)
                 .onChange(of: isRunning) {
                     if !isRunning {
@@ -115,6 +110,9 @@ struct BitcoinCore: View {
         .onAppear(perform: {
             isBitcoinCoreRunning()
         })
+        .alert(message, isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        }
     }
     
     private func startBitcoinCore() {

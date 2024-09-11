@@ -8,6 +8,8 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case stopLightning
+    case startLightning
     case lightingRunning
     case lightningInstalled
     case launchLightningInstall
@@ -33,6 +35,10 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .stopLightning:
+            return "StopLightning"
+        case.startLightning:
+            return "StartLightning"
         case .lightingRunning:
             return "IsLightningOn"
         case .lightningInstalled:

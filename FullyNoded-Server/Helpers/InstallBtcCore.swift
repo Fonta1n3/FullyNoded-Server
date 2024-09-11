@@ -14,8 +14,8 @@ class InstallBitcoinCore {
         var discoverExists = false
         var listenExists = false
         var externalIpExists = false
-        var gordianServerUserExists = false
-        var gordianServerWhitelistExists = false
+        var fullynodedServerUserExists = false
+        var fullynodedServerWhitelistExists = false
         
         BitcoinConf.getBitcoinConf { (conf, error) in
             guard let conf = conf, !error, conf.count > 0 else {
@@ -46,14 +46,14 @@ class InstallBitcoinCore {
                     switch k {
                     case "rpcauth":
                         if existingValue.hasPrefix("\(rpcuser):") {
-                            gordianServerUserExists = true
+                            fullynodedServerUserExists = true
                             updatedConf[i] = rpcauth
                         }
                         
-                    case "rpcwhitelist":
-                        if existingValue.hasPrefix("\(rpcuser):") {
-                            gordianServerWhitelistExists = true
-                        }
+//                    case "rpcwhitelist":
+//                        if existingValue.hasPrefix("\(rpcuser):") {
+//                            fullynodedServerWhitelistExists = true
+//                        }
                         
                     case "onlynet", "#onlynet":
                         onlynetExists = true
@@ -86,13 +86,13 @@ class InstallBitcoinCore {
             
             var bitcoinConf = updatedConf.joined(separator: "\n")
             
-            if !gordianServerUserExists {
+            if !fullynodedServerUserExists {
                 bitcoinConf = rpcauth + "\n" + bitcoinConf
             }
             
-            if !gordianServerWhitelistExists {
-                bitcoinConf = "rpcwhitelist=\(rpcuser):\(rpcWhiteList)\n" + bitcoinConf
-            }
+//            if !fullynodedServerWhitelistExists {
+//                bitcoinConf = "rpcwhitelist=\(rpcuser):\(rpcWhiteList)\n" + bitcoinConf
+//            }
             
             if !proxyExists {
                 bitcoinConf = "proxy=127.0.0.1:19050\n" + bitcoinConf
@@ -160,7 +160,7 @@ class InstallBitcoinCore {
         if writeFile("/Users/\(NSUserName())/.fullynoded/fullynoded.log", "") {
             createBitcoinCoreDirectory()
         } else {
-            //simpleAlert(message: "There was an issue...", info: "Unable to create the gordian.log, please let us know about this bug.", buttonLabel: "OK")
+            //simpleAlert(message: "There was an issue...", info: "Unable to create the fullynoded.log, please let us know about this bug.", buttonLabel: "OK")
         }
     }
     

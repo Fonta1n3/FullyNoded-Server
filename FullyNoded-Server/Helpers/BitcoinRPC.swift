@@ -14,10 +14,34 @@ class BitcoinRPC {
     lazy var session = URLSession(configuration: .default)
     
     func command(method: String, completion: @escaping ((result: Any?, error: String?)) -> Void) {
-        print("command")
         let nodeIp = "127.0.0.1:38332"
-        let user = "joinmarket"
-        let rpcPassword = "9yxN2wfbhdct76ndFOZvlqsXEOTWkfs4SytG0u84kgI="
+        guard let user = UserDefaults.standard.string(forKey: "rpcUser") else {
+            completion((nil, "No rpc user saved."))
+            return
+        }
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { [weak self] creds in
+            guard let self = self else { return }
+            
+            guard let creds = creds else {
+                completion((nil, "No BitcoinRPCCreds saved."))
+                return
+            }
+            
+            guard let encryptedPass = creds["password"] as? Data else {
+                completion((nil, "No rpc password saved."))
+                return
+            }
+            
+            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
+                completion((nil, "Unable to decrypt the rpc password."))
+                return
+            }
+            
+            guard let rpcPassword = String(data: decryptedPass, encoding: .utf8) else {
+                completion((nil, "Unable to encode rpc password data to utf8 string."))
+                return
+            }
+            
             let stringUrl = "http://\(user):\(rpcPassword)@\(nodeIp)"
             guard let url = URL(string: stringUrl) else {
                 completion((nil, "Error converting the url."))
@@ -68,6 +92,6 @@ class BitcoinRPC {
                 completion((nil, errorMessage))
             }
             task.resume()
-        
+        }
     }
 }

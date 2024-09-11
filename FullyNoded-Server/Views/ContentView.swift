@@ -24,7 +24,7 @@ struct ContentView: View {
     @State private var showError = false
     @State private var message = ""
     @State private var services: [Service] = []
-    @State private var bitcoinCoreRunning = false
+    //@State private var bitcoinCoreRunning = false
     @State private var bitcoinCoreInstalled = false
     @State private var lightningInstalled = false
     @State private var xcodeSelectInstalled = false
@@ -36,41 +36,34 @@ struct ContentView: View {
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
     @State private var promptToInstallLightning = false
-    @State private var isLightningRunning = false
+    //@State private var isLightningRunning = false
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
     @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
     private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
     private let joinMarket = Service(name: "Join Market", id: UUID(), running: false)
-    private var env = [String:String]()
-    private var envValues: EnvValues
+    @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
+        "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
+        "version": "26.2",
+        "prefix": "bitcoin-26.2",
+        "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
+        "chain": "signet"
+    ])
+    @State private var env: [String: String] = [:]
     
-    private struct EnvValues {
-        let binaryName: String
-        let version: String
-        let prefix: String
-        let dataDir: String
-        let chain: String
-    }
     
-    init() {
-        self.envValues = EnvValues(
-            binaryName: "bitcoin-26.2-arm64-apple-darwin.tar.gz",
-            version: "26.2",
-            prefix: "bitcoin-26.2",
-            dataDir: "/Users/fontaine/Library/Application Support/Bitcoin",
-            chain: "signet"
-        )
-        
-        self.env = [
-            "BINARY_NAME": envValues.binaryName,
-            "VERSION": envValues.version,
-            "PREFIX": envValues.prefix,
-            "DATADIR": envValues.dataDir,
-            "CHAIN": envValues.chain
-        ]
-    }
+//    struct EnvValues {
+//        let binaryName: String
+//        let version: String
+//        let prefix: String
+//        let dataDir: String
+//        let chain: String
+//    }
+    
+//    init() {
+//        
+//    }
 
     var body: some View {
         NavigationView {
@@ -78,33 +71,30 @@ struct ContentView: View {
                 ForEach(services) { service in
                     NavigationLink {
                         if service.name == "Bitcoin Core" {
-                            BitcoinCore(bitcoinCoreService: service, env: env, running: bitcoinCoreRunning)
+                            BitcoinCore(env: env)
+                        }
+                        if service.name == "Core Lightning" {
+                            CoreLightning()
                         }
                     } label: {
                         HStack() {
                             if service.name == "Bitcoin Core" {
-                                if bitcoinCoreRunning {
-                                    Image(systemName: "circle.fill")
+                                if bitcoinCoreInstalled {
+                                    Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
                                 } else {
-                                    Image(systemName: "circle.fill")
-                                        .foregroundStyle(.red)
+                                    Image(systemName: "checkmark.circle")
+                                        .foregroundStyle(.gray)
                                 }
                             }
                             
                             if service.name == "Core Lightning" {
                                 if lightningInstalled {
-                                    if isLightningRunning {
-                                        Image(systemName: "circle.fill")
-                                            .foregroundStyle(.green)
-                                    } else {
-                                        Image(systemName: "circle.fill")
-                                            .foregroundStyle(.red)
-                                    }
-                                        
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
                                 } else {
-                                    Image(systemName: "circle.fill")
-                                        .foregroundStyle(.red)
+                                    Image(systemName: "checkmark.circle")
+                                        .foregroundStyle(.gray)
                                 }
                             }
                             
@@ -117,12 +107,12 @@ struct ContentView: View {
                                         // if input exceeds 90 seconds then kill the timer...
                                         if timeRemaining > 0 {
                                             timeRemaining -= 1
-                                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(envValues.prefix)/bin"
+                                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(bitcoinEnvValues.prefix)/bin"
                                             if FileManager.default.fileExists(atPath: tempPath) {
                                                 showMessage(message: "Bitcoin Core install completed ✓")
                                                 //bitcoinInstallSuccess = true
 //                                                startCheckingForInstall = false
-                                                runScript(script: .checkForBitcoin)
+                                                runScript(script: .checkForBitcoin, env: env)
                                                 timeRemaining = 90
                                             }
                                         }
@@ -140,26 +130,28 @@ struct ContentView: View {
            
         }
         .onAppear(perform: {
-            services = [bitcoinCore, coreLightning, joinMarket]
-            runScript(script: .checkForBitcoin)
+            getSavedValues()
+            services = [bitcoinCore, coreLightning/*, joinMarket*/]
+            runScript(script: .checkForBitcoin, env: env)
         })
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
             Button("OK") {
-                runScript(script: .launchLightningInstall)
+                installLightning()
                 // start timer
             }
             Button("Cancel", role: .cancel) {}
-            
         }
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
         .alert("Install Brew? Core Lightning installation relies on Brew.", isPresented: $promptToInstallBrew) {
-            Button("OK", role: .cancel) {}
+            Button("OK", role: .cancel) {
+                //runScript...
+            }
         }
         .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
             Button("OK", role: .cancel) {
-                runScript(script: .checkForBitcoin)
+                runScript(script: .checkForBitcoin, env: env)
             }
         }
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
@@ -168,20 +160,79 @@ struct ContentView: View {
         .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
             Button("OK", role: .cancel) {
                 // check for xcode select first.
-                runScript(script: .checkXcodeSelect)
+                runScript(script: .checkXcodeSelect, env: env)
             }
         }
         .alert("Install XCode command line tools? FullyNoded-Server relies on XCode command line tools to function.", isPresented: $promptToInstallXcode) {
             Button("OK", role: .cancel) {
-                runScript(script: .installXcode)
+                runScript(script: .installXcode, env: env)
             }
+        }
+    }
+    
+    private func installLightning() {
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
+            guard let bitcoinRPCCreds = bitcoinRPCCreds else { return }
+            
+            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else { return }
+            
+            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else { return }
+            
+            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else { return }
+            
+            var lightningEnv: [String: String] = [:]
+            lightningEnv["USER"] = NSUserName()
+            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcUser")
+            lightningEnv["RPC_PASSWORD"] = rpcPass
+            lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir
+            runScript(script: .launchLightningInstall, env: lightningEnv)
+        }
+    }
+    
+    private func getSavedValues() {
+        DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
+            guard let bitcoinEnv = bitcoinEnv else {
+                let dict = [
+                    "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
+                    "version": "26.2",
+                    "prefix": "bitcoin-26.2",
+                    "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
+                    "chain": "signet"
+                ]
+                DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
+                    guard saved else {
+                        showMessage(message: "Unable to save default bitcoin env values.")
+                        return
+                    }
+                    
+                    self.env = [
+                        "BINARY_NAME": self.bitcoinEnvValues.binaryName,
+                        "VERSION": self.bitcoinEnvValues.version,
+                        "PREFIX": self.bitcoinEnvValues.prefix,
+                        "DATADIR": self.bitcoinEnvValues.dataDir,
+                        "CHAIN": self.bitcoinEnvValues.chain
+                    ]
+                }
+                
+                return
+            }
+            
+            self.bitcoinEnvValues = .init(dictionary: bitcoinEnv)
+            
+            self.env = [
+                "BINARY_NAME": self.bitcoinEnvValues.binaryName,
+                "VERSION": self.bitcoinEnvValues.version,
+                "PREFIX": self.bitcoinEnvValues.prefix,
+                "DATADIR": self.bitcoinEnvValues.dataDir,
+                "CHAIN": self.bitcoinEnvValues.chain
+            ]
         }
     }
     
     func parseBitcoindVersionResponse(result: String) {
         if result.contains("Bitcoin Core Daemon version") || result.contains("Bitcoin Core version") {
             bitcoinCoreInstalled = true
-            runScript(script: .isBitcoindRunning)
+            runScript(script: .checkForBrew, env: env)
             let tempPath = "/Users/\(NSUserName())/.fullynoded/installBitcoin.sh"
             if FileManager.default.fileExists(atPath: tempPath) {
                 try? FileManager.default.removeItem(atPath: tempPath)
@@ -190,10 +241,11 @@ struct ContentView: View {
         } else {
             bitcoinCoreInstalled = false
             promptToInstallBitcoin = true
+            lightningInstalled = false
         }
     }
     
-    private func runScript(script: SCRIPT) {
+    private func runScript(script: SCRIPT, env: [String: String]) {
         #if DEBUG
         print("run script: \(script.stringValue)")
         #endif
@@ -238,6 +290,7 @@ struct ContentView: View {
         }
     }
     
+    
     private func showMessage(message: String) {
         showError = true
         self.message = message
@@ -252,21 +305,11 @@ struct ContentView: View {
         case .checkXcodeSelect:
             parseXcodeSelectResult(result: result)
             
-        case .isBitcoindRunning:
-            if result.contains("Running") {
-                bitcoinCoreRunning = true
-            } else if result.contains("Stopped") {
-                bitcoinCoreRunning = false
-            }
-            runScript(script: .checkForBrew)
-            // Check lightning here
-            // Check JM after
-            //isLightningInstalled
         case .checkForBrew:
             if result != "" {
                 // brew is installed
                 //promptToInstallLightning = true
-                runScript(script: .lightningInstalled)
+                runScript(script: .lightningInstalled, env: env)
             } else {
                 promptToInstallBrew = true
             }
@@ -275,14 +318,15 @@ struct ContentView: View {
             if result.contains("core-lightning") {
                 print("lightning already installed?")
                 // check if its running
-                runScript(script: .lightingRunning)
+                runScript(script: .lightingRunning, env: env)
+                lightningInstalled = true
             } else {
+                lightningInstalled = false
                 promptToInstallLightning = true
             }
             
-        case .lightingRunning:
-            parseIsLightningRunningResponse(result: result)
-            
+//        case .lightingRunning:
+//            parseIsLightningRunningResponse(result: result)
             
             
         default:
@@ -290,25 +334,15 @@ struct ContentView: View {
         }
     }
     
-    private func parseIsLightningRunningResponse(result: String) {
-        if result.contains("Running") {
-            isLightningRunning = true
-        } else {
-            isLightningRunning = false
-        }
-    }
+//    private func parseIsLightningRunningResponse(result: String) {
+//        if result.contains("Running") {
+//            isLightningRunning = true
+//        } else {
+//            isLightningRunning = false
+//        }
+//    }
     
-    private func convertStringToDictionary(json: String) -> [String: AnyObject]? {
-            if let data = json.data(using: .utf8) {
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data, options: [.mutableLeaves, .allowFragments]) as? [String: AnyObject]
-                    return json
-                } catch {
-                    return nil
-                }
-            }
-            return nil
-        }
+    
     
     private func parseXcodeSelectResult(result: String) {
         if result.contains("XCode select not installed") {
