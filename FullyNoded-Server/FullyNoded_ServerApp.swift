@@ -14,7 +14,7 @@ struct FullyNoded_ServerApp: App {
             ContentView()
                 .onAppear {
                     if UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as? String == nil {
-                        UserDefaults.standard.setValue(Crypto.privKeyData(), forKey: "encKeyFullyNodedServer")
+                        UserDefaults.standard.setValue(Crypto.privKeyData().base64EncodedString(), forKey: "encKeyFullyNodedServer")
                     }
                 }
         }

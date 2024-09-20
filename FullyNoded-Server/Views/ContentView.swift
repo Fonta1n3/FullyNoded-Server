@@ -36,13 +36,13 @@ struct ContentView: View {
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
     @State private var promptToInstallLightning = false
-    //@State private var isLightningRunning = false
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
     @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
     private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
     private let joinMarket = Service(name: "Join Market", id: UUID(), running: false)
+    
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
         "version": "26.2",
@@ -50,20 +50,9 @@ struct ContentView: View {
         "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
         "chain": "signet"
     ])
+    
     @State private var env: [String: String] = [:]
     
-    
-//    struct EnvValues {
-//        let binaryName: String
-//        let version: String
-//        let prefix: String
-//        let dataDir: String
-//        let chain: String
-//    }
-    
-//    init() {
-//        
-//    }
 
     var body: some View {
         NavigationView {
@@ -131,8 +120,7 @@ struct ContentView: View {
         }
         .onAppear(perform: {
             getSavedValues()
-            services = [bitcoinCore, coreLightning/*, joinMarket*/]
-            runScript(script: .checkForBitcoin, env: env)
+            
         })
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
             Button("OK") {
@@ -172,7 +160,11 @@ struct ContentView: View {
     
     private func installLightning() {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
-            guard let bitcoinRPCCreds = bitcoinRPCCreds else { return }
+            guard let bitcoinRPCCreds = bitcoinRPCCreds else {
+                // Create them..
+                
+                return
+            }
             
             guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else { return }
             
@@ -181,10 +173,10 @@ struct ContentView: View {
             guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else { return }
             
             var lightningEnv: [String: String] = [:]
-            lightningEnv["USER"] = NSUserName()
-            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcUser")
+            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
             lightningEnv["RPC_PASSWORD"] = rpcPass
-            lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir
+            lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir.replacingOccurrences(of: " ", with: "*")
+            lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
             runScript(script: .launchLightningInstall, env: lightningEnv)
         }
     }
@@ -199,6 +191,7 @@ struct ContentView: View {
                     "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
                     "chain": "signet"
                 ]
+                
                 DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
                     guard saved else {
                         showMessage(message: "Unable to save default bitcoin env values.")
@@ -212,6 +205,9 @@ struct ContentView: View {
                         "DATADIR": self.bitcoinEnvValues.dataDir,
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
+                    
+                    services = [bitcoinCore, coreLightning/*, joinMarket*/]
+                    runScript(script: .checkForBitcoin, env: env)
                 }
                 
                 return
@@ -226,6 +222,9 @@ struct ContentView: View {
                 "DATADIR": self.bitcoinEnvValues.dataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
+            
+            services = [bitcoinCore, coreLightning/*, joinMarket*/]
+            runScript(script: .checkForBitcoin, env: env)
         }
     }
     
@@ -350,16 +349,16 @@ struct ContentView: View {
         } else {
             promptToInstallXcode = false
             
-            LatestBtcCoreRelease.get { (dict, error) in                
-                if error != nil {
-                    
-                    print("error: \(error!)")
-                } else {
-                    print("dict: \(dict!)")
-                    InstallBitcoinCore.checkExistingConf()
-                    // Set timer to see if install was successful
-                    startCheckingForBitcoinInstall = true
+            LatestBtcCoreRelease.get { (dict, error) in
+                guard let dict = dict else {
+                    showMessage(message: error ?? "Unknown issue downloading bitcoin core release.")
+                    return
                 }
+                print("dict: \(dict)")
+                // save to core data here...
+                InstallBitcoinCore.checkExistingConf()
+                // Set timer to see if install was successful
+                startCheckingForBitcoinInstall = true
             }
         }
     }

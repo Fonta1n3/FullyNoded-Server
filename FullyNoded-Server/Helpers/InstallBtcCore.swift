@@ -13,9 +13,8 @@ class InstallBitcoinCore {
         var onlynetExists = false
         var discoverExists = false
         var listenExists = false
-        var externalIpExists = false
+        //var externalIpExists = false
         var fullynodedServerUserExists = false
-        var fullynodedServerWhitelistExists = false
         
         BitcoinConf.getBitcoinConf { (conf, error) in
             guard let conf = conf, !error, conf.count > 0 else {
@@ -29,92 +28,102 @@ class InstallBitcoinCore {
             
             var rpcauth = "#rpcauth="
             let rpcuser = "FullyNoded-Server"
-            if let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) {
-                rpcauth = rpcAuthCreds.rpcAuth
-                UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
-                UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+            guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return }
+            rpcauth = rpcAuthCreds.rpcAuth
+            //UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
+            let data = Data(rpcAuthCreds.rpcPassword.utf8)
+            
+            guard let encryptedPass = Crypto.encrypt(data) else {
+                print("unable to encrypt rpc pass.")
+                return
             }
             
-            var updatedConf = conf
-            
-            for (i, setting) in conf.enumerated() {
-                if setting.contains("=") {
-                    let arr = setting.components(separatedBy: "=")
-                    let k = arr[0]
-                    let existingValue = arr[1]
-                    
-                    switch k {
-                    case "rpcauth":
-                        if existingValue.hasPrefix("\(rpcuser):") {
-                            fullynodedServerUserExists = true
-                            updatedConf[i] = rpcauth
+            DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                guard saved else { return }
+                
+                UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+                
+                var updatedConf = conf
+                
+                for (i, setting) in conf.enumerated() {
+                    if setting.contains("=") {
+                        let arr = setting.components(separatedBy: "=")
+                        let k = arr[0]
+                        let existingValue = arr[1]
+                        
+                        switch k {
+                        case "rpcauth":
+                            if existingValue.hasPrefix("\(rpcuser):") {
+                                fullynodedServerUserExists = true
+                                updatedConf[i] = rpcauth
+                            }
+                            
+    //                    case "rpcwhitelist":
+    //                        if existingValue.hasPrefix("\(rpcuser):") {
+    //                            fullynodedServerWhitelistExists = true
+    //                        }
+                            
+                        case "onlynet", "#onlynet":
+                            onlynetExists = true
+                            
+//                        case "externalip":
+//                            externalIpExists = true
+                            
+                        case "discover", "#discover":
+                            discoverExists = true
+                            
+                        case "blocksdir":
+                            UserDefaults.standard.setValue(existingValue, forKey: "blockDir")
+                            
+                        case "testnet", "regtest", "signet":
+                            if existingValue != "" {
+    //                            simpleAlert(message: "Incompatible bitcoin.conf setting!", info: "GordianServer allows you to run multiple networks simultaneously, we do this by specifying which chain we want to launch as a command line argument. Specifying a network in your bitcoin.conf is not compatible with this approach, please remove the line in your conf file which specifies a network.", buttonLabel: "OK")
+                            }
+                            
+                        case "proxy", "#proxy":
+                            proxyExists = true
+                            
+                        case "listen", "#listen":
+                            listenExists = true
+                            
+                        default:
+                            break
                         }
-                        
-//                    case "rpcwhitelist":
-//                        if existingValue.hasPrefix("\(rpcuser):") {
-//                            fullynodedServerWhitelistExists = true
-//                        }
-                        
-                    case "onlynet", "#onlynet":
-                        onlynetExists = true
-                        
-                    case "externalip":
-                        externalIpExists = true
-                        
-                    case "discover", "#discover":
-                        discoverExists = true
-                        
-                    case "blocksdir":
-                        UserDefaults.standard.setValue(existingValue, forKey: "blockDir")
-                        
-                    case "testnet", "regtest", "signet":
-                        if existingValue != "" {
-//                            simpleAlert(message: "Incompatible bitcoin.conf setting!", info: "GordianServer allows you to run multiple networks simultaneously, we do this by specifying which chain we want to launch as a command line argument. Specifying a network in your bitcoin.conf is not compatible with this approach, please remove the line in your conf file which specifies a network.", buttonLabel: "OK")
-                        }
-                        
-                    case "proxy", "#proxy":
-                        proxyExists = true
-                        
-                    case "listen", "#listen":
-                        listenExists = true
-                        
-                    default:
-                        break
                     }
                 }
+                
+                var bitcoinConf = updatedConf.joined(separator: "\n")
+                
+                if !fullynodedServerUserExists {
+                    bitcoinConf = rpcauth + "\n" + bitcoinConf
+                }
+                
+    //            if !fullynodedServerWhitelistExists {
+    //                bitcoinConf = "rpcwhitelist=\(rpcuser):\(rpcWhiteList)\n" + bitcoinConf
+    //            }
+                
+                if !proxyExists {
+                    bitcoinConf = "proxy=127.0.0.1:19050\n" + bitcoinConf
+                }
+                
+                if !listenExists {
+                    bitcoinConf = "listen=1\n" + bitcoinConf
+                }
+                
+                if !discoverExists {
+                    bitcoinConf = "discover=1\n" + bitcoinConf
+                }
+                
+                if !onlynetExists {
+                    bitcoinConf = "#onlynet=onion\n" + bitcoinConf
+                }
+                
+//                if !externalIpExists {
+//                    bitcoinConf = "externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")\n" + bitcoinConf
+//                }
+                
+                setBitcoinConf(bitcoinConf)
             }
-            
-            var bitcoinConf = updatedConf.joined(separator: "\n")
-            
-            if !fullynodedServerUserExists {
-                bitcoinConf = rpcauth + "\n" + bitcoinConf
-            }
-            
-//            if !fullynodedServerWhitelistExists {
-//                bitcoinConf = "rpcwhitelist=\(rpcuser):\(rpcWhiteList)\n" + bitcoinConf
-//            }
-            
-            if !proxyExists {
-                bitcoinConf = "proxy=127.0.0.1:19050\n" + bitcoinConf
-            }
-            
-            if !listenExists {
-                bitcoinConf = "listen=1\n" + bitcoinConf
-            }
-            
-            if !discoverExists {
-                bitcoinConf = "discover=1\n" + bitcoinConf
-            }
-            
-            if !onlynetExists {
-                bitcoinConf = "#onlynet=onion\n" + bitcoinConf
-            }
-            
-            if !externalIpExists {
-                //bitcoinConf = "externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")\n" + bitcoinConf
-            }
-            
-            setBitcoinConf(bitcoinConf)
         }
     }
     

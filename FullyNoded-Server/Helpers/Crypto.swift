@@ -9,7 +9,7 @@ import Foundation
 import CryptoKit
 
 class Crypto {
-    static let encKeyUnify = UserDefaults.standard.value(forKey: "encKeyUnify") as! String
+    static let encKeyUnify = UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as! String
     
     static func encrypt(_ data: Data) -> Data? {
         guard let key = KeyChain.getData(encKeyUnify) else {

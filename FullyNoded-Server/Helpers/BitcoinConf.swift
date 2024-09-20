@@ -13,12 +13,23 @@ class BitcoinConf {
         let d = Defaults.shared
         let prune = d.prune
         let txindex = d.txindex
-        let walletDisabled = d.walletdisabled
+        //let walletDisabled = d.walletdisabled
         var rpcauth = "#rpcauth="
         let rpcuser = "FullyNoded-Server"
-        if let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) {
-            rpcauth = rpcAuthCreds.rpcAuth
-            UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
+        
+        guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return nil }
+        rpcauth = rpcAuthCreds.rpcAuth
+        //UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
+        let data = Data(rpcAuthCreds.rpcPassword.utf8)
+        
+        guard let encryptedPass = Crypto.encrypt(data) else {
+            print("unable to encrypt rpc pass.")
+            return nil
+        }
+        
+        DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+            guard saved else { return }
+            
             UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
         }
         //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")
@@ -35,9 +46,9 @@ class BitcoinConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
-        proxy=127.0.0.1:19150
-        listen=1
-        discover=1
+        #proxy=127.0.0.1:19150
+        #listen=1
+        #discover=1
         \(rpcauth)
         [main]
         rpcport=8332
