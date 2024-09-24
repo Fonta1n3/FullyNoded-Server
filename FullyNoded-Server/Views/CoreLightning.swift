@@ -18,9 +18,24 @@ struct CoreLightning: View {
 
     
     var body: some View {
+        
         HStack() {
             Image(systemName: "server.rack")
+                .padding(.leading)
             
+            Text("Core Lightning Server")
+            Spacer()
+            Button {
+                isLightningOn()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .padding(.trailing)
+        }
+        .padding([.top])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        HStack() {            
             if isAnimating {
                 ProgressView()
                     .scaleEffect(0.5)
@@ -33,7 +48,7 @@ struct CoreLightning: View {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.green)
                 }
-                Text("Core Lightning running")
+                Text("Running")
             } else {
                 if isAnimating {
                     Image(systemName: "circle.fill")
@@ -42,7 +57,7 @@ struct CoreLightning: View {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.red)
                 }
-                Text("Core Lightning off")
+                Text("Stopped")
             }
             
             if !isRunning {
@@ -58,19 +73,13 @@ struct CoreLightning: View {
                     Text("Stop")
                 }
             }
-            Spacer()
-            Button {
-                isLightningOn()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding(.trailing)
+            
         }
-        .padding([.leading, .top])
+        .padding([.leading])
         .frame(maxWidth: .infinity, alignment: .leading)
         
         Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding(.leading)
+            .padding([.leading, .top])
             .frame(maxWidth: .infinity, alignment: .leading)
         
         HStack() {
@@ -86,6 +95,16 @@ struct CoreLightning: View {
             } label: {
                 Text("Log")
             }
+        }
+        .padding([.leading, .trailing])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        Label("Quick Connect", systemImage: "qrcode")
+            .padding([.leading, .top])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
+        Button("Connect Plasma", systemImage: "qrcode") {
+            // show QR
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)

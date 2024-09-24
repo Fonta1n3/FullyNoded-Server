@@ -137,6 +137,16 @@ struct BitcoinCore: View {
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
         
+        Label("Quick Connect", systemImage: "qrcode")
+            .padding([.leading, .top])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
+        Button("Connect Fully Noded", systemImage: "qrcode") {
+            // show QR
+        }
+        .padding([.leading, .trailing])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
         Spacer()
         
         HStack() {
