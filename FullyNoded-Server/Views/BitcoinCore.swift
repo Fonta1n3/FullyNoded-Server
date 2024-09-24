@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 struct BitcoinCore: View {
     
     @State private var showError = false
@@ -14,67 +15,100 @@ struct BitcoinCore: View {
     @State private var isRunning = false
     @State private var isAnimating = false
     @State private var logOutput = ""
-    var chains = ["Mainnet", "Testnet", "Signet", "Regtest"]
-    @State private var selectedChain = "Signet"
-        
+    @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+    @State private var env: [String: String] = [:]
+    private var chains = ["main", "test", "signet", "regtest"]
     
-    let env: [String: String]
-    
-    init(env: [String : String]) {
-        self.env = env
-    }
-    
+
     
     var body: some View {
         HStack() {
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                }
-               
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                }
-            }
-            Toggle("Bitcoin Core", isOn: $isRunning)
-                .toggleStyle(.switch)
-                .onChange(of: isRunning) {
-                    if !isRunning {
-                        stopBitcoinCore()
-                    } else {
-                        startBitcoinCore()
-                    }
-                }
+            Image(systemName: "server.rack")
+                .padding(.leading)
             
-            
-            Picker("", selection: $selectedChain) {
-                ForEach(chains, id: \.self) {
-                    Text($0)
-                }
-            }
+            Text("Bitcoin Core Server")
+            Spacer()
             
             Button {
                 isBitcoinCoreRunning()
             } label: {
                 Image(systemName: "arrow.clockwise")
-
             }
-            .padding(.all)
+            .padding([.trailing])
         }
-        .padding([.top, .leading, .trailing])
+        .padding([.top])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        HStack() {
+            if isAnimating {
+                ProgressView()
+                    .scaleEffect(0.5)
+                    .padding([.leading])
+            }
+            
+            if isRunning {
+                if isAnimating {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.orange)
+                        .padding([.leading])
+                } else {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.green)
+                        .padding([.leading])
+                }
+                Text("Running")
+            } else {
+                if isAnimating {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.orange)
+                        .padding([.leading])
+                } else {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.red)
+                        .padding([.leading])
+                }
+                Text("Stopped")
+            }
+            if !isRunning {
+                Button {
+                    startBitcoinCore()
+                } label: {
+                    Text("Start")
+                }
+            } else {
+                Button {
+                    stopBitcoinCore()
+                } label: {
+                    Text("Stop")
+                }
+            }
+            
+            
+        }
+        .padding([.leading, .bottom])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        Label("Network", systemImage: "network")
+            .padding(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
+        HStack() {
+            Picker("", selection: $selectedChain) {
+                ForEach(chains, id: \.self) {
+                    Text($0)
+                }
+            }
+            .onChange(of: selectedChain) {
+                updateChain(chain: selectedChain)
+                isBitcoinCoreRunning()
+            }
+            .padding([.leading, .trailing])
+        }
+        .padding([.leading, .trailing, .bottom])
+        
+        Label("Utilities", systemImage: "wrench.and.screwdriver")
+            .padding(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         
         HStack() {
             Button {
@@ -82,36 +116,79 @@ struct BitcoinCore: View {
             } label: {
                 Text("Verify")
             }
-            
+            .padding(.leading)
             Button {
                 print("update")
             } label: {
                 Text("Update")
             }
-            
             Button {
-                let d = Defaults.shared
-                let path = d.dataDir
-                let env = ["FILE":"\(path)/bitcoin.conf"]
-                openConf(script: .openFile, env: env, args: []) { _ in }
+                openFile(file: "bitcoin.conf")
             } label: {
                 Text("bitcoin.conf")
             }
+            Button {
+                openFile(file: "debug.log")
+                
+            } label: {
+                Text("Log")
+            }
         }
         .padding([.leading, .trailing])
-        
-        
+        .frame(maxWidth: .infinity, alignment: .leading)
         
         Spacer()
+        
         HStack() {
             Label(logOutput, systemImage: "info.circle")
                 .padding(.all)
         }
         .onAppear(perform: {
-            isBitcoinCoreRunning()
+            selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+            // get the bitcoin env values
+            // need to ensure changing networks here updates the env values too.
+            DataManager.retrieve(entityName: "BitcoinEnv") { env in
+                guard let env = env else { return }
+                let envValues = BitcoinEnvValues(dictionary: env)
+                self.env = [
+                    "BINARY_NAME": envValues.binaryName,
+                    "VERSION": envValues.version,
+                    "PREFIX": envValues.prefix,
+                    "DATADIR": envValues.dataDir,
+                    "CHAIN": envValues.chain
+                ]
+                isBitcoinCoreRunning()
+            }
+            
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func openFile(file: String) {
+        let d = Defaults.shared.dataDir
+        let env = ["FILE": "\(d)/\(file)"]
+        openConf(script: .openFile, env: env, args: []) { _ in }
+    }
+    
+    private func updateChain(chain: String) {
+        var port = "8332"
+        switch chain {
+        case "signet": port = "38332"
+        case "regtest": port = "18443"
+        case "test": port = "18332"
+        default: port = "8332"
+        }
+        UserDefaults.standard.setValue(port, forKey: "port")
+        UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
+        self.env["chain"] = chain
+        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: "BitcoinEnv") { updated in
+            guard updated else {
+                showMessage(message: "There was an issue updating your network...")
+                return
+            }
+            isBitcoinCoreRunning()
         }
     }
     
@@ -128,14 +205,19 @@ struct BitcoinCore: View {
     
     private func parseDidBitcoinStart(result: String) {
         if !result.contains("Stopped") {
-            isBitcoinOn()
+            isBitcoinCoreRunning()
         }
     }
     
-    func isBitcoinOn() {
-        isAnimating = true
-        runScript(script: .isBitcoindRunning)
-    }
+//    func isBitcoinOn() {
+//        isAnimating = true
+//        //runScript(script: .isBitcoindRunning)
+//        BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
+//            if error == nil {
+//                
+//            }
+//        }
+//    }
     
     private func stopBitcoinCore() {
         isAnimating = true
@@ -179,13 +261,13 @@ struct BitcoinCore: View {
         
         switch chain {
         case "main":
-            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/debug.log")
+            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/debug.log")
         case "test":
-            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/testnet3/debug.log")
+            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/testnet3/debug.log")
         case "regtest":
-            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/regtest/debug.log")
+            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/regtest/debug.log")
         case "signet":
-            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/signet/debug.log")
+            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/signet/debug.log")
         default:
             break
         }
@@ -199,15 +281,11 @@ struct BitcoinCore: View {
         
         DispatchQueue.main.async {
             if logItems.count > 2 {
-                //self.bitcoinCoreLogOutlet.stringValue = "\(logItems[logItems.count - 2])"
                 let lastLogItem = "\(logItems[logItems.count - 2])"
                 logOutput = lastLogItem
-                
                 if lastLogItem.contains("Shutdown: done") {
-//                    self.hideSpinner()
-//                    self.bitcoinIsOff()
+                    isRunning = false
                 }
-                
                 if lastLogItem.contains("ThreadRPCServer incorrect password") {
                     showMessage(message: lastLogItem)
                 }
@@ -217,7 +295,17 @@ struct BitcoinCore: View {
     
     private func isBitcoinCoreRunning() {
         isAnimating = true
-        runScript(script: .isBitcoindRunning)
+        //runScript(script: .isBitcoindRunning)
+        BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
+            isAnimating = false
+            if error == nil {
+                isRunning = true
+            } else {
+                isRunning = false
+                showMessage(message: error!)
+            }
+            showBitcoinLog()
+        }
     }
     
     private func showMessage(message: String) {
@@ -248,20 +336,18 @@ struct BitcoinCore: View {
             var result = ""
             
             if let output = String(data: data, encoding: .utf8) {
-                //#if DEBUG
+                #if DEBUG
                 print("output: \(output)")
-                //#endif
+                #endif
                 result += output
             }
             
             if let errorOutput = String(data: errData, encoding: .utf8) {
-                //#if DEBUG
+                #if DEBUG
                 print("error: \(errorOutput)")
-                //#endif
+                #endif
                 result += errorOutput
-                
                 if errorOutput != "" {
-                    //simpleAlert(message: "There was an issue, please let us know about it via Github issues.", info: errorOutput, buttonLabel: "OK")
                     showMessage(message: errorOutput)
                 }
             }
@@ -286,14 +372,15 @@ struct BitcoinCore: View {
 //        case .hasBitcoinShutdownCompleted:
 //            parseHasBitcoinShutdownCompleted(result: result)
             
-        case .isBitcoindRunning:
-            isAnimating = false
-            if result.contains("Running") {
-                isRunning = true
-            } else if result.contains("Stopped") {
-                isRunning = false
-            }
-            showBitcoinLog()
+//        case .isBitcoindRunning:
+//            isAnimating = false
+//            if result.contains("Running") {
+//                isRunning = true
+//            } else if result.contains("Stopped") {
+//                isRunning = false
+//            }
+//            showBitcoinLog()
+            
         case .didBitcoindStart:
             parseDidBitcoinStart(result: result)
             

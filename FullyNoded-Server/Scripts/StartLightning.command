@@ -6,6 +6,6 @@
 #  Created by Peter Denton on 9/11/24.
 #
 
-sudo -u $(whoami) /opt/homebrew/bin/lightningd
+sudo -u $(whoami) /usr/local/bin/lightningd
 exit 1
 

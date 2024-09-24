@@ -9,13 +9,11 @@ import SwiftUI
 
 public struct Service: Identifiable {
     let name: String
-    var running: Bool
     public let id: UUID
     
-    init(name: String, id: UUID, running: Bool) {
+    init(name: String, id: UUID) {
         self.name = name
         self.id = id
-        self.running = running
     }
 }
 
@@ -24,7 +22,6 @@ struct ContentView: View {
     @State private var showError = false
     @State private var message = ""
     @State private var services: [Service] = []
-    //@State private var bitcoinCoreRunning = false
     @State private var bitcoinCoreInstalled = false
     @State private var lightningInstalled = false
     @State private var xcodeSelectInstalled = false
@@ -39,9 +36,9 @@ struct ContentView: View {
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
-    @State private var bitcoinCore = Service(name: "Bitcoin Core", id: UUID(), running: false)
-    private let coreLightning = Service(name: "Core Lightning", id: UUID(), running: false)
-    private let joinMarket = Service(name: "Join Market", id: UUID(), running: false)
+    private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
+    private let coreLightning = Service(name: "Core Lightning", id: UUID())
+    private let joinMarket = Service(name: "Join Market", id: UUID())
     
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
@@ -60,7 +57,7 @@ struct ContentView: View {
                 ForEach(services) { service in
                     NavigationLink {
                         if service.name == "Bitcoin Core" {
-                            BitcoinCore(env: env)
+                            BitcoinCore()
                         }
                         if service.name == "Core Lightning" {
                             CoreLightning()
@@ -69,20 +66,20 @@ struct ContentView: View {
                         HStack() {
                             if service.name == "Bitcoin Core" {
                                 if bitcoinCoreInstalled {
-                                    Image(systemName: "checkmark.circle.fill")
+                                    Image(systemName: "checkmark")
                                         .foregroundStyle(.green)
                                 } else {
-                                    Image(systemName: "checkmark.circle")
+                                    Image(systemName: "xmark")
                                         .foregroundStyle(.gray)
                                 }
                             }
                             
                             if service.name == "Core Lightning" {
                                 if lightningInstalled {
-                                    Image(systemName: "checkmark.circle.fill")
+                                    Image(systemName: "checkmark")
                                         .foregroundStyle(.green)
                                 } else {
-                                    Image(systemName: "checkmark.circle")
+                                    Image(systemName: "xmark")
                                         .foregroundStyle(.gray)
                                 }
                             }
@@ -99,8 +96,6 @@ struct ContentView: View {
                                             let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(bitcoinEnvValues.prefix)/bin"
                                             if FileManager.default.fileExists(atPath: tempPath) {
                                                 showMessage(message: "Bitcoin Core install completed ✓")
-                                                //bitcoinInstallSuccess = true
-//                                                startCheckingForInstall = false
                                                 runScript(script: .checkForBitcoin, env: env)
                                                 timeRemaining = 90
                                             }
@@ -113,10 +108,6 @@ struct ContentView: View {
                 }
             }
             Home()
-            
-
-            
-           
         }
         .onAppear(perform: {
             getSavedValues()
@@ -161,8 +152,8 @@ struct ContentView: View {
     private func installLightning() {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
             guard let bitcoinRPCCreds = bitcoinRPCCreds else {
+                print("no bitcoinRPCCreds, create them?")
                 // Create them..
-                
                 return
             }
             
@@ -177,6 +168,7 @@ struct ContentView: View {
             lightningEnv["RPC_PASSWORD"] = rpcPass
             lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir.replacingOccurrences(of: " ", with: "*")
             lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
+            lightningEnv["NETWORK"] = bitcoinEnvValues.chain
             runScript(script: .launchLightningInstall, env: lightningEnv)
         }
     }
@@ -267,20 +259,19 @@ struct ContentView: View {
             var result = ""
             
             if let output = String(data: data, encoding: .utf8) {
-#if DEBUG
+                #if DEBUG
                 print("output: \(output)")
-#endif
+                #endif
                 result += output
             }
             
             if let errorOutput = String(data: errData, encoding: .utf8) {
-#if DEBUG
+                #if DEBUG
                 print("error: \(errorOutput)")
-#endif
+                #endif
                 result += errorOutput
                 
                 if errorOutput != "" {
-                    //simpleAlert(message: "There was an issue, please let us know about it via Github issues.", info: errorOutput, buttonLabel: "OK")
                     showMessage(message: errorOutput)
                 }
             }
@@ -296,7 +287,10 @@ struct ContentView: View {
     }
     
     func parseScriptResult(script: SCRIPT, result: String) {
+        #if DEBUG
         print("parse \(script.stringValue)")
+        print("result: \(result)")
+        #endif
         switch script {
         case .checkForBitcoin:
             parseBitcoindVersionResponse(result: result)
@@ -306,16 +300,13 @@ struct ContentView: View {
             
         case .checkForBrew:
             if result != "" {
-                // brew is installed
-                //promptToInstallLightning = true
                 runScript(script: .lightningInstalled, env: env)
             } else {
                 promptToInstallBrew = true
             }
             
         case .lightningInstalled:
-            if result.contains("core-lightning") {
-                print("lightning already installed?")
+            if result.hasPrefix("Installed") {
                 // check if its running
                 runScript(script: .lightingRunning, env: env)
                 lightningInstalled = true
@@ -324,24 +315,10 @@ struct ContentView: View {
                 promptToInstallLightning = true
             }
             
-//        case .lightingRunning:
-//            parseIsLightningRunningResponse(result: result)
-            
-            
         default:
             break
         }
     }
-    
-//    private func parseIsLightningRunningResponse(result: String) {
-//        if result.contains("Running") {
-//            isLightningRunning = true
-//        } else {
-//            isLightningRunning = false
-//        }
-//    }
-    
-    
     
     private func parseXcodeSelectResult(result: String) {
         if result.contains("XCode select not installed") {

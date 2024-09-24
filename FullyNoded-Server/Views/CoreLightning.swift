@@ -14,14 +14,13 @@ struct CoreLightning: View {
     @State private var isRunning = false
     @State private var isAnimating = false
     @State private var logOutput = ""
-    var chains = ["Mainnet", "Testnet", "Signet", "Regtest"]
-    @State private var selectedChain = "Signet"
     @State private var env: [String: String] = [:]
-        
-    
+
     
     var body: some View {
         HStack() {
+            Image(systemName: "server.rack")
+            
             if isAnimating {
                 ProgressView()
                     .scaleEffect(0.5)
@@ -34,7 +33,7 @@ struct CoreLightning: View {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.green)
                 }
-               
+                Text("Core Lightning running")
             } else {
                 if isAnimating {
                     Image(systemName: "circle.fill")
@@ -43,59 +42,53 @@ struct CoreLightning: View {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.red)
                 }
-            }
-            Toggle("Core Lightning", isOn: $isRunning)
-                .toggleStyle(.switch)
-                .onChange(of: isRunning) {
-                    if !isRunning {
-                        stopLightning()
-                    } else {
-                        startLightning()
-                    }
-                }
-            
-            
-            Picker("", selection: $selectedChain) {
-                ForEach(chains, id: \.self) {
-                    Text($0)
-                }
+                Text("Core Lightning off")
             }
             
+            if !isRunning {
+                Button {
+                    startLightning()
+                } label: {
+                    Text("Start")
+                }
+            } else {
+                Button {
+                    stopLightning()
+                } label: {
+                    Text("Stop")
+                }
+            }
+            Spacer()
             Button {
                 isLightningOn()
             } label: {
                 Image(systemName: "arrow.clockwise")
-
             }
-            .padding(.all)
+            .padding(.trailing)
         }
-        .padding([.top, .leading, .trailing])
+        .padding([.leading, .top])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        Label("Utilities", systemImage: "wrench.and.screwdriver")
+            .padding(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         
         HStack() {
-//            Button {
-//                runScript(script: .launchVerifier)
-//            } label: {
-//                Text("Verify")
-//            }
-            
             Button {
-                print("update")
+                let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
+                openConf(script: .openFile, env: env, args: []) { _ in }
             } label: {
-                Text("Update")
+                Text("Config")
             }
-            
             Button {
-//                let d = Defaults.shared
-//                let path = d.dataDir
-//                let env = ["FILE":"\(path)/bitcoin.conf"]
-//                openConf(script: .openFile, env: env, args: []) { _ in }
+                let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
+                openConf(script: .openFile, env: env, args: []) { _ in }
             } label: {
-                Text("lightning.conf")
+                Text("Log")
             }
         }
         .padding([.leading, .trailing])
-        
-        
+        .frame(maxWidth: .infinity, alignment: .leading)
         
         Spacer()
         HStack() {
@@ -115,22 +108,7 @@ struct CoreLightning: View {
         runScript(script: .startLightning)
     }
     
-    private func startLightningParse(result: String) {
-        print("startLightningParse")
-        print("result: \(result)")
-
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-//            self.runScript(script: .lightingRunning)
-//        }
-    }
-    
-    private func parseDidLightningStart(result: String) {
-        if !result.contains("Stopped") {
-            isLightningOn()
-        }
-    }
-    
-    func isLightningOn() {
+    private func isLightningOn() {
         isAnimating = true
         runScript(script: .lightingRunning)
     }
@@ -138,85 +116,29 @@ struct CoreLightning: View {
     private func stopLightning() {
         isAnimating = true
         runScript(script: .stopLightning)
-//        BitcoinRPC.shared.command(method: "stop") { (result, error) in
-//            guard let result = result as? String else {
-//                isAnimating = false
-//                showMessage(message: error ?? "Unknown issue turning off Bitcoin Core.")
-//                return
-//            }
-//            
-//            self.showBitcoinLog()
-//            self.stopBitcoinParse(result: result)
-//        }
     }
     
     private func stopLightningParse(result: String) {
         isAnimating = false
-        if result.contains("Bitcoin Core stopping") {
-            print("bitcoin core stopped")
+        if result.contains("Shutdown complete") {
             isRunning = false
-            
-            
-//            DispatchQueue.main.async() {
-//                self.shutDownTimer?.invalidate()
-//                self.shutDownTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(self.queryShutDownStatus), userInfo: nil, repeats: true)
-//            }
-        } else {
-            isRunning = true
-            showMessage(message: "Error turning off mainnet")
+            showLog()
         }
     }
     
-//    @objc func queryShutDownStatus() {
-//        showBitcoinLog()
-//        runScript(script: .hasBitcoinShutdownCompleted)
-//    }
-    
-//    private func showBitcoinLog() {
-//        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-//        var path:URL?
-//        
-//        switch chain {
-//        case "main":
-//            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/debug.log")
-//        case "test":
-//            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/testnet3/debug.log")
-//        case "regtest":
-//            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/regtest/debug.log")
-//        case "signet":
-//            path = URL(fileURLWithPath: "/Users/fontaine/Library/Application Support/Bitcoin/signet/debug.log")
-//        default:
-//            break
-//        }
-//        
-//        guard let path = path, let log = try? String(contentsOf: path, encoding: .utf8) else {
-//            print("can not get \(chain) debug.log")
-//            return
-//        }
-//        
-//        let logItems = log.components(separatedBy: "\n")
-//        
-//        DispatchQueue.main.async {
-//            if logItems.count > 2 {
-//                //self.bitcoinCoreLogOutlet.stringValue = "\(logItems[logItems.count - 2])"
-//                let lastLogItem = "\(logItems[logItems.count - 2])"
-//                logOutput = lastLogItem
-//                
-//                if lastLogItem.contains("Shutdown: done") {
-////                    self.hideSpinner()
-////                    self.bitcoinIsOff()
-//                }
-//                
-//                if lastLogItem.contains("ThreadRPCServer incorrect password") {
-//                    showMessage(message: lastLogItem)
-//                }
-//            }
-//        }
-//    }
-    
-    private func isLightningRunning() {
-        isAnimating = true
-        runScript(script: .isBitcoindRunning)
+    private func showLog() {
+        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/lightning.log")
+        guard let log = try? String(contentsOf: path, encoding: .utf8) else {
+            print("can not get lightning.log")
+            return
+        }
+        let logItems = log.components(separatedBy: "\n")
+        DispatchQueue.main.async {
+            if logItems.count > 2 {
+                let lastLogItem = "\(logItems[logItems.count - 2])"
+                logOutput = lastLogItem
+            }
+        }
     }
     
     private func showMessage(message: String) {
@@ -237,100 +159,86 @@ struct CoreLightning: View {
             let stdErr = Pipe()
             let task = Process()
             task.launchPath = path
-            //task.environment = env
             task.standardOutput = stdOut
             task.standardError = stdErr
             task.launch()
+            // Starting lightning never exits...
+            if script == .startLightning {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.runScript(script: .lightingRunning)
+                }
+            }
             task.waitUntilExit()
             let data = stdOut.fileHandleForReading.readDataToEndOfFile()
             let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
             var result = ""
             
             if let output = String(data: data, encoding: .utf8) {
-                //#if DEBUG
+                #if DEBUG
                 print("output: \(output)")
-                //#endif
+                #endif
                 result += output
             }
             
             if let errorOutput = String(data: errData, encoding: .utf8) {
-                //#if DEBUG
+                #if DEBUG
                 print("error: \(errorOutput)")
-                //#endif
-                //result += errorOutput
+                #endif
                 
                 if errorOutput != "" {
-                    //simpleAlert(message: "There was an issue, please let us know about it via Github issues.", info: errorOutput, buttonLabel: "OK")
                     showMessage(message: errorOutput)
+                    isAnimating = false
                 } else {
                     parseScriptResult(script: script, result: result)
                 }
             }
-            
-            
         }
     }
     
     func parseScriptResult(script: SCRIPT, result: String) {
-        print("parse \(script.stringValue)")
         switch script {
-        case .startLightning:
-            //showBitcoinLog()
-            startLightningParse(result: result)
-            
         case .stopLightning:
             stopLightningParse(result: result)
             
-//        case .checkForBitcoin:
-//            parseBitcoindVersionResponse(result: result)
-//
-//        case .checkXcodeSelect:
-//            parseXcodeSelectResult(result: result)
-//
-//        case .hasBitcoinShutdownCompleted:
-//            parseHasBitcoinShutdownCompleted(result: result)
-            
         case .lightingRunning:
-            print("result: \(result)")
             isAnimating = false
             if result.contains("Running") {
                 isRunning = true
             } else if result.contains("Stopped") {
                 isRunning = false
             }
-            // show log
             
         default:
             break
         }
+        
+        showLog()
     }
     
-//    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-//        #if DEBUG
-//        print("script: \(script.stringValue)")
-//        #endif
-//        let resource = script.stringValue
-//        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
-//            return
-//        }
-//        let stdOut = Pipe()
-//        let task = Process()
-//        task.launchPath = path
-//        task.environment = env
-//        task.arguments = args
-//        task.standardOutput = stdOut
-//        task.launch()
-//        task.waitUntilExit()
-//        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-//        var result = ""
-//        if let output = String(data: data, encoding: .utf8) {
-//            #if DEBUG
-//            print("result: \(output)")
-//            #endif
-//            result += output
-//            completion(true)
-//        } else {
-//            completion(false)
-//        }
-//    }
+    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
+        #if DEBUG
+        print("script: \(script.stringValue)")
+        #endif
+        let resource = script.stringValue
+        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
+        let stdOut = Pipe()
+        let task = Process()
+        task.launchPath = path
+        task.environment = env
+        task.arguments = args
+        task.standardOutput = stdOut
+        task.launch()
+        task.waitUntilExit()
+        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
+        var result = ""
+        if let output = String(data: data, encoding: .utf8) {
+            #if DEBUG
+            print("result: \(output)")
+            #endif
+            result += output
+            completion(true)
+        } else {
+            completion(false)
+        }
+    }
 }

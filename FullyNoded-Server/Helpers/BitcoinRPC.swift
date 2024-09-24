@@ -14,11 +14,15 @@ class BitcoinRPC {
     lazy var session = URLSession(configuration: .default)
     
     func command(method: String, completion: @escaping ((result: Any?, error: String?)) -> Void) {
-        let nodeIp = "127.0.0.1:38332"
-        guard let user = UserDefaults.standard.string(forKey: "rpcUser") else {
+        let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
+        
+        let nodeIp = "127.0.0.1:\(port)"
+        
+        guard let user = UserDefaults.standard.string(forKey: "rpcuser") else {
             completion((nil, "No rpc user saved."))
             return
         }
+        
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { [weak self] creds in
             guard let self = self else { return }
             
