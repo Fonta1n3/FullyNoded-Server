@@ -8,7 +8,7 @@
 import Foundation
 
 class InstallBitcoinCore {
-    class func checkExistingConf() {
+    class func checkExistingConf(completion: @escaping (Bool) -> Void) {
         var proxyExists = false
         var onlynetExists = false
         var discoverExists = false
@@ -19,7 +19,7 @@ class InstallBitcoinCore {
         BitcoinConf.getBitcoinConf { (conf, error) in
             guard let conf = conf, !error, conf.count > 0 else {
                 if let defaultConf = BitcoinConf.bitcoinConf() {
-                    self.setBitcoinConf(defaultConf)
+                    self.setBitcoinConf(defaultConf, completion: completion)
                 } else {
 //                    simpleAlert(message: "Something went wrong...", info: "Unable to create the default bitcoin.conf, please let us know about this bug.", buttonLabel: "OK")
                 }
@@ -122,12 +122,12 @@ class InstallBitcoinCore {
 //                    bitcoinConf = "externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")\n" + bitcoinConf
 //                }
                 
-                setBitcoinConf(bitcoinConf)
+                setBitcoinConf(bitcoinConf, completion: completion)
             }
         }
     }
     
-    class func createDirectory(_ path: String) {
+    class func createDirectory(_ path: String, completion: @escaping (Bool) -> Void) {
         let directory = URL(fileURLWithPath: path, isDirectory: true).path
         
         do {
@@ -155,79 +155,84 @@ class InstallBitcoinCore {
         }
     }
     
-    class func setBitcoinConf(_ bitcoinConf: String) {
+    class func setBitcoinConf(_ bitcoinConf: String, completion: @escaping (Bool) -> Void) {
         if BitcoinConf.setBitcoinConf(bitcoinConf) {
-            setFullyNodedDirectory()
+            setFullyNodedDirectory(completion: completion)
         } else {
             //simpleAlert(message: "There was an issue...", info: "Unable to create the bitcoin.conf, please let us know about this bug.", buttonLabel: "OK")
+            completion((false))
         }
     }
     
-    class func setFullyNodedDirectory() {
-        createDirectory("/Users/\(NSUserName())/.fullynoded")
+    class func setFullyNodedDirectory(completion: @escaping (Bool) -> Void) {
+        createDirectory("/Users/\(NSUserName())/.fullynoded", completion: completion)
         
         if writeFile("/Users/\(NSUserName())/.fullynoded/fullynoded.log", "") {
-            createBitcoinCoreDirectory()
+            createBitcoinCoreDirectory(completion: completion)
         } else {
+            completion((false))
             //simpleAlert(message: "There was an issue...", info: "Unable to create the fullynoded.log, please let us know about this bug.", buttonLabel: "OK")
         }
     }
     
-    class func createBitcoinCoreDirectory() {
+    class func createBitcoinCoreDirectory(completion: @escaping (Bool) -> Void) {
         let path = "/Users/\(NSUserName())/.fullynoded/BitcoinCore"
         do {
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: path) {
                 try fileManager.removeItem(atPath: path)
             }
-            createDirectory(path)
-            getURLs()
+            createDirectory(path, completion: completion)
+            //getURLs()
+            completion((true))
+            
         } catch {
             //simpleAlert(message: "Something went wrong...", info: "When checking for the \(path) folder we got an error: \(error.localizedDescription)", buttonLabel: "OK")
+            completion((false))
         }
     }
     
-    class func getURLs() {
-        LatestBtcCoreRelease.get { (dict, error) in
-            guard let dict = dict else {
-                //simpleAlert(message: "Error", info: "There was an error fetching the latest Bitcoin Core version number and related URL's, please check your internet connection and try again: \(error ?? "unknown")", buttonLabel: "OK")
-                return
-            }
-            
-            let binaryName = dict["macosBinary"] as! String
-            let macosURL = dict["macosURL"] as! String
-            let shaURL = dict["shaURL"] as! String
-            let version = dict["version"] as! String
-            let prefix = dict["binaryPrefix"] as! String
-            let signatures = dict["shasumsSignedUrl"] as! String
-            
-            self.standUp(binaryName: binaryName, macosURL: macosURL, shaURL: shaURL, version: version, prefix: prefix, sigsUrl: signatures)
-        }
-    }
+//    class func getURLs() {
+////        LatestBtcCoreRelease.get { (dict, error) in
+////            guard let dict = dict else {
+////                //simpleAlert(message: "Error", info: "There was an error fetching the latest Bitcoin Core version number and related URL's, please check your internet connection and try again: \(error ?? "unknown")", buttonLabel: "OK")
+////                return
+////            }
+////            
+////            let binaryName = dict["macosBinary"] as! String
+////            let macosURL = dict["macosURL"] as! String
+////            let shaURL = dict["shaURL"] as! String
+////            let version = dict["version"] as! String
+////            let prefix = dict["binaryPrefix"] as! String
+////            let signatures = dict["shasumsSignedUrl"] as! String
+////            
+////            self.standUp(binaryName: binaryName, macosURL: macosURL, shaURL: shaURL, version: version, prefix: prefix, sigsUrl: signatures)
+////        }
+//    }
     
-    class func standUp(binaryName: String, macosURL: String, shaURL: String, version: String, prefix: String, sigsUrl: String) {
-        let env = ["BINARY_NAME":binaryName, "MACOS_URL":macosURL, "SHA_URL":shaURL, "VERSION":version, "PREFIX":prefix, "SIGS_URL": sigsUrl]
-        let ud = UserDefaults.standard
-        ud.set(prefix, forKey: "binaryPrefix")
-        ud.set(binaryName, forKey: "macosBinary")
-        ud.set(version, forKey: "version")
-        runScript(script: .launchInstaller, env: env)
-    }
+//    class func standUp(binaryName: String, macosURL: String, shaURL: String, version: String, prefix: String, sigsUrl: String) {
+//        let env = ["BINARY_NAME":binaryName, "MACOS_URL":macosURL, "SHA_URL":shaURL, "VERSION":version, "PREFIX":prefix, "SIGS_URL": sigsUrl]
+//        let ud = UserDefaults.standard
+//        ud.set(prefix, forKey: "binaryPrefix")
+//        ud.set(binaryName, forKey: "macosBinary")
+//        ud.set(version, forKey: "version")
+//        runScript(script: .launchInstaller, env: env)
+//    }
     
-    class private func runScript(script: SCRIPT, env: [String:String]) {
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.environment = env
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            task.waitUntilExit()
-        }
-    }
+//    class private func runScript(script: SCRIPT, env: [String:String]) {
+//        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
+//        taskQueue.async {
+//            let resource = script.stringValue
+//            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
+//            let stdOut = Pipe()
+//            let stdErr = Pipe()
+//            let task = Process()
+//            task.launchPath = path
+//            task.environment = env
+//            task.standardOutput = stdOut
+//            task.standardError = stdErr
+//            task.launch()
+//            task.waitUntilExit()
+//        }
+//    }
 }

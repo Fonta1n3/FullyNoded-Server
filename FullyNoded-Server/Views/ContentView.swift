@@ -33,6 +33,8 @@ struct ContentView: View {
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
     @State private var promptToInstallLightning = false
+    @State private var taggedReleases: TaggedReleases? = nil
+    @State private var showingBitcoinReleases = false
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
@@ -107,7 +109,7 @@ struct ContentView: View {
                     }
                 }
             }
-            Home()
+            Home(showBitcoinCoreInstallButton: promptToInstallBitcoin, env: env)
         }
         .onAppear(perform: {
             getSavedValues()
@@ -136,15 +138,21 @@ struct ContentView: View {
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }
-        .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
-            Button("OK", role: .cancel) {
-                // check for xcode select first.
-                runScript(script: .checkXcodeSelect, env: env)
-            }
-        }
+//        .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
+//            Button("OK", role: .cancel) {
+//                // check for xcode select first.
+//                runScript(script: .checkXcodeSelect, env: env)
+//            }
+//        }
+        
         .alert("Install XCode command line tools? FullyNoded-Server relies on XCode command line tools to function.", isPresented: $promptToInstallXcode) {
             Button("OK", role: .cancel) {
                 runScript(script: .installXcode, env: env)
+            }
+        }
+        .sheet(isPresented: $showingBitcoinReleases) {
+            if let taggedReleases = taggedReleases {
+                TaggedReleasesView(taggedReleases: taggedReleases)
             }
         }
     }
@@ -153,15 +161,25 @@ struct ContentView: View {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
             guard let bitcoinRPCCreds = bitcoinRPCCreds else {
                 print("no bitcoinRPCCreds, create them?")
+                showMessage(message: "NO Bitcoin RPC Creds, create them?")
                 // Create them..
                 return
             }
             
-            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else { return }
+            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else {
+                showMessage(message: "Unable to get encrypted rpc password.")
+                return
+            }
             
-            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else { return }
+            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else {
+                showMessage(message: "Decrypting rpc password failed.")
+                return
+            }
             
-            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else { return }
+            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else {
+                showMessage(message: "Encoding rpc password data as utf8 failed.")
+                return
+            }
             
             var lightningEnv: [String: String] = [:]
             lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
@@ -198,7 +216,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, coreLightning/*, joinMarket*/]
+                    services = [bitcoinCore, coreLightning, joinMarket]
                     runScript(script: .checkForBitcoin, env: env)
                 }
                 
@@ -215,7 +233,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
             
-            services = [bitcoinCore, coreLightning/*, joinMarket*/]
+            services = [bitcoinCore, coreLightning, joinMarket]
             runScript(script: .checkForBitcoin, env: env)
         }
     }
@@ -326,16 +344,23 @@ struct ContentView: View {
         } else {
             promptToInstallXcode = false
             
-            LatestBtcCoreRelease.get { (dict, error) in
-                guard let dict = dict else {
+            LatestBtcCoreRelease.get { (taggedReleases, error) in
+                guard let taggedReleases = taggedReleases else {
                     showMessage(message: error ?? "Unknown issue downloading bitcoin core release.")
                     return
                 }
-                print("dict: \(dict)")
+                for taggedRelease in taggedReleases {
+                    print("taggedRelease: \(taggedRelease.tagName)")
+                }
+                self.taggedReleases = taggedReleases
+                showingBitcoinReleases = true
+                //TaggedReleasesView(taggedReleases: taggedReleases)
+                // prompt user which tagged release they want to download.
+                //let bitcoinEnvValues = BitcoinEnvValues(dictionary: dict)
                 // save to core data here...
-                InstallBitcoinCore.checkExistingConf()
+                //InstallBitcoinCore.checkExistingConf()
                 // Set timer to see if install was successful
-                startCheckingForBitcoinInstall = true
+                //startCheckingForBitcoinInstall = true
             }
         }
     }

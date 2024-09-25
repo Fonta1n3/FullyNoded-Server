@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E192CA4715400899F84 /* TorClient.swift */; };
 		0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */; };
 		0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */; };
 		0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */; };
@@ -27,6 +28,8 @@
 		0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */; };
 		0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F12C91FE2A00534A8D /* StartLightning.command */; };
 		0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F52C92013900534A8D /* StopLightning.command */; };
+		0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E02CA4263E008DB52E /* GithubReleases.swift */; };
+		0A9822E32CA42BEC008DB52E /* TaggedReleasesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */; };
 		0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */; };
 		0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */; };
 		0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6923B2C7F831D00366192 /* ContentView.swift */; };
@@ -53,9 +56,12 @@
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
+		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0A573E192CA4715400899F84 /* TorClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorClient.swift; sourceTree = "<group>"; };
+		0A573E1B2CA47BC900899F84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcCoreRelease.swift; sourceTree = "<group>"; };
 		0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallBtcCore.swift; sourceTree = "<group>"; };
 		0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
@@ -76,6 +82,8 @@
 		0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
 		0A5CE8F12C91FE2A00534A8D /* StartLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartLightning.command; sourceTree = "<group>"; };
 		0A5CE8F52C92013900534A8D /* StopLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopLightning.command; sourceTree = "<group>"; };
+		0A9822E02CA4263E008DB52E /* GithubReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubReleases.swift; sourceTree = "<group>"; };
+		0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesView.swift; sourceTree = "<group>"; };
 		0AA692312C7F831D00366192 /* FullyNoded-Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FullyNoded-Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullyNoded_ServerApp.swift; sourceTree = "<group>"; };
 		0AA692392C7F831D00366192 /* FullyNoded_Server.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FullyNoded_Server.xcdatamodel; sourceTree = "<group>"; };
@@ -104,6 +112,9 @@
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
+		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +122,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +136,7 @@
 				0AA692482C7F874900366192 /* BitcoinCore.swift */,
 				0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */,
 				0AA6926F2C7F962A00366192 /* Home.swift */,
+				0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -136,13 +149,14 @@
 			path = "Core Data";
 			sourceTree = "<group>";
 		};
-		0A5CE8EB2C91F5FC00534A8D /* Objects */ = {
+		0A5CE8EB2C91F5FC00534A8D /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				0A5CE8D32C89EE1C00534A8D /* Credentials.swift */,
 				0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */,
+				0A9822E02CA4263E008DB52E /* GithubReleases.swift */,
 			);
-			path = Objects;
+			path = Models;
 			sourceTree = "<group>";
 		};
 		0A5CE8EC2C91F7E900534A8D /* Helpers */ = {
@@ -158,6 +172,7 @@
 				0A5CE8D72C8A15EB00534A8D /* LatestLightningRelease.swift */,
 				0A5CE8ED2C91F9F500534A8D /* Crypto.swift */,
 				0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */,
+				0A573E192CA4715400899F84 /* TorClient.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -167,6 +182,8 @@
 			children = (
 				0AA692332C7F831D00366192 /* FullyNoded-Server */,
 				0AA692322C7F831D00366192 /* Products */,
+				A2BB46EEFE020407EAA5D643 /* Pods */,
+				B46C201EBCA0A4648795DD2E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -181,6 +198,7 @@
 		0AA692332C7F831D00366192 /* FullyNoded-Server */ = {
 			isa = PBXGroup;
 			children = (
+				0A573E1B2CA47BC900899F84 /* Info.plist */,
 				0A5CE8EC2C91F7E900534A8D /* Helpers */,
 				0AA6925D2C7F8EC700366192 /* Scripts */,
 				0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */,
@@ -190,7 +208,7 @@
 				0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */,
 				0AA692402C7F831F00366192 /* Preview Content */,
 				0A5CE8CF2C89EC3700534A8D /* Extensions.swift */,
-				0A5CE8EB2C91F5FC00534A8D /* Objects */,
+				0A5CE8EB2C91F5FC00534A8D /* Models */,
 				0A5CE8EA2C91F32000534A8D /* Core Data */,
 			);
 			path = "FullyNoded-Server";
@@ -235,6 +253,23 @@
 			path = Scripts;
 			sourceTree = "<group>";
 		};
+		A2BB46EEFE020407EAA5D643 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */,
+				DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		B46C201EBCA0A4648795DD2E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -242,9 +277,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0AA692452C7F831F00366192 /* Build configuration list for PBXNativeTarget "FullyNoded-Server" */;
 			buildPhases = (
+				E9ADCC8307D7D482E667D07F /* [CP] Check Pods Manifest.lock */,
 				0AA6922D2C7F831D00366192 /* Sources */,
 				0AA6922E2C7F831D00366192 /* Frameworks */,
 				0AA6922F2C7F831D00366192 /* Resources */,
+				4BCFDEABA43396A1A63A65D4 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -324,6 +361,48 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		4BCFDEABA43396A1A63A65D4 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E9ADCC8307D7D482E667D07F /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-FullyNoded-Server-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		0AA6922D2C7F831D00366192 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -337,10 +416,12 @@
 				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
 				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
+				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
 				0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
+				0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */,
 				0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D82C8A15EB00534A8D /* LatestLightningRelease.swift in Sources */,
@@ -348,6 +429,7 @@
 				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
+				0A9822E32CA42BEC008DB52E /* TaggedReleasesView.swift in Sources */,
 				0AA692702C7F962A00366192 /* Home.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -471,6 +553,7 @@
 		};
 		0AA692462C7F831F00366192 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -481,7 +564,9 @@
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -509,6 +594,7 @@
 		};
 		0AA692472C7F831F00366192 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -519,7 +605,9 @@
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

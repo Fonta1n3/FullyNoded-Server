@@ -44,18 +44,22 @@ struct CoreLightning: View {
                 if isAnimating {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.orange)
+                        .padding(.leading)
                 } else {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.green)
+                        .padding(.leading)
                 }
                 Text("Running")
             } else {
                 if isAnimating {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.orange)
+                        .padding(.leading)
                 } else {
                     Image(systemName: "circle.fill")
                         .foregroundStyle(.red)
+                        .padding(.leading)
                 }
                 Text("Stopped")
             }
@@ -89,6 +93,8 @@ struct CoreLightning: View {
             } label: {
                 Text("Config")
             }
+            .padding(.leading)
+            
             Button {
                 let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
                 openConf(script: .openFile, env: env, args: []) { _ in }
