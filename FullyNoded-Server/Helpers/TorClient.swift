@@ -70,14 +70,13 @@ class TorClient: NSObject, URLSessionDelegate {
                 
                 self.config.options = [
                     "AutomapHostsOnResolve": "1",
-                    "SocksPort": "\(proxyPort) OnionTrafficOnly",
+                    "SocksPort": "\(proxyPort)",
                     "AvoidDiskWrites": "1",
                     "LearnCircuitBuildTimeout": "1",
                     "NumEntryGuards": "8",
                     "SafeSocks": "1",
                     "DisableDebuggerAttachment": "1",
                     "SafeLogging": "1",
-                    "ExcludeExitNodes": "1",
                     "StrictNodes": "1"
                 ]
                 

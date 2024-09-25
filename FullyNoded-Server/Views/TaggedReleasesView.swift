@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TaggedReleasesView: View {
     
+    @State private var isAnimating = false
     @State private var showError = false
     @State private var message = ""
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
@@ -53,10 +54,17 @@ struct TaggedReleasesView: View {
             .padding([.leading, .bottom])
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            Button {
-                install(taggedRelease)
-            } label: {
-                Text("Install Bitcoin Core \(tagName)")
+            HStack() {
+                if isAnimating {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                }
+                
+                Button {
+                    install(taggedRelease, useTor: false)
+                } label: {
+                    Text("Install Bitcoin Core \(tagName)")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading)
@@ -68,6 +76,10 @@ struct TaggedReleasesView: View {
                 taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
             }
         
+            .alert(message, isPresented: $showError) {
+                Button("OK", role: .cancel) {}
+            }
+        
         
         
     }
@@ -77,7 +89,7 @@ struct TaggedReleasesView: View {
         self.message = message
     }
     
-    private func install(_ taggedRelease: TaggedReleaseElement) {
+    private func install(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
         let processedVersion = taggedRelease.tagName!.replacingOccurrences(of: "v", with: "")
         var arch = "arm64"
         #if arch(x86_64)
@@ -85,7 +97,12 @@ struct TaggedReleasesView: View {
         #endif
         
         let onion = "http://6hasakffvppilxgehrswmffqurlcjjjhd76jgvaqmsg6ul25s7t3rzyd.onion"
-        let macOSUrl = "\(onion)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
+        let clearnet = "https://bitcoincore.org"
+        var macOSUrl = "\(onion)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
+        
+        if !useTor {
+            macOSUrl = "\(clearnet)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
+        }
         
 //        let dict: [String: Any] = [
 //            "version":"\(processedVersion)",
@@ -96,51 +113,38 @@ struct TaggedReleasesView: View {
 //            "shasumsSignedUrl":"\(onion)/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
 //        ]
         
-//        DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
-//            guard saved else {
-//                return
-//            }
+
             
-            InstallBitcoinCore.checkExistingConf { ready in
-                if ready {
-                    print("hello")
-                    var request = URLRequest(url: URL(string: macOSUrl)!)
-                    request.httpMethod = "GET"
-                    request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+        InstallBitcoinCore.checkExistingConf { ready in
+            if ready {
+                isAnimating = true
+                let task = TorClient.sharedInstance.session.downloadTask(with: URL(string: macOSUrl)!) { localURL, urlResponse, error in
+                    isAnimating = false
                     
-                    let task = TorClient.sharedInstance.session.dataTask(with: request as URLRequest) { (data, response, error) in
-                        if let error = error {
-                            showMessage(message: error.localizedDescription)
-                        }
-                        
-                        guard let urlContent = data else {
-                            //completion((nil, error?.localizedDescription))
-                            
-                            
-                            return
-                        }
-                        
-                        let filePath = URL(fileURLWithPath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
-                        
-                        
-                        do {
-                            try urlContent.write(to: filePath)
+                    if let localURL = localURL {
+                        if let data = try? Data(contentsOf: localURL) {
+                            print(localURL)
+                            let filePath = URL(fileURLWithPath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
+                            guard ((try? data.write(to: filePath)) != nil) else {
+                                return
+                            }
                             print("saved urlContent")
-                        } catch {
-                            print("failed")
+//                                //        DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
+//                                //            guard saved else {
+//                                //                return
+//                                //            }
+//                                // download SHA256SUMS
+//                                // run script to verify sigs, install
+//                                
+//                            
                         }
                     }
-                    task.resume()
-                    // Set timer to see if install was successful
-                    //startCheckingForBitcoinInstall = true
-                } else {
-                    print("not ready")
                 }
+                task.resume()
+                
+            } else {
+                print("not ready")
             }
-            
-            
-        //}
+        }
     }
-    
-    
 }
