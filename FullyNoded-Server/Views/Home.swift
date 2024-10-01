@@ -29,7 +29,7 @@ struct Home: View {
             }
             
             if showingBitcoinReleases, let taggedReleases = taggedReleases {
-                TaggedReleasesView(taggedReleases: taggedReleases)
+                TaggedReleasesView(taggedReleases: taggedReleases, existingVersion: env["PREFIX"]!)
             } else {
                 Image("1024")
                     .resizable()
@@ -37,15 +37,7 @@ struct Home: View {
                     .frame(width: 300.0, height: 300.0)
                     .padding([.all])
             }
-            
-            
-            
         }
-//        .sheet(isPresented: $showingBitcoinReleases) {
-//            if let taggedReleases = taggedReleases {
-//                TaggedReleasesView(taggedReleases: taggedReleases)
-//            }
-//        }
     
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
@@ -55,10 +47,7 @@ struct Home: View {
             if TorClient.sharedInstance.state != .connected && TorClient.sharedInstance.state != .started {
                 TorClient.sharedInstance.start(delegate: nil)
             }
-            
         })
-        
-            
     }
     
     private func runScript(script: SCRIPT, env: [String: String]) {
@@ -140,24 +129,9 @@ struct Home: View {
                     showMessage(message: error ?? "Unknown issue downloading bitcoin core releases.")
                     return
                 }
-//                for taggedRelease in taggedReleases {
-//                    print("taggedRelease: \(taggedRelease.tagName)")
-//                }
                 self.taggedReleases = taggedReleases
                 showingBitcoinReleases = true
-                //TaggedReleasesView(taggedReleases: taggedReleases)
-                // prompt user which tagged release they want to download.
-                //let bitcoinEnvValues = BitcoinEnvValues(dictionary: dict)
-                // save to core data here...
-                //InstallBitcoinCore.checkExistingConf()
-                // Set timer to see if install was successful
-                //startCheckingForBitcoinInstall = true
             }
         }
     }
-    
 }
-
-//#Preview {
-//    Home()
-//}

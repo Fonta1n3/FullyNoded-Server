@@ -10,6 +10,8 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
+    @State private var startCheckingIfRunning = false
     @State private var showError = false
     @State private var message = ""
     @State private var isRunning = false
@@ -83,6 +85,11 @@ struct BitcoinCore: View {
                 }
             }
             
+            EmptyView()
+                .onReceive(timerForBitcoinStatus) { _ in
+                    isBitcoinCoreRunning()
+                }
+            
             
         }
         .padding([.leading, .bottom])
@@ -155,8 +162,6 @@ struct BitcoinCore: View {
         }
         .onAppear(perform: {
             selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
-            // get the bitcoin env values
-            // need to ensure changing networks here updates the env values too.
             DataManager.retrieve(entityName: "BitcoinEnv") { env in
                 guard let env = env else { return }
                 let envValues = BitcoinEnvValues(dictionary: env)
@@ -208,7 +213,7 @@ struct BitcoinCore: View {
     }
     
     private func startBitcoinParse(result: String) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
             self.runScript(script: .didBitcoindStart)
         }
     }
@@ -217,17 +222,8 @@ struct BitcoinCore: View {
         if !result.contains("Stopped") {
             isBitcoinCoreRunning()
         }
+        startCheckingIfRunning = true
     }
-    
-//    func isBitcoinOn() {
-//        isAnimating = true
-//        //runScript(script: .isBitcoindRunning)
-//        BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
-//            if error == nil {
-//                
-//            }
-//        }
-//    }
     
     private func stopBitcoinCore() {
         isAnimating = true
@@ -246,24 +242,13 @@ struct BitcoinCore: View {
     private func stopBitcoinParse(result: String) {
         isAnimating = false
         if result.contains("Bitcoin Core stopping") {
-            print("bitcoin core stopped")
             isRunning = false
-            
-            
-//            DispatchQueue.main.async() {
-//                self.shutDownTimer?.invalidate()
-//                self.shutDownTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(self.queryShutDownStatus), userInfo: nil, repeats: true)
-//            }
         } else {
             isRunning = true
             showMessage(message: "Error turning off mainnet")
         }
     }
     
-//    @objc func queryShutDownStatus() {
-//        showBitcoinLog()
-//        runScript(script: .hasBitcoinShutdownCompleted)
-//    }
     
     private func showBitcoinLog() {
         let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
@@ -305,15 +290,35 @@ struct BitcoinCore: View {
     
     private func isBitcoinCoreRunning() {
         isAnimating = true
-        //runScript(script: .isBitcoindRunning)
         BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
-            isAnimating = false
-            if error == nil {
-                isRunning = true
-            } else {
-                isRunning = false
-                showMessage(message: error!)
+            guard error == nil else {
+                if let error = error {
+                    if !error.contains("Could not connect to the server") {
+                        switch error {
+                        case _ where error.contains("Loading block index"),
+                            _ where error.contains("Verifying blocks"),
+                            _ where error.contains("Loading P2P addresses…"),
+                            _ where error.contains("Pruning"),
+                            _ where error.contains("Rewinding"),
+                            _ where error.contains("Rescanning"),
+                            _ where error.contains("Loading wallet"):
+                            isRunning = true
+                            isAnimating = false
+                            logOutput = error
+                        default:
+                            isAnimating = false
+                            showMessage(message: error)
+                        }
+                    } else {
+                        isRunning = false
+                        isAnimating = false
+                        logOutput = error
+                    }
+                }
+                return
             }
+            isRunning = true
+            isAnimating = false
             showBitcoinLog()
         }
     }
@@ -367,29 +372,10 @@ struct BitcoinCore: View {
     }
     
     func parseScriptResult(script: SCRIPT, result: String) {
-        print("parse \(script.stringValue)")
         switch script {
         case .startBitcoin:
             showBitcoinLog()
             startBitcoinParse(result: result)
-            
-//        case .checkForBitcoin:
-//            parseBitcoindVersionResponse(result: result)
-//            
-//        case .checkXcodeSelect:
-//            parseXcodeSelectResult(result: result)
-//            
-//        case .hasBitcoinShutdownCompleted:
-//            parseHasBitcoinShutdownCompleted(result: result)
-            
-//        case .isBitcoindRunning:
-//            isAnimating = false
-//            if result.contains("Running") {
-//                isRunning = true
-//            } else if result.contains("Stopped") {
-//                isRunning = false
-//            }
-//            showBitcoinLog()
             
         case .didBitcoindStart:
             parseDidBitcoinStart(result: result)
@@ -400,9 +386,6 @@ struct BitcoinCore: View {
     }
     
     private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        #if DEBUG
-        print("script: \(script.stringValue)")
-        #endif
         let resource = script.stringValue
         guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
             return
@@ -418,9 +401,6 @@ struct BitcoinCore: View {
         let data = stdOut.fileHandleForReading.readDataToEndOfFile()
         var result = ""
         if let output = String(data: data, encoding: .utf8) {
-            #if DEBUG
-            print("result: \(output)")
-            #endif
             result += output
             completion(true)
         } else {

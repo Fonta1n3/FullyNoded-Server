@@ -191,48 +191,4 @@ class InstallBitcoinCore {
             completion((false))
         }
     }
-    
-//    class func getURLs() {
-////        LatestBtcCoreRelease.get { (dict, error) in
-////            guard let dict = dict else {
-////                //simpleAlert(message: "Error", info: "There was an error fetching the latest Bitcoin Core version number and related URL's, please check your internet connection and try again: \(error ?? "unknown")", buttonLabel: "OK")
-////                return
-////            }
-////            
-////            let binaryName = dict["macosBinary"] as! String
-////            let macosURL = dict["macosURL"] as! String
-////            let shaURL = dict["shaURL"] as! String
-////            let version = dict["version"] as! String
-////            let prefix = dict["binaryPrefix"] as! String
-////            let signatures = dict["shasumsSignedUrl"] as! String
-////            
-////            self.standUp(binaryName: binaryName, macosURL: macosURL, shaURL: shaURL, version: version, prefix: prefix, sigsUrl: signatures)
-////        }
-//    }
-    
-//    class func standUp(binaryName: String, macosURL: String, shaURL: String, version: String, prefix: String, sigsUrl: String) {
-//        let env = ["BINARY_NAME":binaryName, "MACOS_URL":macosURL, "SHA_URL":shaURL, "VERSION":version, "PREFIX":prefix, "SIGS_URL": sigsUrl]
-//        let ud = UserDefaults.standard
-//        ud.set(prefix, forKey: "binaryPrefix")
-//        ud.set(binaryName, forKey: "macosBinary")
-//        ud.set(version, forKey: "version")
-//        runScript(script: .launchInstaller, env: env)
-//    }
-    
-//    class private func runScript(script: SCRIPT, env: [String:String]) {
-//        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-//        taskQueue.async {
-//            let resource = script.stringValue
-//            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-//            let stdOut = Pipe()
-//            let stdErr = Pipe()
-//            let task = Process()
-//            task.launchPath = path
-//            task.environment = env
-//            task.standardOutput = stdOut
-//            task.standardError = stdErr
-//            task.launch()
-//            task.waitUntilExit()
-//        }
-//    }
 }

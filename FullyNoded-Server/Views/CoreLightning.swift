@@ -14,7 +14,6 @@ struct CoreLightning: View {
     @State private var isRunning = false
     @State private var isAnimating = false
     @State private var logOutput = ""
-    @State private var env: [String: String] = [:]
 
     
     var body: some View {

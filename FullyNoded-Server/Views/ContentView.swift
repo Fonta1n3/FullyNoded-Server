@@ -73,6 +73,19 @@ struct ContentView: View {
                                 } else {
                                     Image(systemName: "xmark")
                                         .foregroundStyle(.gray)
+                                    EmptyView()
+                                        .onReceive(timerForBitcoinInstall) { _ in
+                                            DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
+                                                guard let bitcoinEnv = bitcoinEnv else { return }
+                                                let envValues = BitcoinEnvValues(dictionary: bitcoinEnv)
+                                                let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(envValues.prefix)/bin/bitcoind"
+                                                if FileManager.default.fileExists(atPath: tempPath) {
+                                                    bitcoinCoreInstalled = true
+                                                    self.timerForBitcoinInstall.upstream.connect().cancel()
+                                                }
+                                            }
+                                            
+                                        }
                                 }
                             }
                             
@@ -83,27 +96,20 @@ struct ContentView: View {
                                 } else {
                                     Image(systemName: "xmark")
                                         .foregroundStyle(.gray)
+                                    EmptyView()
+                                        .onReceive(timerForLightningInstall) { _ in
+                                            if FileManager.default.fileExists(atPath: "/usr/local/bin/lightningd") {
+                                                lightningInstalled = true
+                                                self.timerForLightningInstall.upstream.connect().cancel()
+                                            }
+                                        }
                                 }
                             }
                             
                             Text(service.name)
                             
                             if service.name == "Join Market" {
-                                if startCheckingForBitcoinInstall {
-                                    EmptyView()
-                                    .onReceive(timerForBitcoinInstall) { _ in
-                                        // if input exceeds 90 seconds then kill the timer...
-                                        if timeRemaining > 0 {
-                                            timeRemaining -= 1
-                                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(bitcoinEnvValues.prefix)/bin"
-                                            if FileManager.default.fileExists(atPath: tempPath) {
-                                                showMessage(message: "Bitcoin Core install completed ✓")
-                                                runScript(script: .checkForBitcoin, env: env)
-                                                timeRemaining = 90
-                                            }
-                                        }
-                                    }
-                                }
+
                             }
                         }
                     }
@@ -118,7 +124,6 @@ struct ContentView: View {
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
             Button("OK") {
                 installLightning()
-                // start timer
             }
             Button("Cancel", role: .cancel) {}
         }
@@ -138,21 +143,10 @@ struct ContentView: View {
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }
-//        .alert("Install Bitcoin Core?", isPresented: $promptToInstallBitcoin) {
-//            Button("OK", role: .cancel) {
-//                // check for xcode select first.
-//                runScript(script: .checkXcodeSelect, env: env)
-//            }
-//        }
         
         .alert("Install XCode command line tools? FullyNoded-Server relies on XCode command line tools to function.", isPresented: $promptToInstallXcode) {
             Button("OK", role: .cancel) {
                 runScript(script: .installXcode, env: env)
-            }
-        }
-        .sheet(isPresented: $showingBitcoinReleases) {
-            if let taggedReleases = taggedReleases {
-                TaggedReleasesView(taggedReleases: taggedReleases)
             }
         }
     }
@@ -160,9 +154,7 @@ struct ContentView: View {
     private func installLightning() {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
             guard let bitcoinRPCCreds = bitcoinRPCCreds else {
-                print("no bitcoinRPCCreds, create them?")
                 showMessage(message: "NO Bitcoin RPC Creds, create them?")
-                // Create them..
                 return
             }
             
@@ -223,6 +215,7 @@ struct ContentView: View {
                 return
             }
             
+            
             self.bitcoinEnvValues = .init(dictionary: bitcoinEnv)
             
             self.env = [
@@ -232,7 +225,7 @@ struct ContentView: View {
                 "DATADIR": self.bitcoinEnvValues.dataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
-            
+                        
             services = [bitcoinCore, coreLightning, joinMarket]
             runScript(script: .checkForBitcoin, env: env)
         }
@@ -325,7 +318,6 @@ struct ContentView: View {
             
         case .lightningInstalled:
             if result.hasPrefix("Installed") {
-                // check if its running
                 runScript(script: .lightingRunning, env: env)
                 lightningInstalled = true
             } else {
@@ -349,18 +341,8 @@ struct ContentView: View {
                     showMessage(message: error ?? "Unknown issue downloading bitcoin core release.")
                     return
                 }
-                for taggedRelease in taggedReleases {
-                    print("taggedRelease: \(taggedRelease.tagName)")
-                }
                 self.taggedReleases = taggedReleases
                 showingBitcoinReleases = true
-                //TaggedReleasesView(taggedReleases: taggedReleases)
-                // prompt user which tagged release they want to download.
-                //let bitcoinEnvValues = BitcoinEnvValues(dictionary: dict)
-                // save to core data here...
-                //InstallBitcoinCore.checkExistingConf()
-                // Set timer to see if install was successful
-                //startCheckingForBitcoinInstall = true
             }
         }
     }
