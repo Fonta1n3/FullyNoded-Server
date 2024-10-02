@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E192CA4715400899F84 /* TorClient.swift */; };
+		0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E1C2CADC15400899F84 /* KillBitcoind.command */; };
+		0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E1E2CADC5CF00899F84 /* Torrc.swift */; };
 		0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */; };
 		0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */; };
 		0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */; };
@@ -62,6 +64,8 @@
 /* Begin PBXFileReference section */
 		0A573E192CA4715400899F84 /* TorClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorClient.swift; sourceTree = "<group>"; };
 		0A573E1B2CA47BC900899F84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0A573E1C2CADC15400899F84 /* KillBitcoind.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = KillBitcoind.command; sourceTree = "<group>"; };
+		0A573E1E2CADC5CF00899F84 /* Torrc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Torrc.swift; sourceTree = "<group>"; };
 		0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcCoreRelease.swift; sourceTree = "<group>"; };
 		0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallBtcCore.swift; sourceTree = "<group>"; };
 		0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
@@ -173,6 +177,7 @@
 				0A5CE8ED2C91F9F500534A8D /* Crypto.swift */,
 				0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */,
 				0A573E192CA4715400899F84 /* TorClient.swift */,
+				0A573E1E2CADC5CF00899F84 /* Torrc.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -249,6 +254,7 @@
 				0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */,
 				0A5CE8F12C91FE2A00534A8D /* StartLightning.command */,
 				0A5CE8F52C92013900534A8D /* StopLightning.command */,
+				0A573E1C2CADC15400899F84 /* KillBitcoind.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -351,6 +357,7 @@
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
+				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,
 				0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
 				0AA692682C7F8EC700366192 /* LaunchXcodeInstall.command in Resources */,
@@ -408,6 +415,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
 				0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */,
 				0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */,

@@ -41,6 +41,7 @@ class TorClient: NSObject, URLSessionDelegate {
     // The tor client url session including the tor configuration.
     lazy var session = URLSession(configuration: sessionConfiguration)
     
+    
     // Start the tor client.
     func start(delegate: OnionManagerDelegate?) {
         //session.delegate = self
@@ -55,7 +56,7 @@ class TorClient: NSObject, URLSessionDelegate {
         
         session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: .main)
         
-       
+        addTorrc()
         
         //add V3 auth keys to ClientOnionAuthDir if any exist
         createTorDirectory()
@@ -204,12 +205,7 @@ class TorClient: NSObject, URLSessionDelegate {
     }
     
     private func torPath() -> String {
-        #if targetEnvironment(simulator)
-            let path = NSSearchPathForDirectoriesInDomains(.applicationDirectory, .userDomainMask, true).first ?? ""
-            return "\(path.split(separator: Character("/"))[0..<2].joined(separator: "/"))/.tor_tmp"
-        #else
-            return "\(NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true).first ?? "")/tor"
-        #endif
+        return "\(NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true).first ?? "")/tor"
     }
         
     
@@ -284,6 +280,57 @@ class TorClient: NSObject, URLSessionDelegate {
 //            completion()
 //        }
 //    }
+    
+    private func addTorrc() {
+        createHiddenServiceDirectory()
+        let torrcUrl = URL(fileURLWithPath: "/Users/\(NSUserName())/.torrc")
+        let torrc = Data(Torrc.torrc.utf8)
+        do {
+            try torrc.write(to: torrcUrl)
+        } catch {
+            print("an error happened while creating the file")
+        }
+    }
+    
+    private func createHiddenServiceDirectory() {
+        let jmHostDir = "\(torPath())/host/joinmarket/"
+        let btcMainDir = "\(torPath())/host/bitcoin/rpc/main/"
+        let btcTestDir = "\(torPath())/host/bitcoin/rpc/test/"
+        let btcRegtestDir = "\(torPath())/host/bitcoin/rpc/regtest/"
+        let btcSignetDir = "\(torPath())/host/bitcoin/rpc/signet/"
+        
+        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir]
+        for hsDir in hsDirs {
+            do {
+                try FileManager.default.createDirectory(atPath: hsDir,
+                                                        withIntermediateDirectories: true,
+                                                        attributes: [FileAttributeKey.posixPermissions: 0o700])
+            } catch {
+                print("Directory previously created.")
+            }
+        }
+    }
+    
+    func hostnames() -> [String]? {
+        let jmHost = "\(torPath())/host/joinmarket/hostname"
+        let btcMain = "\(torPath())/host/bitcoin/rpc/main/hostname"
+        let btcTest = "\(torPath())/host/bitcoin/rpc/test/hostname"
+        let btcRegtest = "\(torPath())/host/bitcoin/rpc/regtest/hostname"
+        let btcSignet = "\(torPath())/host/bitcoin/rpc/signet/hostname"
+        
+        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest]
+        var hostnames: [String] = []
+        
+        for host in hosts {
+            let path = URL(fileURLWithPath: host)
+            guard let hs = try? String(contentsOf: path, encoding: .utf8) else { return nil }
+            let trimmed = hs.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines)
+
+            hostnames.append(trimmed)
+        }
+        
+        return hostnames
+    }
     
     func turnedOff() -> Bool {
         return false

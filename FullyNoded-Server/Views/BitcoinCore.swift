@@ -11,6 +11,7 @@ import SwiftUI
 struct BitcoinCore: View {
     
     let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
+    @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
     @State private var message = ""
@@ -106,6 +107,7 @@ struct BitcoinCore: View {
                 }
             }
             .onChange(of: selectedChain) {
+                print("selectedChain: \(selectedChain)")
                 updateChain(chain: selectedChain)
                 isBitcoinCoreRunning()
             }
@@ -136,9 +138,35 @@ struct BitcoinCore: View {
             }
             Button {
                 openFile(file: "debug.log")
-                
             } label: {
                 Text("Log")
+            }
+            Button {
+                guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
+                guard let dataDir = env["DATADIR"] else { return }
+                let bitcoinConfPath = dataDir + "/bitcoin.conf"
+                if FileManager.default.fileExists(atPath: bitcoinConfPath) {
+                    guard let conf = try? Data(contentsOf: URL(fileURLWithPath: bitcoinConfPath)),
+                            let string = String(data: conf, encoding: .utf8) else {
+                        print("no conf")
+                        return
+                    }
+                    let newConf = """
+                    \(creds.rpcAuth)
+                    \(string)
+                    """
+                    try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
+                    let passData = Data(creds.rpcPassword.utf8)
+                    guard let encryptedPass = Crypto.encrypt(passData) else { return }
+                    DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                        guard updated else { return }
+                        
+                        runScript(script: .killBitcoind)
+                    }
+                    
+                }
+            } label: {
+                Text("Refresh RPC Authentication")
             }
         }
         .padding([.leading, .trailing])
@@ -150,9 +178,69 @@ struct BitcoinCore: View {
         
         Button("Connect Fully Noded", systemImage: "qrcode") {
             // show QR
+            // http://rpcuser:rpcpassword@uhqefiu873h827h3ufnjecnkajbciw7bui3hbuf233b.onion:18443
+            
+            guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
+                print("no hostnames")
+                return
+            }
+            var host = ""
+            let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
+            
+             switch chain {
+             case "main":
+                 host = hiddenServices[1] + ":" + "8332"
+             case "test":
+                 host = hiddenServices[2] + ":" + "18332"
+             case "signet":
+                 host = hiddenServices[3] + ":" + "38332"
+             case "regtest":
+                 host = hiddenServices[3] + ":" + "18443"
+             default:
+                 break
+             }
+            
+            DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCred in
+                guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
+                    print("no passwrod")
+                    return
+                }
+                
+                guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
+                    print("cant decrypt")
+                    return
+                }
+                
+                guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
+                    print("cant convert")
+                    return
+                }
+                
+                let url = "http://FullyNoded-Server:\(rpcPass)@\(host)"
+                
+                qrImage = generateQRCode(from: url)
+            }
+            
+             
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
+        
+        if let qrImage = qrImage {
+            
+            Image(nsImage: qrImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading)
+            
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                        self.qrImage = nil
+                    }
+                }
+        }
         
         Spacer()
         
@@ -181,6 +269,26 @@ struct BitcoinCore: View {
         }
     }
     
+    private func generateQRCode(from string: String) -> NSImage {
+        let data = string.data(using: .ascii)
+        let filter = CIFilter(name: "CIQRCodeGenerator")
+        filter!.setValue(data, forKey: "inputMessage")
+        let transform = CGAffineTransform(scaleX: 10, y: 10)
+        let output = filter?.outputImage?.transformed(by: transform)
+
+        let colorParameters = [
+            "inputColor0": CIColor(color: NSColor.black), // Foreground
+            "inputColor1": CIColor(color: NSColor.white) // Background
+        ]
+
+        let colored = (output!.applyingFilter("CIFalseColor", parameters: colorParameters as [String : Any]))
+        let rep = NSCIImageRep(ciImage: colored)
+        let nsImage = NSImage(size: rep.size)
+        nsImage.addRepresentation(rep)
+
+        return nsImage
+    }
+    
     private func openFile(file: String) {
         let d = Defaults.shared.dataDir
         let env = ["FILE": "\(d)/\(file)"]
@@ -197,7 +305,7 @@ struct BitcoinCore: View {
         }
         UserDefaults.standard.setValue(port, forKey: "port")
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
-        self.env["chain"] = chain
+        self.env["CHAIN"] = chain
         DataManager.update(keyToUpdate: "chain", newValue: chain, entity: "BitcoinEnv") { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
@@ -291,9 +399,11 @@ struct BitcoinCore: View {
     private func isBitcoinCoreRunning() {
         isAnimating = true
         BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
+            isAnimating = false
             guard error == nil else {
                 if let error = error {
                     if !error.contains("Could not connect to the server") {
+                        isRunning = true
                         switch error {
                         case _ where error.contains("Loading block index"),
                             _ where error.contains("Verifying blocks"),
@@ -301,24 +411,20 @@ struct BitcoinCore: View {
                             _ where error.contains("Pruning"),
                             _ where error.contains("Rewinding"),
                             _ where error.contains("Rescanning"),
-                            _ where error.contains("Loading wallet"):
-                            isRunning = true
-                            isAnimating = false
+                            _ where error.contains("Loading wallet"),
+                            _ where error.contains("Looks like your rpc credentials"):
                             logOutput = error
                         default:
-                            isAnimating = false
                             showMessage(message: error)
                         }
                     } else {
                         isRunning = false
-                        isAnimating = false
                         logOutput = error
                     }
                 }
                 return
             }
             isRunning = true
-            isAnimating = false
             showBitcoinLog()
         }
     }
@@ -379,6 +485,12 @@ struct BitcoinCore: View {
             
         case .didBitcoindStart:
             parseDidBitcoinStart(result: result)
+            
+        case .killBitcoind:
+            if result.contains("Its dead") {
+                isRunning = false
+                showMessage(message: "RPC Authentication refreshed, you need to start your node for the changes to take effect.")
+            }
             
         default:
             break
