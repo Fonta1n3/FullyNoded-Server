@@ -8,6 +8,9 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case getRune
+    case lightningAddress
+    case lightningNodeId
     case killBitcoind
     case stopLightning
     case startLightning
@@ -36,6 +39,12 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .getRune:
+            return "GetRune"
+        case .lightningAddress:
+            return "LightningAddress"
+        case .lightningNodeId:
+            return "LightningNodeId"
         case .killBitcoind:
             return "KillBitcoind"
         case .stopLightning:

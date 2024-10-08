@@ -14,6 +14,9 @@ struct CoreLightning: View {
     @State private var isRunning = false
     @State private var isAnimating = false
     @State private var logOutput = ""
+    @State private var qrImage: NSImage? = nil
+    @State private var nodeId = ""
+    @State private var publicUrl = ""
 
     
     var body: some View {
@@ -109,10 +112,26 @@ struct CoreLightning: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         
         Button("Connect Plasma", systemImage: "qrcode") {
-            // show QR
+            showQr()
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
+        
+        if let qrImage = qrImage {
+            
+            Image(nsImage: qrImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading)
+            
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                        self.qrImage = nil
+                    }
+                }
+        }
         
         Spacer()
         HStack() {
@@ -124,6 +143,18 @@ struct CoreLightning: View {
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func showQr() {
+    // lnlink:02b10ff0fad12abf6e96730afb98bdbffc8d9ec11af8e7a1cb35ac48a54257a018@127.0.0.1:7171?token=59FSVv_QDQ_kLqZsWiJ9csyYsk0HR-KffUgjyqXkmTY9MA
+        NgrokAddress.get { (publicUrl, error) in
+            guard let publicUrl = publicUrl else {
+                showMessage(message: error ?? "Unknown error getting nodes address.")
+                return
+            }
+            self.publicUrl = publicUrl
+            runScript(script: .lightningNodeId)
         }
     }
     
@@ -186,13 +217,19 @@ struct CoreLightning: View {
             task.standardOutput = stdOut
             task.standardError = stdErr
             task.launch()
-            // Starting lightning never exits...
-            if script == .startLightning {
+            
+            switch script {
+            case .startLightning:
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self.runScript(script: .lightingRunning)
                 }
+
+            default:
+                break
             }
+            
             task.waitUntilExit()
+            
             let data = stdOut.fileHandleForReading.readDataToEndOfFile()
             let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
             var result = ""
@@ -202,6 +239,14 @@ struct CoreLightning: View {
                 print("output: \(output)")
                 #endif
                 result += output
+            }
+            
+            switch script {
+            case .getRune, .lightningNodeId:
+                parseDataResponse(script: script, data: data)
+                
+            default:
+                break
             }
             
             if let errorOutput = String(data: errData, encoding: .utf8) {
@@ -219,6 +264,23 @@ struct CoreLightning: View {
         }
     }
     
+    func parseDataResponse(script: SCRIPT, data: Data) {
+        switch script {
+        case .getRune:
+            guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
+            let lnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+            self.qrImage = lnLink.qrQode
+            
+        case .lightningNodeId:
+            guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
+            self.nodeId = info.id
+            runScript(script: .getRune)
+            
+        default:
+            break
+        }
+    }
+    
     func parseScriptResult(script: SCRIPT, result: String) {
         switch script {
         case .stopLightning:
@@ -228,6 +290,13 @@ struct CoreLightning: View {
             isAnimating = false
             if result.contains("Running") {
                 isRunning = true
+                NgrokAddress.get { (publicUrl, error) in
+                    guard let publicUrl = publicUrl else {
+                        runScript(script: .lightningAddress)
+                        return
+                    }
+                    self.publicUrl = publicUrl
+                }
             } else if result.contains("Stopped") {
                 isRunning = false
             }
@@ -237,6 +306,16 @@ struct CoreLightning: View {
         }
         
         showLog()
+    }
+    
+    private func dec(_ codable: Codable.Type, _ jsonData: Data) -> (response: Any?, errorDesc: String?) {
+        let decoder = JSONDecoder()
+        do {
+            let item = try decoder.decode(codable.self, from: jsonData)
+            return((item, nil))
+        } catch {
+            return((nil, "\(error)"))
+        }
     }
     
     private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {

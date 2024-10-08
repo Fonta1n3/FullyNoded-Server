@@ -38,34 +38,6 @@ enum LatestBtcCoreRelease {
                 return
             }
             completion((taggedReleases, nil))
-            
-            
-//                                if let latestTag = jsonArray[0] as? NSDictionary {
-//                                    if let version = latestTag["tag_name"] as? String {
-//                                        let processedVersion = version.replacingOccurrences(of: "v", with: "")
-//                                        var arch = "arm64"
-//                                        
-//                                        #if arch(x86_64)
-//                                            arch = "x86_64"
-//                                        #endif
-//                                        
-//                                        let dict: [String: Any] = [
-//                                            "version":"\(processedVersion)",
-//                                            "binaryPrefix":"bitcoin-\(processedVersion)",
-//                                            "macosBinary":"bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz",
-//                                            "macosURL":"https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz",
-//                                            "shaURL":"https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS",
-//                                            "shasumsSignedUrl":"https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-//                                        ]
-//                                        
-//                                        completion((BitcoinEnvValues(dictionary: dict), nil))
-//                                    }
-//                                }
-                            
-                        
-                    
-                
-            
         }
         task.resume()
     }

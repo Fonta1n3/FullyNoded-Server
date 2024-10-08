@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 
 public struct Service: Identifiable {
     let name: String
@@ -319,7 +320,7 @@ struct ContentView: View {
         case .lightningInstalled:
             if result.hasPrefix("Installed") {
                 runScript(script: .lightingRunning, env: env)
-                lightningInstalled = true
+                lightningInstalled = true                
             } else {
                 lightningInstalled = false
                 promptToInstallLightning = true

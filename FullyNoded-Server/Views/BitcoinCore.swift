@@ -218,7 +218,7 @@ struct BitcoinCore: View {
                 
                 let url = "http://FullyNoded-Server:\(rpcPass)@\(host)"
                 
-                qrImage = generateQRCode(from: url)
+                qrImage = url.qrQode
             }
             
              
@@ -267,26 +267,6 @@ struct BitcoinCore: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-    }
-    
-    private func generateQRCode(from string: String) -> NSImage {
-        let data = string.data(using: .ascii)
-        let filter = CIFilter(name: "CIQRCodeGenerator")
-        filter!.setValue(data, forKey: "inputMessage")
-        let transform = CGAffineTransform(scaleX: 10, y: 10)
-        let output = filter?.outputImage?.transformed(by: transform)
-
-        let colorParameters = [
-            "inputColor0": CIColor(color: NSColor.black), // Foreground
-            "inputColor1": CIColor(color: NSColor.white) // Background
-        ]
-
-        let colored = (output!.applyingFilter("CIFalseColor", parameters: colorParameters as [String : Any]))
-        let rep = NSCIImageRep(ciImage: colored)
-        let nsImage = NSImage(size: rep.size)
-        nsImage.addRepresentation(rep)
-
-        return nsImage
     }
     
     private func openFile(file: String) {
