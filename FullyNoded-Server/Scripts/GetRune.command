@@ -6,5 +6,5 @@
 #  Created by Peter Denton on 10/8/24.
 #  
 
-sudo -u $(whoami) /usr/local/bin/lightning-cli commando-rune
+sudo -u $(whoami) /opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightning-cli commando-rune
 exit 1

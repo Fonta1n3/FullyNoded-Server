@@ -125,14 +125,12 @@ struct CoreLightning: View {
                 .frame(width: 100, height: 100)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading)
-            
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
                         self.qrImage = nil
                     }
                 }
         }
-        
         Spacer()
         HStack() {
             Label(logOutput, systemImage: "info.circle")
@@ -147,15 +145,7 @@ struct CoreLightning: View {
     }
     
     private func showQr() {
-    // lnlink:02b10ff0fad12abf6e96730afb98bdbffc8d9ec11af8e7a1cb35ac48a54257a018@127.0.0.1:7171?token=59FSVv_QDQ_kLqZsWiJ9csyYsk0HR-KffUgjyqXkmTY9MA
-        NgrokAddress.get { (publicUrl, error) in
-            guard let publicUrl = publicUrl else {
-                showMessage(message: error ?? "Unknown error getting nodes address.")
-                return
-            }
-            self.publicUrl = publicUrl
-            runScript(script: .lightningNodeId)
-        }
+        getPublicUrl()
     }
     
     private func startLightning() {
@@ -223,11 +213,16 @@ struct CoreLightning: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self.runScript(script: .lightingRunning)
                 }
-
+                
+            case .lightningAddress:
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    getPublicUrl()
+                }
+               
             default:
                 break
             }
-            
+                        
             task.waitUntilExit()
             
             let data = stdOut.fileHandleForReading.readDataToEndOfFile()
@@ -239,6 +234,8 @@ struct CoreLightning: View {
                 print("output: \(output)")
                 #endif
                 result += output
+            } else {
+                print("data.count: \(data.count)")
             }
             
             switch script {
@@ -254,12 +251,39 @@ struct CoreLightning: View {
                 print("error: \(errorOutput)")
                 #endif
                 
-                if errorOutput != "" {
+                if errorOutput != "", !errorOutput.contains("Your account is limited to 1 simultaneous ngrok agent sessions") {
                     showMessage(message: errorOutput)
                     isAnimating = false
                 } else {
                     parseScriptResult(script: script, result: result)
                 }
+            }
+        }
+    }
+    
+    func getPublicUrl() {
+        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/ngrok.log")
+        guard let log = try? Data(contentsOf: path) else {
+            print("Unable to get ngrok.log.")
+            return
+        }
+        guard let stringValue = String(data: log, encoding: .utf8) else {
+            print("Unable to convert log data to utf8 string.")
+            return
+        }
+        let array = stringValue.split(separator: "\n")
+        for item in array {
+            if item.contains("url") {
+                guard let ngrokLog = try? JSONDecoder().decode(NgrokLog.self, from: Data(item.utf8)) else {
+                    print("Failed converting json to ngrokLog.")
+                    return
+                }
+                guard let url = ngrokLog.url else {
+                    print("No url from ngrok.log.")
+                    return
+                }
+                self.publicUrl = url.replacingOccurrences(of: "tcp://", with: "")
+                runScript(script: .lightningNodeId)
             }
         }
     }
@@ -290,13 +314,14 @@ struct CoreLightning: View {
             isAnimating = false
             if result.contains("Running") {
                 isRunning = true
-                NgrokAddress.get { (publicUrl, error) in
-                    guard let publicUrl = publicUrl else {
-                        runScript(script: .lightningAddress)
-                        return
-                    }
-                    self.publicUrl = publicUrl
-                }
+//                NgrokAddress.get { (publicUrl, error) in
+//                    guard let publicUrl = publicUrl else {
+//                        runScript(script: .lightningAddress)
+//                        return
+//                    }
+//                    self.publicUrl = publicUrl
+//                }
+                runScript(script: .lightningAddress)
             } else if result.contains("Stopped") {
                 isRunning = false
             }

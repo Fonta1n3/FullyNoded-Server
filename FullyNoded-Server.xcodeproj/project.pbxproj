@@ -13,9 +13,9 @@
 		0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E222CB432D200899F84 /* LightningNodeId.command */; };
 		0A573E252CB435F200899F84 /* GetInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E242CB435F200899F84 /* GetInfo.swift */; };
 		0A573E2B2CB4419A00899F84 /* LightningAddress.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E2A2CB4419A00899F84 /* LightningAddress.command */; };
-		0A573E2D2CB5697500899F84 /* NgrokAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E2C2CB5697500899F84 /* NgrokAddress.swift */; };
 		0A573E312CB577D100899F84 /* GetRune.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E302CB577D100899F84 /* GetRune.command */; };
 		0A573E332CB578B300899F84 /* Rune.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E322CB578B300899F84 /* Rune.swift */; };
+		0A573E352CB819D900899F84 /* NgrokLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E342CB819D900899F84 /* NgrokLog.swift */; };
 		0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */; };
 		0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */; };
 		0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */; };
@@ -63,6 +63,15 @@
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
+		0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */; };
+		0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */; };
+		0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */; };
+		0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE122CBD6F1000428D02 /* Assets.swift */; };
+		0AD7BE152CBD7AC100428D02 /* LaunchJMInstaller.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE142CBD7AC100428D02 /* LaunchJMInstaller.command */; };
+		0AD7BE172CBD8DA000428D02 /* JoinMarket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */; };
+		0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE182CBD919600428D02 /* JMRPC.swift */; };
+		0AD7BE1B2CBD921100428D02 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE1A2CBD921100428D02 /* Commands.swift */; };
+		0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE1C2CBD923300428D02 /* JMWallet.swift */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -74,9 +83,9 @@
 		0A573E222CB432D200899F84 /* LightningNodeId.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LightningNodeId.command; sourceTree = "<group>"; };
 		0A573E242CB435F200899F84 /* GetInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetInfo.swift; sourceTree = "<group>"; };
 		0A573E2A2CB4419A00899F84 /* LightningAddress.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LightningAddress.command; sourceTree = "<group>"; };
-		0A573E2C2CB5697500899F84 /* NgrokAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NgrokAddress.swift; sourceTree = "<group>"; };
 		0A573E302CB577D100899F84 /* GetRune.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = GetRune.command; sourceTree = "<group>"; };
 		0A573E322CB578B300899F84 /* Rune.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rune.swift; sourceTree = "<group>"; };
+		0A573E342CB819D900899F84 /* NgrokLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NgrokLog.swift; sourceTree = "<group>"; };
 		0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcCoreRelease.swift; sourceTree = "<group>"; };
 		0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallBtcCore.swift; sourceTree = "<group>"; };
 		0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
@@ -126,6 +135,15 @@
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
+		0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestJoinMarketRelease.swift; sourceTree = "<group>"; };
+		0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarketTaggedReleases.swift; sourceTree = "<group>"; };
+		0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallJoinMarket.command; sourceTree = "<group>"; };
+		0AD7BE122CBD6F1000428D02 /* Assets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
+		0AD7BE142CBD7AC100428D02 /* LaunchJMInstaller.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMInstaller.command; sourceTree = "<group>"; };
+		0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarket.swift; sourceTree = "<group>"; };
+		0AD7BE182CBD919600428D02 /* JMRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMRPC.swift; sourceTree = "<group>"; };
+		0AD7BE1A2CBD921100428D02 /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
+		0AD7BE1C2CBD923300428D02 /* JMWallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMWallet.swift; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
@@ -151,6 +169,8 @@
 				0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */,
 				0AA6926F2C7F962A00366192 /* Home.swift */,
 				0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */,
+				0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */,
+				0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -171,6 +191,9 @@
 				0A9822E02CA4263E008DB52E /* GithubReleases.swift */,
 				0A573E242CB435F200899F84 /* GetInfo.swift */,
 				0A573E322CB578B300899F84 /* Rune.swift */,
+				0A573E342CB819D900899F84 /* NgrokLog.swift */,
+				0AD7BE122CBD6F1000428D02 /* Assets.swift */,
+				0AD7BE1C2CBD923300428D02 /* JMWallet.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -189,7 +212,9 @@
 				0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */,
 				0A573E192CA4715400899F84 /* TorClient.swift */,
 				0A573E1E2CADC5CF00899F84 /* Torrc.swift */,
-				0A573E2C2CB5697500899F84 /* NgrokAddress.swift */,
+				0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */,
+				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
+				0AD7BE1A2CBD921100428D02 /* Commands.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -270,6 +295,8 @@
 				0A573E222CB432D200899F84 /* LightningNodeId.command */,
 				0A573E2A2CB4419A00899F84 /* LightningAddress.command */,
 				0A573E302CB577D100899F84 /* GetRune.command */,
+				0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */,
+				0AD7BE142CBD7AC100428D02 /* LaunchJMInstaller.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -309,6 +336,8 @@
 			dependencies = (
 			);
 			name = "FullyNoded-Server";
+			packageProductDependencies = (
+			);
 			productName = "FullyNoded-Server";
 			productReference = 0AA692312C7F831D00366192 /* FullyNoded-Server.app */;
 			productType = "com.apple.product-type.application";
@@ -337,6 +366,8 @@
 				Base,
 			);
 			mainGroup = 0AA692282C7F831D00366192;
+			packageReferences = (
+			);
 			productRefGroup = 0AA692322C7F831D00366192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -357,6 +388,7 @@
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
+				0AD7BE152CBD7AC100428D02 /* LaunchJMInstaller.command in Resources */,
 				0AA692642C7F8EC700366192 /* LaunchBrewInstall.command in Resources */,
 				0A573E2B2CB4419A00899F84 /* LightningAddress.command in Resources */,
 				0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */,
@@ -369,6 +401,7 @@
 				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
 				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
+				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
@@ -434,15 +467,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
+				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
+				0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */,
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
+				0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */,
 				0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */,
 				0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */,
 				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
+				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
+				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
 				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
 				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
-				0A573E2D2CB5697500899F84 /* NgrokAddress.swift in Sources */,
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
 				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
@@ -450,13 +487,16 @@
 				0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
 				0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */,
+				0A573E352CB819D900899F84 /* NgrokLog.swift in Sources */,
 				0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
+				0AD7BE1B2CBD921100428D02 /* Commands.swift in Sources */,
 				0A9822E32CA42BEC008DB52E /* TaggedReleasesView.swift in Sources */,
+				0AD7BE172CBD8DA000428D02 /* JoinMarket.swift in Sources */,
 				0AA692702C7F962A00366192 /* Home.swift in Sources */,
 				0A573E332CB578B300899F84 /* Rune.swift in Sources */,
 			);

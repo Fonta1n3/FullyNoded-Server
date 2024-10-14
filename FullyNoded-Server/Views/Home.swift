@@ -17,6 +17,8 @@ struct Home: View {
     
     let showBitcoinCoreInstallButton: Bool
     let env: [String: String]
+    let showJoinMarketInstallButton: Bool
+    let jmTaggedReleases: TaggedReleases
     
     var body: some View {
         VStack() {
@@ -30,6 +32,8 @@ struct Home: View {
             
             if showingBitcoinReleases, let taggedReleases = taggedReleases {
                 TaggedReleasesView(taggedReleases: taggedReleases, existingVersion: env["PREFIX"]!)
+            } else if showJoinMarketInstallButton, jmTaggedReleases.count > 0 {
+                JoinMarketTaggedReleasesView(taggedReleases: jmTaggedReleases, existingVersion: "xx")
             } else {
                 Image("1024")
                     .resizable()

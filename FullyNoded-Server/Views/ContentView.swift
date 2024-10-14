@@ -25,9 +25,11 @@ struct ContentView: View {
     @State private var services: [Service] = []
     @State private var bitcoinCoreInstalled = false
     @State private var lightningInstalled = false
+    @State private var joinMarketInstalled = false
     @State private var xcodeSelectInstalled = false
     @State private var promptToInstallXcode = false
     @State private var promptToInstallBitcoin = false
+    @State private var promptToInstallJoinMarket = false
     @State private var startCheckingForBitcoinInstall = false
     @State private var startCheckingForLightningInstall = false
     @State private var bitcoinInstallSuccess = false
@@ -36,6 +38,7 @@ struct ContentView: View {
     @State private var promptToInstallLightning = false
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showingBitcoinReleases = false
+    @State private var jmTaggedReleases: TaggedReleases = []
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
@@ -65,6 +68,12 @@ struct ContentView: View {
                         if service.name == "Core Lightning" {
                             CoreLightning()
                         }
+                        if service.name == "Join Market" {
+                            JoinMarket()
+                        }
+                            
+                        
+                        
                     } label: {
                         HStack() {
                             if service.name == "Bitcoin Core" {
@@ -107,16 +116,36 @@ struct ContentView: View {
                                 }
                             }
                             
+                            if service.name == "Join Market" {
+                                if joinMarketInstalled {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Image(systemName: "xmark")
+                                        .foregroundStyle(.gray)
+//                                    EmptyView()
+//                                        .onReceive(timerForLightningInstall) { _ in
+//                                            if FileManager.default.fileExists(atPath: "/usr/local/bin/lightningd") {
+//                                                lightningInstalled = true
+//                                                self.timerForLightningInstall.upstream.connect().cancel()
+//                                            }
+//                                        }
+                                }
+                            }
+                            
                             Text(service.name)
                             
-                            if service.name == "Join Market" {
-
-                            }
+                            
                         }
                     }
                 }
             }
-            Home(showBitcoinCoreInstallButton: promptToInstallBitcoin, env: env)
+            Home(
+                showBitcoinCoreInstallButton: promptToInstallBitcoin,
+                env: env,
+                showJoinMarketInstallButton: promptToInstallJoinMarket,
+                jmTaggedReleases: jmTaggedReleases
+            )
         }
         .onAppear(perform: {
             getSavedValues()
@@ -179,7 +208,12 @@ struct ContentView: View {
             lightningEnv["RPC_PASSWORD"] = rpcPass
             lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir.replacingOccurrences(of: " ", with: "*")
             lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
-            lightningEnv["NETWORK"] = bitcoinEnvValues.chain
+            var network = "bitcoin"
+            if bitcoinEnvValues.chain != "main" {
+                 network = bitcoinEnvValues.chain
+            }
+            lightningEnv["NETWORK"] = network
+            
             runScript(script: .launchLightningInstall, env: lightningEnv)
         }
     }
@@ -239,6 +273,21 @@ struct ContentView: View {
             let tempPath = "/Users/\(NSUserName())/.fullynoded/installBitcoin.sh"
             if FileManager.default.fileExists(atPath: tempPath) {
                 try? FileManager.default.removeItem(atPath: tempPath)
+            }
+            
+            print("Bitcoin Core installed, check for Join market...")
+            let jmWalletDPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-v0.9.11/scripts/jmwalletd.py"
+            guard !FileManager.default.fileExists(atPath: jmWalletDPath)  else {
+                print("join market already installed")
+                joinMarketInstalled = true
+                return
+            }
+            // check if join marketv already installed
+            LatestJoinMarketRelease.get { (releases, error) in
+                if let releases = releases {
+                    jmTaggedReleases = releases
+                    promptToInstallJoinMarket = true
+                }
             }
             
         } else {
@@ -320,7 +369,7 @@ struct ContentView: View {
         case .lightningInstalled:
             if result.hasPrefix("Installed") {
                 runScript(script: .lightingRunning, env: env)
-                lightningInstalled = true                
+                lightningInstalled = true  
             } else {
                 lightningInstalled = false
                 promptToInstallLightning = true
@@ -348,7 +397,6 @@ struct ContentView: View {
         }
     }
 }
-
 
 
 private let itemFormatter: DateFormatter = {

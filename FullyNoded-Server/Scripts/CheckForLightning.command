@@ -6,7 +6,7 @@
 #  Created by Peter Denton on 9/5/24.
 #
 
-if command -v /usr/local/bin/lightningd &> /dev/null; then
+if command -v /opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd &> /dev/null; then
     echo "Installed"
     exit 1
 else

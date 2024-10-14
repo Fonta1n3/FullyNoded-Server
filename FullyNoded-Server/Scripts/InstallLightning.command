@@ -87,14 +87,14 @@ function installDependencies() {
 
 function configureLightning () {
 CONFIG="alias=FullyNoded-Server\n\
-plugin-dir=/usr/local/libexec/c-lightning/plugins\n\
-subdaemon=channeld:/usr/local/libexec/c-lightning/lightning_channeld\n\
-subdaemon=closingd:/usr/local/libexec/c-lightning/lightning_closingd\n\
-subdaemon=connectd:/usr/local/libexec/c-lightning/lightning_connectd\n\
-subdaemon=gossipd:/usr/local/libexec/c-lightning/lightning_gossipd\n\
-subdaemon=hsmd:/usr/local/libexec/c-lightning/lightning_hsmd\n\
-subdaemon=onchaind:/usr/local/libexec/c-lightning/lightning_onchaind\n\
-subdaemon=openingd:/usr/local/libexec/c-lightning/lightning_openingd\n\
+plugin-dir=/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins\n\
+subdaemon=channeld:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_channeld\n\
+subdaemon=closingd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_closingd\n\
+subdaemon=connectd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_connectd\n\
+subdaemon=gossipd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_gossipd\n\
+subdaemon=hsmd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_hsmd\n\
+subdaemon=onchaind:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_onchaind\n\
+subdaemon=openingd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_openingd\n\
 bitcoin-rpcpassword="$RPC_PASSWORD"\n\
 bitcoin-rpcuser="$RPC_USER"\n\
 bitcoin-cli=/Users/$(whoami)/.fullynoded/BitcoinCore/"$PREFIX"/bin/bitcoin-cli\n\
@@ -135,29 +135,11 @@ daemon"
 }
 
 function installLightning () {
-    ln -s /opt/homebrew/Cellar/gettext/0.20.1/bin/xgettext /usr/local/opt
-    export PATH="/usr/local/opt:$PATH"
-    export LDFLAGS="-L/usr/local/opt/sqlite/lib"
-    export CPPFLAGS="-I/usr/local/opt/sqlite/include"
-    export CPATH=/opt/homebrew/include
-    export LIBRARY_PATH=/opt/homebrew/lib
-    printf 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi\n' >> ~/.bash_profile
-    source ~/.bash_profile
-    pyenv install 3.8.10
-    pip install --upgrade pip
-    pip install poetry
-    python3 -m pip install mako
-    git clone https://github.com/ElementsProject/lightning.git
-    cd lightning
-    git checkout $LIGHTNING_VERSION
-    poetry install
-    ./configure --disable-rust --enable-experimental-features
-    poetry run make
-    make install
+    sudo -u $(whoami) $BREW_PATH install core-lightning
     exit 1
 }
 
-installDependencies
+#installDependencies
 configureLightning
 installLightning
 

@@ -8,6 +8,8 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case launchJMInstaller
+    case installJoinMarket
     case getRune
     case lightningAddress
     case lightningNodeId
@@ -39,6 +41,10 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .launchJMInstaller:
+            return "LaunchJMInstaller"
+        case .installJoinMarket:
+            return "InstallJoinMarket"
         case .getRune:
             return "GetRune"
         case .lightningAddress:
