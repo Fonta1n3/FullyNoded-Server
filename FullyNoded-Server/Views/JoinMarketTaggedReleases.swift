@@ -43,23 +43,26 @@ struct JoinMarketTaggedReleasesView: View {
                     .padding(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-//                let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
-//                var arch = "arm64"
-//    #if arch(x86_64)
-//                arch = "x86_64"
-//    #endif
-                //http://6hasakffvppilxgehrswmffqurlcjjjhd76jgvaqmsg6ul25s7t3rzyd.onion/
-//                Text(verbatim: "Downloading from https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
-//                    .padding(.leading)
-//                    .frame(maxWidth: .infinity, alignment: .leading)
+                               
+                Text(verbatim: "Downloading from \(taggedRelease.tarballURL ?? "")")
+                                    .padding(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-//                HStack() {
-//                    let url = "https://github.com/bitcoin/bitcoin/blob/master/doc/release-notes/release-notes-\(tagName.replacingOccurrences(of: "v", with: "")).md"
-//                    
-//                    Link("Release Notes", destination: URL(string: url)!)
-//                }
-//                .padding([.leading, .bottom])
-//                .frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: taggedRelease.name ?? "")
+                                    .padding(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text(verbatim: taggedRelease.body ?? "")
+                                    .padding(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+//
+                                HStack() {
+                                    let url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/blob/master/docs/release-notes/release-notes-\(tagName.replacingOccurrences(of: "v", with: "")).md"
+                
+                                    Link("Release Notes", destination: URL(string: url)!)
+                                }
+                                .padding([.leading, .bottom])
+                                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack() {
                     if isAnimating {
@@ -68,6 +71,7 @@ struct JoinMarketTaggedReleasesView: View {
                     }
                     
                     Button {
+                        startCheckingForJoinMarketInstall = true
                         download(taggedRelease, useTor: false)
                     } label: {
                         Text("Install Join Market \(tagName)")
@@ -82,41 +86,15 @@ struct JoinMarketTaggedReleasesView: View {
                     EmptyView()
                         .onReceive(timerForJoinMarketInstall) { _ in
                             print("onReceive: timerForJoinMarketInstall")
-//                            let tempPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/bitcoin-\(processedVersion)/bin/bitcoind"
-//                            if FileManager.default.fileExists(atPath: tempPath) {
-//                                //showMessage(message: "Bitcoin Core install completed ✓")
-//                                bitcoinCoreInstallComplete = true
-//                                
-//                                // save new envValues! and update lightning config if it exists
-//                                let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-//                                if FileManager.default.fileExists(atPath: lightningConfPath) {
-//                                    // get the config
-//                                    
-//                                    guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
-//                                            let string = String(data: conf, encoding: .utf8) else {
-//                                        print("no conf")
-//                                        return
-//                                    }
-//                                    let arr = string.split(separator: "\n")
-//                                    guard arr.count > 0  else { return }
-//                                    for item in arr {
-//                                        if item.hasSuffix("/bin/bitcoin-cli") {
-//                                            let existingCliPathArr = item.split(separator: "=")
-//                                            if existingCliPathArr.count == 2 {
-//                                                let existingCliPath = existingCliPathArr[1]
-//                                                let newPath = existingCliPath.replacingOccurrences(of: existingVersion, with: "bitcoin-\(processedVersion)")
-//                                                let newConf = string.replacingOccurrences(of: existingCliPath, with: newPath)
-//                                                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-//                                            }
-//                                            
-//                                        }
-//                                    }
-//                                }
-//                                saveEnvVaules(version: processedVersion)
-//                                startCheckingForBitcoinInstall = false
-//                            } else {
-//                                startCheckingForBitcoinInstall = true
-//                            }
+                            let tempPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName.replacingOccurrences(of: "v", with: ""))/scripts/jmwalletd.py"
+                            if FileManager.default.fileExists(atPath: tempPath) {
+                                showMessage(message: "Join Market install completed ✓")
+                                joinMarketInstallComplete = true
+                                startCheckingForJoinMarketInstall = false
+                                isAnimating = false
+                            } else {
+                                startCheckingForJoinMarketInstall = true
+                            }
                         }
                 }
             }
@@ -133,158 +111,151 @@ struct JoinMarketTaggedReleasesView: View {
             }
     }
     
-//    private func saveEnvVaules(version: String) {
-//        DataManager.deleteAllData(entityName: "BitcoinEnv") { deleted in
-//            guard deleted else { return }
-//            
-//            let dict = [
-//                "binaryName": "bitcoin-\(version)-arm64-apple-darwin.tar.gz",
-//                "version": version,
-//                "prefix": "bitcoin-\(version)",
-//                "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
-//                "chain": UserDefaults.standard.string(forKey: "chain") ?? "signet"
-//            ]
-//            
-//            DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
-//                guard saved else {
-//                    showMessage(message: "Unable to save default bitcoin env values.")
-//                    return
-//                }
-//                bitcoinCoreInstallComplete = true
-//            }
-//        }
-//    }
-    
     private func showMessage(message: String) {
+        isAnimating = false
         showError = true
         self.message = message
     }
     
-//    private func downloadSHA256SUMS(processedVersion: String, arch: String) {
-//        let urlSHA256SUMS = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
-//        description = "Downloading SHA256SUMS file from \(urlSHA256SUMS)"
-//        let task = URLSession.shared.downloadTask(with: URL(string: urlSHA256SUMS)!) { localURL, urlResponse, error in
-//            if let localURL = localURL {
-//                if let data = try? Data(contentsOf: localURL) {
-//                    print(localURL)
-//                    let filePath = URL(fileURLWithPath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS")
-//                    guard ((try? data.write(to: filePath)) != nil) else {
-//                        return
-//                    }
-//                    downloadSigs(processedVersion: processedVersion, arch: arch)
-//                }
-//            }
-//        }
-//        task.resume()
-//    }
-    
-//    private func downloadSigs(processedVersion: String, arch: String) {
-//        let urlSigs = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-//        description = "Downloading th signed SHA256SUMS file from \(urlSigs)"
-//        let task = URLSession.shared.downloadTask(with: URL(string: urlSigs)!) { localURL, urlResponse, error in
-//            isAnimating = false
-//            if let localURL = localURL {
-//                if let data = try? Data(contentsOf: localURL) {
-//                    let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS.asc")
-//                    guard ((try? data.write(to: filePath)) != nil) else {
-//                        return
-//                    }
-//                    let binaryName  = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-//                    let macosURL = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-//                    let shaURL = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
-//                    let binaryPrefix = "bitcoin-\(processedVersion)"
-//                    let shasumsSignedUrl = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-//                    installNow(binaryName: binaryName, macosURL: macosURL, shaURL: shaURL, version: processedVersion, prefix: binaryPrefix, sigsUrl: shasumsSignedUrl)
-//                    startCheckingForBitcoinInstall = true
-//                }
-//            }
-//        }
-//        task.resume()
-//    }
-    
     private func download(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
-        print("download jm version \(taggedRelease.tagName) from \(taggedRelease.tarballURL)")
-        guard let tagName = taggedRelease.tagName else {
-            print("no tag name.")
+        isAnimating = true
+        guard var tagName = taggedRelease.tagName else {
+            showMessage(message: "No tag name.")
             return
         }
-        guard let tarballUrl = taggedRelease.tarballURL else { 
-            print("no tarballUrl")
+        tagName = tagName.replacingOccurrences(of: "v", with: "")
+        
+        guard let tarballUrlCheck = taggedRelease.tarballURL else {
+            showMessage(message: "No tarball url.")
             return
         }
         
-        let task = URLSession.shared.downloadTask(with: URL(string: tarballUrl)!) { localURL, urlResponse, error in
-            print("error: \(error?.localizedDescription)")
-            if let localURL = localURL {
-                if let data = try? Data(contentsOf: localURL) {
-                    
-                    let dirPath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket")
-                    if !FileManager.default.fileExists(atPath: dirPath.path()) {
-                        do {
-                            try FileManager.default.createDirectory(atPath: dirPath.path(), withIntermediateDirectories: true, attributes: nil)
-                        } catch {
-                            print(error.localizedDescription)
-                        }
-                    }
-                    
-                    let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz")
-                    guard ((try? data.write(to: filePath)) != nil) else {
-                        print("writing file failed")
-                        return
-                    }
-                    print("saved to .fullynoded...")
-                    
-                    print("taggedRelease: \(taggedRelease)")
-                    guard let assetsURLCheck = taggedRelease.assetsURL, let assetsUrl = URL(string: assetsURLCheck) else {
-                        print("no assets url")
-                        return
-                    }
-                    
-                    fetchAssets(url: assetsUrl, tagName: tagName)
+        guard let tarballUrl = URL(string: tarballUrlCheck) else {
+            showMessage(message: "Failed converting to taball url string to url.")
+            return
+        }
+        
+        let task = URLSession.shared.downloadTask(with: tarballUrl) { localURL, urlResponse, error in
+            guard error == nil else {
+                showMessage(message: error!.localizedDescription)
+                return
+            }
+            
+            guard let localURL = localURL else {
+                showMessage(message: "No local url.")
+                return
+            }
+            
+            guard let data = try? Data(contentsOf: localURL) else {
+                showMessage(message: "No data in local url.")
+                return
+            }
+            
+            let dirPath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket")
+            if !FileManager.default.fileExists(atPath: dirPath.path()) {
+                do {
+                    try FileManager.default.createDirectory(atPath: dirPath.path(), withIntermediateDirectories: true, attributes: nil)
+                } catch {
+                    showMessage(message: error.localizedDescription)
                 }
             }
+            
+            let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz")
+            guard ((try? data.write(to: filePath)) != nil) else {
+                showMessage(message: "Writing file failed.")
+                return
+            }
+            
+            guard let assetsURLCheck = taggedRelease.assetsURL, let assetsUrl = URL(string: assetsURLCheck), let author = taggedRelease.author, let authorName = author.login else {
+                showMessage(message: "No assets url.")
+                return
+            }
+            
+            downloadPublicKey(url: assetsUrl, tagName: tagName, author: authorName)
+        }
+        
+        task.resume()
+    }
+    
+    func downloadPublicKey(url: URL, tagName: String, author: String) {
+        var pubkeyUrlRoot = "https://raw.githubusercontent.com/JoinMarket-Org/joinmarket-clientserver/refs/heads/master/pubkeys/"
+        if author == "kristapsk" {
+            pubkeyUrlRoot += "KristapsKaupe.asc"
+        } else if author == "AdamISZ" {
+            pubkeyUrlRoot += "AdamGibson.asc"
+        }
+        guard let pubKeyUrl = URL(string: pubkeyUrlRoot) else { return }
+        let task = URLSession.shared.downloadTask(with: pubKeyUrl) { localURL, urlResponse, error in
+            guard error == nil else {
+                showMessage(message: error!.localizedDescription)
+                return
+            }
+            guard let localURL = localURL else {
+                showMessage(message: "No local url.")
+                return
+            }
+            guard let data = try? Data(contentsOf: localURL) else {
+                showMessage(message: "No data in local url.")
+                return
+            }
+            
+            let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/\(author).asc")
+            
+            guard ((try? data.write(to: filePath)) != nil) else {
+                showMessage(message: "Writing file failed.")
+                return
+            }
+            
+            fetchAssets(url: url, tagName: tagName, author: author)
         }
         task.resume()
     }
     
-    func fetchAssets(url: URL, tagName: String) {
+    func fetchAssets(url: URL, tagName: String, author: String) {
         let request = URLRequest(url: url)
         let session = URLSession.shared
         
         let task = session.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-                print(error?.localizedDescription)
+                showMessage(message: error!.localizedDescription)
                 return
             }
             
             guard let data = data else {
-                print("no data")
+                showMessage(message: "No data.")
                 return
             }
             
-            
-            
-           guard let assets = try? JSONDecoder().decode(Assets.self, from: data) else {
-               print("error converting to assets")
+            guard let assets = try? JSONDecoder().decode(Assets.self, from: data) else {
+                showMessage(message: "Error encoding to assets.")
                 return
             }
             
             for asset in assets {
-                print(asset)
-                guard let name = asset.name, let sigUrlCheck = asset.url else { return }
+                guard let name = asset.name, let sigUrlCheck = asset.url else {
+                    showMessage(message: "No asset name or url.")
+                    return
+                }
                 
                 if name.hasSuffix(".tar.gz.asc") {
-                    guard let sigUrl = URL(string: sigUrlCheck) else { return }
-                    downloadTarBallSig(url: sigUrl, tagName: tagName)
+                    guard let sigUrl = URL(string: sigUrlCheck) else {
+                        showMessage(message: "Unable to convert sig url string to url.")
+                        return
+                    }
+                    downloadTarBallSig(url: sigUrl, tagName: tagName, author: author)
                 }
             }
         }
         task.resume()
     }
     
-    func downloadTarBallSig(url: URL, tagName: String) {
-        let task = URLSession.shared.downloadTask(with: url) { localURL, urlResponse, error in
-            print("error: \(error?.localizedDescription)")
+    
+    func downloadTarBallSig(url: URL, tagName: String, author: String) {
+        var request = URLRequest(url: url)
+        request.addValue("application/octet-stream", forHTTPHeaderField: "Accept")
+        request.addValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        
+        let task = URLSession.shared.downloadTask(with: request) { localURL, urlResponse, error in
             if let localURL = localURL {
                 if let data = try? Data(contentsOf: localURL) {
                     
@@ -296,7 +267,7 @@ struct JoinMarketTaggedReleasesView: View {
                     print("sig saved to .fullynoded...")
                     
                     // Now we can run install script.
-                    runScript(script: .launchJMInstaller, env: [:])
+                    runScript(script: .launchJMInstaller, env: ["TAG_NAME": tagName, "AUTHOR": author])
                     UserDefaults.standard.setValue(tagName, forKey: "tagName")
                 }
             }
@@ -304,73 +275,22 @@ struct JoinMarketTaggedReleasesView: View {
         task.resume()
     }
     
-//        func installNow(binaryName: String, macosURL: String, shaURL: String, version: String, prefix: String, sigsUrl: String) {
-//            let env = ["BINARY_NAME":binaryName, "MACOS_URL":macosURL, "SHA_URL":shaURL, "VERSION":version, "PREFIX":prefix, "SIGS_URL": sigsUrl]
-//            let ud = UserDefaults.standard
-//            ud.set(prefix, forKey: "binaryPrefix")
-//            ud.set(binaryName, forKey: "macosBinary")
-//            ud.set(version, forKey: "version")
-//            description = "Launching terminal to run a script to check the provided sha256sums against our own, verifying gpg sigs and unpack the tarball. "
-//            isAnimating = false
-//            runScript(script: .launchInstaller, env: env)
-//        }
-        
-        func runScript(script: SCRIPT, env: [String:String]) {
-            let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-            taskQueue.async {
-                let resource = script.stringValue
-                guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-                let stdOut = Pipe()
-                let stdErr = Pipe()
-                let task = Process()
-                task.launchPath = path
-                task.environment = env
-                task.standardOutput = stdOut
-                task.standardError = stdErr
-                task.launch()
-                task.waitUntilExit()
-            }
+    func runScript(script: SCRIPT, env: [String:String]) {
+        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
+        taskQueue.async {
+            let resource = script.stringValue
+            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
+            let stdOut = Pipe()
+            let stdErr = Pipe()
+            let task = Process()
+            task.launchPath = path
+            task.environment = env
+            task.standardOutput = stdOut
+            task.standardError = stdErr
+            task.launch()
+            task.waitUntilExit()
         }
+    }
     
-//    private func checkForBitcoinCore(script: SCRIPT, env: [String: String]) {
-//        #if DEBUG
-//        print("run script: \(script.stringValue)")
-//        #endif
-//        
-//        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-//        taskQueue.async {
-//            let resource = script.stringValue
-//            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-//            let stdOut = Pipe()
-//            let stdErr = Pipe()
-//            let task = Process()
-//            task.launchPath = path
-//            task.environment = env
-//            task.standardOutput = stdOut
-//            task.standardError = stdErr
-//            task.launch()
-//            task.waitUntilExit()
-//            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-//            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-//            var result = ""
-//            
-//            if let output = String(data: data, encoding: .utf8) {
-//                #if DEBUG
-//                print("output: \(output)")
-//                #endif
-//                result += output
-//            }
-//            
-//            if let errorOutput = String(data: errData, encoding: .utf8) {
-//                #if DEBUG
-//                print("error: \(errorOutput)")
-//                #endif
-//                result += errorOutput
-//                if errorOutput != "" {
-//                    showMessage(message: errorOutput)
-//                }
-//            }
-//        }
-//    }
 }
 

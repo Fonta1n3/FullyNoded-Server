@@ -7,7 +7,7 @@
 
 import Foundation
 
-typealias Asset = [AssetElement]
+typealias Assets = [AssetElement]
 
 // MARK: - WelcomeElement
 struct AssetElement: Codable {
