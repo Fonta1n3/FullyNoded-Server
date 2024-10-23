@@ -107,7 +107,6 @@ struct BitcoinCore: View {
                 }
             }
             .onChange(of: selectedChain) {
-                print("selectedChain: \(selectedChain)")
                 updateChain(chain: selectedChain)
                 isBitcoinCoreRunning()
             }
@@ -293,6 +292,67 @@ struct BitcoinCore: View {
             }
             isBitcoinCoreRunning()
         }
+        updateLightningConfNetwork(chain: chain)
+        updateJMConfNetwork(chain: chain)
+        
+    }
+    
+    private func updateJMConfNetwork(chain: String) {
+        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+        if FileManager.default.fileExists(atPath: jmConfPath) {
+            // get the config
+            
+            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)),
+                    let string = String(data: conf, encoding: .utf8) else {
+                print("no jm conf")
+                return
+            }
+            let arr = string.split(separator: "\n")
+            guard arr.count > 0  else { return }
+            for item in arr {
+                if item.hasPrefix("network = ") {
+                    let existingNetworkArr = item.split(separator: " = ")
+                    if existingNetworkArr.count == 2 {
+                        let existingNetwork = existingNetworkArr[1]
+                        var network = chain
+                        if network == "regtest" {
+                            network = "testnet"
+                        }
+                        let newConf = string.replacingOccurrences(of: existingNetwork, with: network)
+                        try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func updateLightningConfNetwork(chain: String) {
+        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+        if FileManager.default.fileExists(atPath: lightningConfPath) {
+            // get the config
+            
+            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
+                    let string = String(data: conf, encoding: .utf8) else {
+                print("no conf")
+                return
+            }
+            let arr = string.split(separator: "\n")
+            guard arr.count > 0  else { return }
+            for item in arr {
+                if item.hasPrefix("network=") {
+                    let existingNetworkArr = item.split(separator: "=")
+                    if existingNetworkArr.count == 2 {
+                        let existingNetwork = existingNetworkArr[1]
+                        var network = chain
+                        if network == "main" {
+                            network = "bitcoin"
+                        }
+                        let newConf = string.replacingOccurrences(of: existingNetwork, with: network)
+                        try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+                    }
+                }
+            }
+        }
     }
     
     private func startBitcoinCore() {
@@ -315,7 +375,7 @@ struct BitcoinCore: View {
     
     private func stopBitcoinCore() {
         isAnimating = true
-        BitcoinRPC.shared.command(method: "stop") { (result, error) in
+        BitcoinRPC.shared.command(method: "stop", params: [:]) { (result, error) in
             guard let result = result as? String else {
                 isAnimating = false
                 showMessage(message: error ?? "Unknown issue turning off Bitcoin Core.")
@@ -378,7 +438,7 @@ struct BitcoinCore: View {
     
     private func isBitcoinCoreRunning() {
         isAnimating = true
-        BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
+        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
             isAnimating = false
             guard error == nil else {
                 if let error = error {

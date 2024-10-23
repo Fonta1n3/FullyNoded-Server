@@ -41,6 +41,7 @@ struct ContentView: View {
     @State private var jmTaggedReleases: TaggedReleases = []
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     
     private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
@@ -71,9 +72,6 @@ struct ContentView: View {
                         if service.name == "Join Market" {
                             JoinMarket()
                         }
-                            
-                        
-                        
                     } label: {
                         HStack() {
                             if service.name == "Bitcoin Core" {
@@ -123,13 +121,16 @@ struct ContentView: View {
                                 } else {
                                     Image(systemName: "xmark")
                                         .foregroundStyle(.gray)
-//                                    EmptyView()
-//                                        .onReceive(timerForLightningInstall) { _ in
-//                                            if FileManager.default.fileExists(atPath: "/usr/local/bin/lightningd") {
-//                                                lightningInstalled = true
-//                                                self.timerForLightningInstall.upstream.connect().cancel()
-//                                            }
-//                                        }
+                                    EmptyView()
+                                        .onReceive(timerForJMInstall) { _ in
+                                            if let tagName = UserDefaults.standard.string(forKey: "tagName") {
+                                                let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+                                                if FileManager.default.fileExists(atPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py") && FileManager.default.fileExists(atPath: jmConfigPath) {
+                                                    joinMarketInstalled = true
+                                                    self.timerForJMInstall.upstream.connect().cancel()
+                                                }
+                                            }
+                                        }
                                 }
                             }
                             
@@ -143,7 +144,7 @@ struct ContentView: View {
             Home(
                 showBitcoinCoreInstallButton: promptToInstallBitcoin,
                 env: env,
-                showJoinMarketInstallButton: promptToInstallJoinMarket,
+                showJoinMarketInstallButton: !joinMarketInstalled,
                 jmTaggedReleases: jmTaggedReleases
             )
         }
@@ -160,9 +161,9 @@ struct ContentView: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("Install Brew? Core Lightning installation relies on Brew.", isPresented: $promptToInstallBrew) {
+        .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {
-                //runScript...
+                runScript(script: .installHomebrew, env: [:])
             }
         }
         .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
@@ -174,7 +175,7 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         }
         
-        .alert("Install XCode command line tools? FullyNoded-Server relies on XCode command line tools to function.", isPresented: $promptToInstallXcode) {
+        .alert("Install XCode command line tools? FullyNoded-Server relies on Xcode command line tools to function.", isPresented: $promptToInstallXcode) {
             Button("OK", role: .cancel) {
                 runScript(script: .installXcode, env: env)
             }
@@ -275,25 +276,31 @@ struct ContentView: View {
                 try? FileManager.default.removeItem(atPath: tempPath)
             }
             
-            print("Bitcoin Core installed, check for Join market...")
-            let jmWalletDPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-v0.9.11/scripts/jmwalletd.py"
-            guard !FileManager.default.fileExists(atPath: jmWalletDPath)  else {
-                print("join market already installed")
-                joinMarketInstalled = true
-                return
-            }
-            // check if join marketv already installed
-            LatestJoinMarketRelease.get { (releases, error) in
-                if let releases = releases {
-                    jmTaggedReleases = releases
-                    promptToInstallJoinMarket = true
+            if let tagName = UserDefaults.standard.object(forKey: "tagName") as? String {
+                let jmWalletDPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py"
+                guard !FileManager.default.fileExists(atPath: jmWalletDPath)  else {
+                    print("join market already installed")
+                    joinMarketInstalled = true
+                    return
                 }
+                
+                getJmRelease()
+            } else {
+                getJmRelease()
             }
-            
         } else {
             bitcoinCoreInstalled = false
             promptToInstallBitcoin = true
             lightningInstalled = false
+        }
+    }
+    
+    private func getJmRelease() {
+        LatestJoinMarketRelease.get { (releases, error) in
+            if let releases = releases {
+                jmTaggedReleases = releases
+                promptToInstallJoinMarket = true
+            }
         }
     }
     

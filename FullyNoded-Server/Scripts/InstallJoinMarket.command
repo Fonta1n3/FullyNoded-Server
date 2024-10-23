@@ -15,10 +15,11 @@ function unpackTarball() {
     /opt/homebrew/bin/gpg --import $AUTHOR.asc
     /opt/homebrew/bin/gpg --verify joinmarket-$TAG_NAME.tar.gz.asc joinmarket-$TAG_NAME.tar.gz
     mkdir joinmarket-$TAG_NAME && tar -zxvf joinmarket-$TAG_NAME.tar.gz -C joinmarket-$TAG_NAME --strip-components 1
-#    rm -rf joinmarket-$TAG_NAME.tar.gz
-#    rm -rf joinmarket-$TAG_NAME.tar.gz.asc
     cd joinmarket-$TAG_NAME
-    ./install.sh --without-qt
+    ./install.sh --without-qt --disable-secp-check
+    source jmvenv/bin/activate
+    cd scripts
+    python wallet-tool.py generate
     echo "Install complete."
     exit 1
 }

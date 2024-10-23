@@ -10,7 +10,7 @@ import SwiftUI
 struct JoinMarket: View {
     
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
-    let timerForStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
+    let timerForStatus = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
@@ -96,9 +96,11 @@ struct JoinMarket: View {
         .padding([.leading, .bottom])
         .frame(maxWidth: .infinity, alignment: .leading)
         
-        Label("Network \(selectedChain)", systemImage: "network")
+        Label(selectedChain.capitalized, systemImage: "network")
             .padding([.leading, .bottom])
             .frame(maxWidth: .infinity, alignment: .leading)
+        
+        
         
         
         Label("Utilities", systemImage: "wrench.and.screwdriver")
@@ -106,17 +108,17 @@ struct JoinMarket: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         
         HStack() {
-            Button {
-                //runScript(script: .launchVerifier)
-            } label: {
-                Text("Verify")
-            }
-            .padding(.leading)
-            Button {
-                print("update")
-            } label: {
-                Text("Update")
-            }
+//            Button {
+//                //runScript(script: .launchVerifier)
+//            } label: {
+//                Text("Verify")
+//            }
+//            .padding(.leading)
+//            Button {
+//                print("update")
+//            } label: {
+//                Text("Update")
+//            }
             Button {
                 openFile(file: "joinmarket.cfg")
             } label: {
@@ -139,7 +141,7 @@ struct JoinMarket: View {
             // show QR
             
             guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-                print("no hostnames")
+                showMessage(message: "No hostnames.")
                 return
             }
             let host = hiddenServices[0] + ":" + "28183"
@@ -147,7 +149,7 @@ struct JoinMarket: View {
             let certPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/ssl/cert.pem"
             if FileManager.default.fileExists(atPath: certPath) {
                 guard var cert = try? String(contentsOf: URL(fileURLWithPath: certPath)) else {
-                    print("no cert")
+                    showMessage(message: "No joinmarket cert.")
                     return
                 }
                 cert = cert.replacingOccurrences(of: "\n", with: "")
@@ -155,7 +157,6 @@ struct JoinMarket: View {
                 cert = cert.replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
                 cert = cert.replacingOccurrences(of: " ", with: "")
                 let quickConnectUrl = "http://" + host + "?cert=\(cert)"
-                print("quickConnectUrl: \(quickConnectUrl)")
                 qrImage = quickConnectUrl.qrQode
             }
             
@@ -197,142 +198,59 @@ struct JoinMarket: View {
         }
     }
     
+    private func updateChain(chain: String) {
+        
+    }
+    
     private func openFile(file: String) {
         let env = ["FILE": "/Users/\(NSUserName())/Library/Application Support/joinmarket/\(file)"]
         
         openConf(script: .openFile, env: env, args: []) { _ in }
     }
-    
-   
-    
+        
     private func startJoinMarket() {
-        print("start")
-        //isAnimating = true
-        //runScript(script: .startBitcoin)
+        isAnimating = true
+        env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
+        runScript(script: .launchJmStarter)
     }
     
-    private func startBitcoinParse(result: String) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-            self.runScript(script: .didBitcoindStart)
-        }
-    }
+//    private func startBitcoinParse(result: String) {
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+//            self.runScript(script: .didBitcoindStart)
+//        }
+//    }
     
-    private func parseDidBitcoinStart(result: String) {
-        if !result.contains("Stopped") {
-            isJoinMarketRunning()
-        }
-        startCheckingIfRunning = true
-    }
+//    private func parseDidBitcoinStart(result: String) {
+//        if !result.contains("Stopped") {
+//            isJoinMarketRunning()
+//        }
+//        startCheckingIfRunning = true
+//    }
     
     private func stopJoinMarket() {
-        print("stop")
-//        isAnimating = true
-//        BitcoinRPC.shared.command(method: "stop") { (result, error) in
-//            guard let result = result as? String else {
-//                isAnimating = false
-//                showMessage(message: error ?? "Unknown issue turning off Bitcoin Core.")
-//                return
-//            }
-//            
-//            self.showBitcoinLog()
-//            self.stopBitcoinParse(result: result)
-//        }
+        runScript(script: .stopJm)
     }
     
-    private func stopBitcoinParse(result: String) {
-        isAnimating = false
-        if result.contains("Bitcoin Core stopping") {
-            isRunning = false
-        } else {
-            isRunning = true
-            showMessage(message: "Error turning off mainnet")
-        }
-    }
-    
-    
-    private func showLog() {
-        print("showLog")
-//        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-//        var path:URL?
-//        
-//        switch chain {
-//        case "main":
-//            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/debug.log")
-//        case "test":
-//            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/testnet3/debug.log")
-//        case "regtest":
-//            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/regtest/debug.log")
-//        case "signet":
-//            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/signet/debug.log")
-//        default:
-//            break
-//        }
-//        
-//        guard let path = path, let log = try? String(contentsOf: path, encoding: .utf8) else {
-//            print("can not get \(chain) debug.log")
-//            return
-//        }
-//        
-//        let logItems = log.components(separatedBy: "\n")
-//        
-//        DispatchQueue.main.async {
-//            if logItems.count > 2 {
-//                let lastLogItem = "\(logItems[logItems.count - 2])"
-//                logOutput = lastLogItem
-//                if lastLogItem.contains("Shutdown: done") {
-//                    isRunning = false
-//                }
-//                if lastLogItem.contains("ThreadRPCServer incorrect password") {
-//                    showMessage(message: lastLogItem)
-//                }
-//            }
-//        }
-    }
-    
+        
     private func isJoinMarketRunning() {
         isAnimating = true
         JMRPC.sharedInstance.command(method: .session, param: nil) { (response, errorDesc) in
             isAnimating = false
-            guard let response = response as? [String:Any] else {
+            guard errorDesc == nil else {
+                if errorDesc!.contains("Could not connect to the server.") {
+                    isRunning = false
+                } else {
+                    showMessage(message: errorDesc!)
+                }
+                return
+            }
+            guard let _ = response as? [String:Any] else {
                 isRunning = false
                 return
             }
-            
             isRunning = true
             
-            print("response: \(response)")
-            
-            //completion((JMSession(response), nil))
         }
-//        BitcoinRPC.shared.command(method: "getblockchaininfo") { (result, error) in
-//            isAnimating = false
-//            guard error == nil else {
-//                if let error = error {
-//                    if !error.contains("Could not connect to the server") {
-//                        isRunning = true
-//                        switch error {
-//                        case _ where error.contains("Loading block index"),
-//                            _ where error.contains("Verifying blocks"),
-//                            _ where error.contains("Loading P2P addresses…"),
-//                            _ where error.contains("Pruning"),
-//                            _ where error.contains("Rewinding"),
-//                            _ where error.contains("Rescanning"),
-//                            _ where error.contains("Loading wallet"),
-//                            _ where error.contains("Looks like your rpc credentials"):
-//                            logOutput = error
-//                        default:
-//                            showMessage(message: error)
-//                        }
-//                    } else {
-//                        isRunning = false
-//                        logOutput = error
-//                    }
-//                }
-//                return
-//            }
-//            isRunning = true
-//            showBitcoinLog()
-//        }
     }
     
     private func showMessage(message: String) {
@@ -377,24 +295,7 @@ struct JoinMarket: View {
                 if errorOutput != "" {
                     showMessage(message: errorOutput)
                 }
-            }
-            
-            parseScriptResult(script: script, result: result)
-        }
-    }
-    
-    func parseScriptResult(script: SCRIPT, result: String) {
-        switch script {
-        case .startBitcoin:
-            showLog()
-            startBitcoinParse(result: result)
-            
-        case .didBitcoindStart:
-            parseDidBitcoinStart(result: result)
-            
-            
-        default:
-            break
+            }            
         }
     }
     

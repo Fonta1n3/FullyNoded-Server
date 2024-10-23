@@ -314,13 +314,6 @@ struct CoreLightning: View {
             isAnimating = false
             if result.contains("Running") {
                 isRunning = true
-//                NgrokAddress.get { (publicUrl, error) in
-//                    guard let publicUrl = publicUrl else {
-//                        runScript(script: .lightningAddress)
-//                        return
-//                    }
-//                    self.publicUrl = publicUrl
-//                }
                 runScript(script: .lightningAddress)
             } else if result.contains("Stopped") {
                 isRunning = false

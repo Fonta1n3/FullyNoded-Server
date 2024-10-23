@@ -72,6 +72,9 @@
 		0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE182CBD919600428D02 /* JMRPC.swift */; };
 		0AD7BE1B2CBD921100428D02 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE1A2CBD921100428D02 /* Commands.swift */; };
 		0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE1C2CBD923300428D02 /* JMWallet.swift */; };
+		0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE202CC2B1F100428D02 /* StartJm.command */; };
+		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
+		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -144,6 +147,9 @@
 		0AD7BE182CBD919600428D02 /* JMRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMRPC.swift; sourceTree = "<group>"; };
 		0AD7BE1A2CBD921100428D02 /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
 		0AD7BE1C2CBD923300428D02 /* JMWallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMWallet.swift; sourceTree = "<group>"; };
+		0AD7BE202CC2B1F100428D02 /* StartJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartJm.command; sourceTree = "<group>"; };
+		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
+		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
@@ -297,6 +303,9 @@
 				0A573E302CB577D100899F84 /* GetRune.command */,
 				0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */,
 				0AD7BE142CBD7AC100428D02 /* LaunchJMInstaller.command */,
+				0AD7BE202CC2B1F100428D02 /* StartJm.command */,
+				0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */,
+				0AD7BE242CC2BCEF00428D02 /* StopJm.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -393,10 +402,12 @@
 				0A573E2B2CB4419A00899F84 /* LightningAddress.command in Resources */,
 				0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */,
 				0AA6926D2C7F8EC700366192 /* Strap.command in Resources */,
+				0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
 				0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */,
 				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
 				0AA692692C7F8EC700366192 /* OpenFile.command in Resources */,
+				0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */,
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
 				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
@@ -404,6 +415,7 @@
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
+				0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */,
 				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,

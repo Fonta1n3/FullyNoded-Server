@@ -13,7 +13,7 @@ class BitcoinRPC {
     static let shared = BitcoinRPC()
     lazy var session = URLSession(configuration: .default)
     
-    func command(method: String, completion: @escaping ((result: Any?, error: String?)) -> Void) {
+    func command(method: String, params: [String: Any], completion: @escaping ((result: Any?, error: String?)) -> Void) {
         let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
         
         let nodeIp = "127.0.0.1:\(port)"
@@ -54,7 +54,18 @@ class BitcoinRPC {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
-            request.httpBody = "{\"jsonrpc\":\"1.0\",\"id\":\"curltest\",\"method\":\"\(method)\",\"params\":[]}".data(using: .utf8)
+            
+            let dict:[String:Any] = ["jsonrpc": "1.0", "id": UUID().uuidString, "method": method, "params": params]
+            
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted) else {
+                #if DEBUG
+                print("converting to jsonData failing...")
+                #endif
+                return
+            }
+            
+            request.httpBody = jsonData
+            
             let task = session.dataTask(with: request as URLRequest) { (data, response, error) in
                 guard let urlContent = data else {
                     completion((nil, error?.localizedDescription))

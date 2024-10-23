@@ -8,6 +8,9 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case stopJm
+    case launchJmStarter
+    case startJm
     case launchJMInstaller
     case installJoinMarket
     case getRune
@@ -41,6 +44,12 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .stopJm:
+            return "StopJm"
+        case .launchJmStarter:
+            return "LaunchJMStarter"
+        case .startJm:
+            return "StartJm"
         case .launchJMInstaller:
             return "LaunchJMInstaller"
         case .installJoinMarket:

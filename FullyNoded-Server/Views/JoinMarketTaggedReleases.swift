@@ -28,47 +28,70 @@ struct JoinMarketTaggedReleasesView: View {
     }
     
     var body: some View {
-        if !joinMarketInstallComplete {
-            Picker("Select a Join Market version to install:", selection: $taggedRelease) {
-                Text("Select a release").tag(UUID())
-                ForEach(taggedReleases, id: \.self) {
-                    Text($0.tagName ?? "")
-                        .tag(Optional($0.uuid))
-                }
-            }
-            .padding([.top, .leading, .trailing])
-            
-            if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
-                Text("Written by \(login)")
-                    .padding(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                               
-                Text(verbatim: "Downloading from \(taggedRelease.tarballURL ?? "")")
-                                    .padding(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text(verbatim: taggedRelease.name ?? "")
-                                    .padding(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text(verbatim: taggedRelease.body ?? "")
-                                    .padding(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-//
-                                HStack() {
-                                    let url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/blob/master/docs/release-notes/release-notes-\(tagName.replacingOccurrences(of: "v", with: "")).md"
-                
-                                    Link("Release Notes", destination: URL(string: url)!)
-                                }
-                                .padding([.leading, .bottom])
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                HStack() {
-                    if isAnimating {
-                        ProgressView()
-                            .scaleEffect(0.5)
+        if startCheckingForJoinMarketInstall, let tagName = taggedRelease.tagName {
+            EmptyView()
+                .onReceive(timerForJoinMarketInstall) { _ in
+                    let jmwalletdPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName.replacingOccurrences(of: "v", with: ""))/scripts/jmwalletd.py"
+                    let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+                    if FileManager.default.fileExists(atPath: jmwalletdPath) && FileManager.default.fileExists(atPath: jmConfigPath) {
+                        configureJm()
+                    } else {
+                        startCheckingForJoinMarketInstall = true
                     }
+                }
+        }
+        
+        if isAnimating, let tagName = taggedRelease.tagName {
+            HStack() {
+                ProgressView()
+                    .scaleEffect(0.5)
+                
+                Text("Installing and configuring Join Market \(tagName). (wait for the terminal script to complete)")
+                
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding([.leading, .top])
+            
+            Spacer()
+            
+            
+            
+        } else {
+            if !joinMarketInstallComplete {
+                Picker("Select a Join Market version to install:", selection: $taggedRelease) {
+                    Text("Select a release").tag(UUID())
+                    ForEach(taggedReleases, id: \.self) {
+                        Text($0.tagName ?? "")
+                            .tag(Optional($0.uuid))
+                    }
+                }
+                .padding([.top, .leading, .trailing, .bottom])
+                
+                if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
+                    Text("Join Market \(tagName), written by \(login).")
+                        .padding([.leading, .bottom])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                                   
+                    Text(verbatim: "Downloading from \(taggedRelease.tarballURL ?? "")")
+                        .padding([.leading, .bottom])
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(verbatim: taggedRelease.name ?? "")
+                                        .padding([.leading, .bottom])
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(verbatim: taggedRelease.body ?? "")
+                                        .padding([.leading, .bottom])
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+    //
+                                    HStack() {
+                                        let url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/blob/master/docs/release-notes/release-notes-\(tagName.replacingOccurrences(of: "v", with: "")).md"
+                    
+                                        Link("Release Notes", destination: URL(string: url)!)
+                                    }
+                                    .padding([.leading, .bottom])
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                     
                     Button {
                         startCheckingForJoinMarketInstall = true
@@ -76,39 +99,87 @@ struct JoinMarketTaggedReleasesView: View {
                     } label: {
                         Text("Install Join Market \(tagName)")
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    
+                    Text(description)
+                    
+                    
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                
-                Text(description)
-                
-                if startCheckingForJoinMarketInstall {
-                    EmptyView()
-                        .onReceive(timerForJoinMarketInstall) { _ in
-                            print("onReceive: timerForJoinMarketInstall")
-                            let tempPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName.replacingOccurrences(of: "v", with: ""))/scripts/jmwalletd.py"
-                            if FileManager.default.fileExists(atPath: tempPath) {
-                                showMessage(message: "Join Market install completed ✓")
-                                joinMarketInstallComplete = true
-                                startCheckingForJoinMarketInstall = false
-                                isAnimating = false
-                            } else {
-                                startCheckingForJoinMarketInstall = true
-                            }
-                        }
-                }
+            } else {
+                Text("Join Market installed ✓")
+                    .padding(.all)
             }
-        } else {
-            Text("Join Market installed ✓")
-                .padding(.all)
+            Spacer()
+                .onAppear {
+                    taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
+                }
+                .alert(message, isPresented: $showError) {
+                    Button("OK", role: .cancel) {}
+                }
         }
-        Spacer()
-            .onAppear {
-                taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
+        
+    }
+    
+    
+    
+    private func configureJm() {
+        print("configureJm")
+        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "signet"
+        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+        switch chain {
+        case "main": chain = "mainnet"
+        case "regtest": chain = "testnet"
+        case "test": chain = "testnet"
+        default:
+            break
+        }
+        updateConf(key: "network", value: chain)
+        updateConf(key: "rpc_port", value: port)
+        updateConf(key: "rpc_wallet_file", value: "jm_wallet")
+        
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
+            guard let rpcCreds = rpcCreds, let encryptedPassword = rpcCreds["password"] as? Data, let decryptedPass = Crypto.decrypt(encryptedPassword), let stringPass = String(data: decryptedPass, encoding: .utf8) else { return }
+            
+            updateConf(key: "rpc_password", value: stringPass)
+            updateConf(key: "rpc_user", value: "FullyNoded-Server")
+            
+            BitcoinRPC.shared.command(method: "createwallet", params: ["wallet_name": "jm_wallet", "descriptors": false]) { (result, error) in
+                guard error == nil else {
+                    if !error!.contains("Database already exists.") {
+                        showMessage(message: error!)
+                    }
+                    joinMarketInstallComplete = true
+                    startCheckingForJoinMarketInstall = false
+                    isAnimating = false
+                    return
+                }
+                
+                showMessage(message: "Join Market installed and configured ✓")
+                joinMarketInstallComplete = true
+                startCheckingForJoinMarketInstall = false
+                isAnimating = false
             }
-            .alert(message, isPresented: $showError) {
-                Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func updateConf(key: String, value: String) {
+        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+        if FileManager.default.fileExists(atPath: jmConfPath) {
+            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)),
+                  let string = String(data: conf, encoding: .utf8) else {
+                print("no jm conf")
+                return
             }
+            let arr = string.split(separator: "\n")
+            guard arr.count > 0  else { return }
+            for item in arr {
+                if item.hasPrefix("\(key) =") {
+                    let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
+                    try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+                }
+            }
+        }
     }
     
     private func showMessage(message: String) {
@@ -261,11 +332,9 @@ struct JoinMarketTaggedReleasesView: View {
                     
                     let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
                     guard ((try? data.write(to: filePath)) != nil) else {
-                        print("writing file failed")
+                        showMessage(message: "Unable to write file: Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
                         return
                     }
-                    print("sig saved to .fullynoded...")
-                    
                     // Now we can run install script.
                     runScript(script: .launchJMInstaller, env: ["TAG_NAME": tagName, "AUTHOR": author])
                     UserDefaults.standard.setValue(tagName, forKey: "tagName")
@@ -275,8 +344,8 @@ struct JoinMarketTaggedReleasesView: View {
         task.resume()
     }
     
-    func runScript(script: SCRIPT, env: [String:String]) {
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
+    func runScript(script: SCRIPT, env: [String: String]) {
+        let taskQueue = DispatchQueue.global(qos: .background)
         taskQueue.async {
             let resource = script.stringValue
             guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }

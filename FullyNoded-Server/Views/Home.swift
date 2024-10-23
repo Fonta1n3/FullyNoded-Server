@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-import Tor
+
 
 struct Home: View {
     @State private var showError = false
     @State private var message = ""
-    @State private var promptToInstallXcode = false
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showingBitcoinReleases = false
     
@@ -24,7 +23,19 @@ struct Home: View {
         VStack() {
             if showBitcoinCoreInstallButton && taggedReleases == nil {
                 Button {
-                    runScript(script: .checkXcodeSelect, env: env)
+                    LatestBtcCoreRelease.get { (taggedReleases, error) in
+                        guard error == nil else {
+                            showMessage(message: error ?? "Unknown error.")
+                            return
+                        }
+                        
+                        guard let taggedReleases = taggedReleases else {
+                            showMessage(message: error ?? "Unknown issue downloading bitcoin core releases.")
+                            return
+                        }
+                        self.taggedReleases = taggedReleases
+                        showingBitcoinReleases = true
+                    }
                 } label: {
                     Text("Install Bitcoin Core")
                 }
@@ -93,49 +104,11 @@ struct Home: View {
                     showMessage(message: errorOutput)
                 }
             }
-            
-            parseScriptResult(script: script, result: result)
         }
     }
     
     private func showMessage(message: String) {
         showError = true
         self.message = message
-    }
-    
-    func parseScriptResult(script: SCRIPT, result: String) {
-        #if DEBUG
-        print("parse \(script.stringValue)")
-        print("result: \(result)")
-        #endif
-        switch script {
-        case .checkXcodeSelect:
-            parseXcodeSelectResult(result: result)
-        
-        default:
-            break
-        }
-    }
-    
-    private func parseXcodeSelectResult(result: String) {
-        if result.contains("XCode select not installed") {
-            promptToInstallXcode = true
-        } else {
-            promptToInstallXcode = false
-            
-            LatestBtcCoreRelease.get { (taggedReleases, error) in
-                guard error == nil else {
-                    showMessage(message: error ?? "Unknown error.")
-                    return
-                }
-                
-                guard let taggedReleases = taggedReleases else {
-                    showMessage(message: error ?? "Unknown issue downloading bitcoin core releases.")
-                    return
-                }
-                self.taggedReleases = taggedReleases
-                showingBitcoinReleases = true
-            }
-        }
     }
 }
