@@ -100,8 +100,6 @@ bitcoin-rpcuser="$RPC_USER"\n\
 bitcoin-cli=/Users/$(whoami)/.fullynoded/BitcoinCore/"$PREFIX"/bin/bitcoin-cli\n\
 bitcoin-datadir="$DATA_DIR"\n\
 network="$NETWORK"\n\
-proxy=127.0.0.1:9050\n\
-bind-addr=127.0.0.1:9735\n\
 log-file=/Users/$(whoami)/.lightning/lightning.log\n\
 log-level=debug:plugin\n\
 experimental-offers\n\

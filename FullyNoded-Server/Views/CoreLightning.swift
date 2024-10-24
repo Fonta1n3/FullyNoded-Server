@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct CoreLightning: View {
-    
     @State private var showError = false
     @State private var message = ""
     @State private var isRunning = false
@@ -17,6 +16,8 @@ struct CoreLightning: View {
     @State private var qrImage: NSImage? = nil
     @State private var nodeId = ""
     @State private var publicUrl = ""
+    @State private var lnlink = ""
+    @State private var plasmaExists = false
 
     
     var body: some View {
@@ -118,7 +119,6 @@ struct CoreLightning: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         
         if let qrImage = qrImage {
-            
             Image(nsImage: qrImage)
                 .resizable()
                 .scaledToFit()
@@ -130,7 +130,21 @@ struct CoreLightning: View {
                         self.qrImage = nil
                     }
                 }
+            if plasmaExists {
+                Link("Connect Plasma", destination: URL(string: self.lnlink)!)
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+        
+        Link("What is Plasma?", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
+            .padding([.leading, .bottom])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
         Spacer()
         HStack() {
             Label(logOutput, systemImage: "info.circle")
@@ -138,9 +152,19 @@ struct CoreLightning: View {
         }
         .onAppear(perform: {
             isLightningOn()
+            checkIfPlasmaExists()
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func checkIfPlasmaExists() {
+        guard let filePaths = try? FileManager.default.contentsOfDirectory(atPath: "/Applications") else { return }
+        for filePath in filePaths {
+            if filePath == "Plasma.app" {
+                plasmaExists = true
+            }
         }
     }
     
@@ -234,8 +258,6 @@ struct CoreLightning: View {
                 print("output: \(output)")
                 #endif
                 result += output
-            } else {
-                print("data.count: \(data.count)")
             }
             
             switch script {
@@ -293,6 +315,7 @@ struct CoreLightning: View {
         case .getRune:
             guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
             let lnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+            self.lnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
             self.qrImage = lnLink.qrQode
             
         case .lightningNodeId:

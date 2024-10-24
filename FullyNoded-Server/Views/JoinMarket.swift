@@ -20,6 +20,7 @@ struct JoinMarket: View {
     @State private var logOutput = ""
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var env: [String: String] = [:]
+    @State private var url: String?
     private var chains = ["main", "test", "signet", "regtest"]
     
 
@@ -157,6 +158,7 @@ struct JoinMarket: View {
                 cert = cert.replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
                 cert = cert.replacingOccurrences(of: " ", with: "")
                 let quickConnectUrl = "http://" + host + "?cert=\(cert)"
+                self.url = "joinmarket://localhost:28183?cert=\(cert)"
                 qrImage = quickConnectUrl.qrQode
             }
             
@@ -181,7 +183,15 @@ struct JoinMarket: View {
                         self.qrImage = nil
                     }
                 }
+            
+            if let url = url {
+                Link("Connect Fully Noded - Join Market", destination: URL(string: url)!)
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+        
+        
         
         Spacer()
         

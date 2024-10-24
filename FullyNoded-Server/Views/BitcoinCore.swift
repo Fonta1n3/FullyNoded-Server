@@ -20,6 +20,7 @@ struct BitcoinCore: View {
     @State private var logOutput = ""
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var env: [String: String] = [:]
+    @State private var url: String?
     private var chains = ["main", "test", "signet", "regtest"]
     
 
@@ -183,18 +184,18 @@ struct BitcoinCore: View {
                 print("no hostnames")
                 return
             }
-            var host = ""
+            var onionHost = ""
             let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
             
              switch chain {
              case "main":
-                 host = hiddenServices[1] + ":" + "8332"
+                 onionHost = hiddenServices[1] + ":" + "8332"
              case "test":
-                 host = hiddenServices[2] + ":" + "18332"
+                 onionHost = hiddenServices[2] + ":" + "18332"
              case "signet":
-                 host = hiddenServices[3] + ":" + "38332"
+                 onionHost = hiddenServices[3] + ":" + "38332"
              case "regtest":
-                 host = hiddenServices[3] + ":" + "18443"
+                 onionHost = hiddenServices[3] + ":" + "18443"
              default:
                  break
              }
@@ -215,9 +216,12 @@ struct BitcoinCore: View {
                     return
                 }
                 
-                let url = "http://FullyNoded-Server:\(rpcPass)@\(host)"
-                
+                let url = "http://FullyNoded-Server:\(rpcPass)@\(onionHost)"
                 qrImage = url.qrQode
+                
+                let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+                self.url = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
+                
             }
             
              
@@ -239,6 +243,14 @@ struct BitcoinCore: View {
                         self.qrImage = nil
                     }
                 }
+            
+            
+        }
+        
+        if let url = url {
+            Link("Connect Fully Noded", destination: URL(string: url)!)
+                .padding([.leading, .bottom])
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         
         Spacer()
