@@ -22,7 +22,6 @@ struct CoreLightning: View {
 
     
     var body: some View {
-        
         HStack() {
             Image(systemName: "server.rack")
                 .padding(.leading)
@@ -135,9 +134,7 @@ struct CoreLightning: View {
                         self.qrImage = nil
                     }
                 }
-            
         }
-        
         
             if plasmaExists {
                 if let lnlink = self.lnlink {
@@ -244,11 +241,6 @@ struct CoreLightning: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self.runScript(script: .lightingRunning)
                 }
-                
-//            case .lightningAddress:
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-//                    getPublicUrl()
-//                }
                
             default:
                 break

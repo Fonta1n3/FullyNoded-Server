@@ -15,74 +15,6 @@ NETWORK=$5
 
 export BREW_PATH=/opt/homebrew/bin/brew
 export CELLAR_PATH=/opt/homebrew/Cellar
-export LIGHTNING_VERSION=v24.05
-
-function installDependencies() {
-    echo "Installing lightning dependencies..."
-    
-    if ! [ -d $CELLAR_PATH/autoconf ]; then
-        echo "Installing autoconf..."
-        sudo -u $(whoami) $BREW_PATH install autoconf
-    else
-        echo "autoconf already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/automake ]; then
-        echo "Installing automake..."
-        sudo -u $(whoami) $BREW_PATH install automake
-    else
-        echo "automake already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/libtool ]; then
-        echo "Installing libtool..."
-        sudo -u $(whoami) $BREW_PATH install libtool
-    else
-        echo "libtool already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/python3 ]; then
-        echo "Installing python3..."
-        sudo -u $(whoami) $BREW_PATH install python3
-    else
-        echo "python3 already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/gnu-sed ]; then
-        echo "Installing gnu-sed..."
-        sudo -u $(whoami) $BREW_PATH install gnu-sed
-    else
-        echo "gnu-sed already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/gettext ]; then
-        echo "Installing gettext..."
-        sudo -u $(whoami) $BREW_PATH install gettext
-    else
-        echo "gettext already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/libsodium ]; then
-        echo "Installing libsodium..."
-        sudo -u $(whoami) $BREW_PATH install libsodium
-    else
-        echo "libsodium already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/sqlite ]; then
-        echo "Installing sqlite..."
-        sudo -u $(whoami) $BREW_PATH install sqlite
-    else
-        echo "sqlite already installed"
-    fi
-    
-    if ! [ -d $CELLAR_PATH/pyenv ]; then
-        echo "Installing pyenv..."
-        sudo -u $(whoami) $BREW_PATH reinstall pyenv
-    else
-        echo "pyenv already installed"
-    fi
-}
 
 
 function configureLightning () {
@@ -104,7 +36,12 @@ log-file=/Users/$(whoami)/.lightning/lightning.log\n\
 log-level=debug:plugin\n\
 experimental-offers\n\
 fetchinvoice-noconnect\n\
+disable-plugin=clnrest\n\
+plugin=/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs\n\
+clnrest-port=18765\n\
+clnrest-protocol=HTTP\n\
 daemon"
+
     
     if ! [ -d ~/.lightning ]; then
         echo "Creating ~/.lightning directory..."
@@ -133,11 +70,17 @@ daemon"
 }
 
 function installLightning () {
-    sudo -u $(whoami) $BREW_PATH install core-lightning
+    sudo -u $(whoami) $BREW_PATH reinstall core-lightning
+    cd /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins
+    git clone https://github.com/daywalker90/clnrest-rs.git
+    cd clnrest-rs
+    $BREW_PATH install rust
+    cargo build --release
+    mv target/release/clnrest-rs /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs
+    chmod +x /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs
     exit 1
 }
 
-#installDependencies
 configureLightning
 installLightning
 
