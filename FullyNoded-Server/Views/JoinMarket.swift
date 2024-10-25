@@ -135,6 +135,7 @@ struct JoinMarket: View {
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
                         self.qrImage = nil
+                        self.url = nil
                     }
                 }
             if let url = url {

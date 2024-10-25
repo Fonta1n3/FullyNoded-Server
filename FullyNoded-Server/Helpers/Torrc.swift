@@ -100,6 +100,10 @@ class Torrc {
     HiddenServiceDir \(torPath())/host/bitcoin/rpc/signet/
     HiddenServiceVersion 3
     HiddenServicePort 38332 127.0.0.1:38332
+    
+    HiddenServiceDir \(torPath())/host/cln/rpc/
+    HiddenServiceVersion 3
+    HiddenServicePort 18765 127.0.0.1:18765
 
     ################ This section is just for relays #####################
     #

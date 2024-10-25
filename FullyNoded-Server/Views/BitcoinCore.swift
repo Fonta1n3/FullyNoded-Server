@@ -10,7 +10,6 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
-    let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
@@ -22,18 +21,16 @@ struct BitcoinCore: View {
     @State private var env: [String: String] = [:]
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
+    private let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
-
     
     var body: some View {
         HStack() {
             Image(systemName: "server.rack")
                 .padding(.leading)
-            
             Text("Bitcoin Core Server")
             Spacer()
-            
             Button {
                 isBitcoinCoreRunning()
             } label: {
@@ -50,7 +47,6 @@ struct BitcoinCore: View {
                     .scaleEffect(0.5)
                     .padding([.leading])
             }
-            
             if isRunning {
                 if isAnimating {
                     Image(systemName: "circle.fill")
@@ -87,13 +83,10 @@ struct BitcoinCore: View {
                     Text("Stop")
                 }
             }
-            
             EmptyView()
                 .onReceive(timerForBitcoinStatus) { _ in
                     isBitcoinCoreRunning()
                 }
-            
-            
         }
         .padding([.leading, .bottom])
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -112,9 +105,14 @@ struct BitcoinCore: View {
                 updateChain(chain: selectedChain)
                 isBitcoinCoreRunning()
             }
-            .padding([.leading, .trailing])
+            //.padding([.trailing])
+            .frame(width: 150)
+            //.clipped()
+            //.contentShape(Rectangle())
+            //.frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding([.leading, .trailing, .bottom])
+        .frame(maxWidth: .infinity, alignment: .leading)
         
         Label("Utilities", systemImage: "wrench.and.screwdriver")
             .padding(.leading)
@@ -143,29 +141,7 @@ struct BitcoinCore: View {
                 Text("Log")
             }
             Button {
-                guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
-                guard let dataDir = env["DATADIR"] else { return }
-                let bitcoinConfPath = dataDir + "/bitcoin.conf"
-                if FileManager.default.fileExists(atPath: bitcoinConfPath) {
-                    guard let conf = try? Data(contentsOf: URL(fileURLWithPath: bitcoinConfPath)),
-                            let string = String(data: conf, encoding: .utf8) else {
-                        print("no conf")
-                        return
-                    }
-                    let newConf = """
-                    \(creds.rpcAuth)
-                    \(string)
-                    """
-                    try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
-                    let passData = Data(creds.rpcPassword.utf8)
-                    guard let encryptedPass = Crypto.encrypt(passData) else { return }
-                    DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
-                        guard updated else { return }
-                        
-                        runScript(script: .killBitcoind)
-                    }
-                    
-                }
+                refreshRPCAuth()
             } label: {
                 Text("Refresh RPC Authentication")
             }
@@ -178,74 +154,21 @@ struct BitcoinCore: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         
         Button("Connect Fully Noded", systemImage: "qrcode") {
-            // show QR
-            // http://rpcuser:rpcpassword@uhqefiu873h827h3ufnjecnkajbciw7bui3hbuf233b.onion:18443
-            
-            guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-                print("no hostnames")
-                return
-            }
-            var onionHost = ""
-            let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-            
-             switch chain {
-             case "main":
-                 onionHost = hiddenServices[1] + ":" + "8332"
-             case "test":
-                 onionHost = hiddenServices[2] + ":" + "18332"
-             case "signet":
-                 onionHost = hiddenServices[3] + ":" + "38332"
-             case "regtest":
-                 onionHost = hiddenServices[3] + ":" + "18443"
-             default:
-                 break
-             }
-            
-            DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCred in
-                guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
-                    print("no passwrod")
-                    return
-                }
-                
-                guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
-                    print("cant decrypt")
-                    return
-                }
-                
-                guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
-                    print("cant convert")
-                    return
-                }
-                
-                let url = "http://FullyNoded-Server:\(rpcPass)@\(onionHost)"
-                qrImage = url.qrQode
-                
-                let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
-                self.fullyNodedUrl = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
-                self.unifyUrl = "unify://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
-            }
-            
-             
+            connectFN()
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
         
         if let qrImage = qrImage {
-            
             Image(nsImage: qrImage)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 100, height: 100)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading)
-            
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.qrImage = nil
-                    }
+                    setSensitiveDataToNil()
                 }
-            
-            
         }
         
         if let fullyNodedUrl = fullyNodedUrl {
@@ -267,23 +190,104 @@ struct BitcoinCore: View {
                 .padding(.all)
         }
         .onAppear(perform: {
-            selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
-            DataManager.retrieve(entityName: "BitcoinEnv") { env in
-                guard let env = env else { return }
-                let envValues = BitcoinEnvValues(dictionary: env)
-                self.env = [
-                    "BINARY_NAME": envValues.binaryName,
-                    "VERSION": envValues.version,
-                    "PREFIX": envValues.prefix,
-                    "DATADIR": envValues.dataDir,
-                    "CHAIN": envValues.chain
-                ]
-                isBitcoinCoreRunning()
-            }
-            
+            initialLoad()
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func refreshRPCAuth() {
+        guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
+        guard let dataDir = env["DATADIR"] else { return }
+        let bitcoinConfPath = dataDir + "/bitcoin.conf"
+        if FileManager.default.fileExists(atPath: bitcoinConfPath) {
+            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: bitcoinConfPath)),
+                    let string = String(data: conf, encoding: .utf8) else {
+                print("no conf")
+                return
+            }
+            let newConf = """
+            \(creds.rpcAuth)
+            \(string)
+            """
+            try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
+            let passData = Data(creds.rpcPassword.utf8)
+            guard let encryptedPass = Crypto.encrypt(passData) else { return }
+            DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                guard updated else { return }
+                runScript(script: .killBitcoind)
+            }
+        }
+    }
+    
+    private func setSensitiveDataToNil() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            self.qrImage = nil
+            self.fullyNodedUrl = nil
+            self.unifyUrl = nil
+        }
+    }
+    
+    private func initialLoad() {
+        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        DataManager.retrieve(entityName: "BitcoinEnv") { env in
+            guard let env = env else { return }
+            let envValues = BitcoinEnvValues(dictionary: env)
+            self.env = [
+                "BINARY_NAME": envValues.binaryName,
+                "VERSION": envValues.version,
+                "PREFIX": envValues.prefix,
+                "DATADIR": envValues.dataDir,
+                "CHAIN": envValues.chain
+            ]
+            isBitcoinCoreRunning()
+        }
+    }
+    
+    private func connectFN() {
+        guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
+            print("no hostnames")
+            return
+        }
+        var onionHost = ""
+        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
+        
+         switch chain {
+         case "main":
+             onionHost = hiddenServices[1] + ":" + "8332"
+         case "test":
+             onionHost = hiddenServices[2] + ":" + "18332"
+         case "signet":
+             onionHost = hiddenServices[3] + ":" + "38332"
+         case "regtest":
+             onionHost = hiddenServices[3] + ":" + "18443"
+         default:
+             break
+         }
+        
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCred in
+            guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
+                print("no passwrod")
+                return
+            }
+            
+            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
+                print("cant decrypt")
+                return
+            }
+            
+            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
+                print("cant convert")
+                return
+            }
+            
+            let url = "http://FullyNoded-Server:\(rpcPass)@\(onionHost)"
+            qrImage = url.qrQode
+            
+            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+            self.fullyNodedUrl = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
+            self.unifyUrl = "unify://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
         }
     }
     

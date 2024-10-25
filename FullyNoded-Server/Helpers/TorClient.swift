@@ -298,8 +298,9 @@ class TorClient: NSObject, URLSessionDelegate {
         let btcTestDir = "\(torPath())/host/bitcoin/rpc/test/"
         let btcRegtestDir = "\(torPath())/host/bitcoin/rpc/regtest/"
         let btcSignetDir = "\(torPath())/host/bitcoin/rpc/signet/"
+        let clnDir = "\(torPath())/host/cln/rpc/"
         
-        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir]
+        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir, clnDir]
         for hsDir in hsDirs {
             do {
                 try FileManager.default.createDirectory(atPath: hsDir,
@@ -317,8 +318,9 @@ class TorClient: NSObject, URLSessionDelegate {
         let btcTest = "\(torPath())/host/bitcoin/rpc/test/hostname"
         let btcRegtest = "\(torPath())/host/bitcoin/rpc/regtest/hostname"
         let btcSignet = "\(torPath())/host/bitcoin/rpc/signet/hostname"
+        let clnDir = "\(torPath())/host/cln/rpc/hostname"
         
-        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest]
+        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest, clnDir]
         var hostnames: [String] = []
         
         for host in hosts {

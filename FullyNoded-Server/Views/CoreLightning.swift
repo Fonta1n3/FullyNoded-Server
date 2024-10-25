@@ -19,7 +19,8 @@ struct CoreLightning: View {
     @State private var lnlink: String?
     @State private var plasmaExists = false
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
-
+    @State private var onionHost: String? = nil
+    @State private var quickConnectClnRest: String? = nil
     
     var body: some View {
         HStack() {
@@ -116,7 +117,7 @@ struct CoreLightning: View {
             .padding([.leading, .top])
             .frame(maxWidth: .infinity, alignment: .leading)
         
-        Button("Connect Plasma", systemImage: "qrcode") {
+        Button("Connect Plasma via LNLink", systemImage: "qrcode") {
             showQr()
         }
         .padding([.leading, .trailing])
@@ -132,13 +133,14 @@ struct CoreLightning: View {
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
                         self.qrImage = nil
+                        self.lnlink = nil
                     }
                 }
         }
         
             if plasmaExists {
                 if let lnlink = self.lnlink {
-                    Link("Connect Plasma Locally", destination: URL(string: lnlink)!)
+                    Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
                         .padding([.leading])
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -147,6 +149,30 @@ struct CoreLightning: View {
                     .padding([.leading])
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+        
+        Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
+            self.onionHost = TorClient.sharedInstance.hostnames()?[5]
+            runScript(script: .getRune)
+        }
+        .padding([.leading])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        if let quickConnectClnRest = self.quickConnectClnRest {
+            let qr = quickConnectClnRest.qrQode
+            Image(nsImage: qr)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading)
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                        self.quickConnectClnRest = nil
+                        self.onionHost = nil
+                        self.lnlink = nil
+                    }
+                }
+        }
         
         
         Spacer()
@@ -317,7 +343,9 @@ struct CoreLightning: View {
                 self.qrImage = publicLnLink.qrQode
             }
             self.lnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
-            
+            if let onionHost = self.onionHost {
+                self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
+            }
             
         case .lightningNodeId:
             guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
