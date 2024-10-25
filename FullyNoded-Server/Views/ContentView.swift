@@ -36,16 +36,18 @@ struct ContentView: View {
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
     @State private var promptToInstallLightning = false
+    @State private var torRunning = false
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showingBitcoinReleases = false
     @State private var jmTaggedReleases: TaggedReleases = []
-    let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    
+    private let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    private let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    private let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    private let timerForTor = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
+    private let tor = Service(name: "Tor", id: UUID())
     
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
@@ -134,9 +136,21 @@ struct ContentView: View {
                                 }
                             }
                             
+                            if service.name == "Tor" {
+                                if torRunning {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Image(systemName: "xmark")
+                                        .foregroundStyle(.gray)
+                                }
+                                
+                                EmptyView()
+                                    .onReceive(timerForTor) { _ in
+                                        self.torRunning = TorClient.sharedInstance.state == .connected
+                                    }
+                            }
                             Text(service.name)
-                            
-                            
                         }
                     }
                 }
@@ -244,7 +258,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, coreLightning, joinMarket]
+                    services = [bitcoinCore, coreLightning, joinMarket, tor]
                     runScript(script: .checkForBitcoin, env: env)
                 }
                 
@@ -262,7 +276,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            services = [bitcoinCore, coreLightning, joinMarket]
+            services = [bitcoinCore, coreLightning, joinMarket, tor]
             runScript(script: .checkForBitcoin, env: env)
         }
     }
