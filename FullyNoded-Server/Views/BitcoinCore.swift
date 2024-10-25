@@ -20,7 +20,8 @@ struct BitcoinCore: View {
     @State private var logOutput = ""
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var env: [String: String] = [:]
-    @State private var url: String?
+    @State private var fullyNodedUrl: String?
+    @State private var unifyUrl: String?
     private var chains = ["main", "test", "signet", "regtest"]
     
 
@@ -220,8 +221,8 @@ struct BitcoinCore: View {
                 qrImage = url.qrQode
                 
                 let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
-                self.url = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
-                
+                self.fullyNodedUrl = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
+                self.unifyUrl = "unify://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
             }
             
              
@@ -247,8 +248,14 @@ struct BitcoinCore: View {
             
         }
         
-        if let url = url {
-            Link("Connect Fully Noded", destination: URL(string: url)!)
+        if let fullyNodedUrl = fullyNodedUrl {
+            Link("Connect Fully Noded", destination: URL(string: fullyNodedUrl)!)
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        
+        if let unifyUrl = unifyUrl {
+            Link("Connect Unify", destination: URL(string: unifyUrl)!)
                 .padding([.leading, .bottom])
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

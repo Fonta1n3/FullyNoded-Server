@@ -14,7 +14,6 @@ public enum SCRIPT: String {
     case launchJMInstaller
     case installJoinMarket
     case getRune
-    case lightningAddress
     case lightningNodeId
     case killBitcoind
     case stopLightning
@@ -56,8 +55,6 @@ public enum SCRIPT: String {
             return "InstallJoinMarket"
         case .getRune:
             return "GetRune"
-        case .lightningAddress:
-            return "LightningAddress"
         case .lightningNodeId:
             return "LightningNodeId"
         case .killBitcoind:

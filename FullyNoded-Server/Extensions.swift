@@ -117,4 +117,8 @@ extension String {
 
         return nsImage
     }
+    
+    var urlSafeB64String: String {
+        return self.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-")
+    }
 }

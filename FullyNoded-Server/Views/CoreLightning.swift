@@ -16,8 +16,9 @@ struct CoreLightning: View {
     @State private var qrImage: NSImage? = nil
     @State private var nodeId = ""
     @State private var publicUrl = ""
-    @State private var lnlink = ""
+    @State private var lnlink: String?
     @State private var plasmaExists = false
+    @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
 
     
     var body: some View {
@@ -85,6 +86,10 @@ struct CoreLightning: View {
         .padding([.leading])
         .frame(maxWidth: .infinity, alignment: .leading)
         
+        Label(selectedChain.capitalized, systemImage: "network")
+            .padding([.leading, .top])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
         Label("Utilities", systemImage: "wrench.and.screwdriver")
             .padding([.leading, .top])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -130,20 +135,22 @@ struct CoreLightning: View {
                         self.qrImage = nil
                     }
                 }
-            if plasmaExists {
-                Link("Connect Plasma", destination: URL(string: self.lnlink)!)
-                    .padding([.leading, .bottom])
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
-                    .padding([.leading, .bottom])
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            
         }
         
-        Link("What is Plasma?", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
-            .padding([.leading, .bottom])
-            .frame(maxWidth: .infinity, alignment: .leading)
+        
+            if plasmaExists {
+                if let lnlink = self.lnlink {
+                    Link("Connect Plasma Locally", destination: URL(string: lnlink)!)
+                        .padding([.leading])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        
         
         Spacer()
         HStack() {
@@ -238,10 +245,10 @@ struct CoreLightning: View {
                     self.runScript(script: .lightingRunning)
                 }
                 
-            case .lightningAddress:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    getPublicUrl()
-                }
+//            case .lightningAddress:
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+//                    getPublicUrl()
+//                }
                
             default:
                 break
@@ -284,29 +291,28 @@ struct CoreLightning: View {
     }
     
     func getPublicUrl() {
-        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/ngrok.log")
-        guard let log = try? Data(contentsOf: path) else {
+        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
+        guard let config = try? Data(contentsOf: path) else {
             print("Unable to get ngrok.log.")
             return
         }
-        guard let stringValue = String(data: log, encoding: .utf8) else {
+        guard let stringValue = String(data: config, encoding: .utf8) else {
             print("Unable to convert log data to utf8 string.")
             return
         }
         let array = stringValue.split(separator: "\n")
+        var anyAddr = false
         for item in array {
-            if item.contains("url") {
-                guard let ngrokLog = try? JSONDecoder().decode(NgrokLog.self, from: Data(item.utf8)) else {
-                    print("Failed converting json to ngrokLog.")
-                    return
-                }
-                guard let url = ngrokLog.url else {
-                    print("No url from ngrok.log.")
-                    return
-                }
-                self.publicUrl = url.replacingOccurrences(of: "tcp://", with: "")
+            if item.hasPrefix("addr=") {
+                anyAddr = true
+                let itemArr = item.split(separator: "=")
+                self.publicUrl = "\(itemArr[1])"
                 runScript(script: .lightningNodeId)
             }
+        }
+        if !anyAddr {
+            runScript(script: .lightningNodeId)
+            showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
         }
     }
     
@@ -314,9 +320,12 @@ struct CoreLightning: View {
         switch script {
         case .getRune:
             guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
-            let lnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+            let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+            if publicUrl != "" {
+                self.qrImage = publicLnLink.qrQode
+            }
             self.lnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
-            self.qrImage = lnLink.qrQode
+            
             
         case .lightningNodeId:
             guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
@@ -337,7 +346,7 @@ struct CoreLightning: View {
             isAnimating = false
             if result.contains("Running") {
                 isRunning = true
-                runScript(script: .lightningAddress)
+                
             } else if result.contains("Stopped") {
                 isRunning = false
             }
