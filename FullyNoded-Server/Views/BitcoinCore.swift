@@ -193,28 +193,12 @@ struct BitcoinCore: View {
         }
     }
     
-    private func updateJMConf(key: String, value: String) {
-        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard let jmConfUrl = URL(string: jmConfPath) else { return }
-        if fileExists(path: jmConfPath) {
-            guard let conf = conf(url: jmConfUrl) else { return }
-            let arr = conf.split(separator: "\n")
-            guard arr.count > 0  else { return }
-            for item in arr {
-                if item.hasPrefix("\(key) =") {
-                    let newConf = conf.replacingOccurrences(of: item, with: key + " = " + value)
-                    try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
-                }
-            }
-        }
-    }
-    
     private func fileExists(path: String) -> Bool {
         return FileManager.default.fileExists(atPath: path)
     }
     
-    private func conf(url: URL) -> String? {
-        guard let conf = try? Data(contentsOf: url),
+    private func conf(stringPath: String) -> String? {
+        guard fileExists(path: stringPath), let url = URL(string: stringPath), let conf = try? Data(contentsOf: url),
                 let string = String(data: conf, encoding: .utf8) else {
             print("no conf")
             return nil
@@ -222,21 +206,31 @@ struct BitcoinCore: View {
         return string
     }
     
+    private func updateJMConf(key: String, value: String) {
+        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+        guard let conf = conf(stringPath: jmConfPath) else { return }
+        let arr = conf.split(separator: "\n")
+        guard arr.count > 0  else { return }
+        for item in arr {
+            if item.hasPrefix("\(key) =") {
+                let newConf = conf.replacingOccurrences(of: item, with: key + " = " + value)
+                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+            }
+        }
+    }
+    
     private func updateCLNConfig(rpcpass: String) {
         let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        if fileExists(path: lightningConfPath) {
-            guard let confUrl = URL(string: lightningConfPath) else { return }
-            guard let conf = conf(url: confUrl) else { return }
-            let arr = conf.split(separator: "\n")
-            guard arr.count > 0  else { return }
-            for item in arr {
-                if item.hasPrefix("bitcoin-rpcpassword") {
-                    let existingArr = item.split(separator: "=")
-                    if existingArr.count == 2 {
-                        let existingPass = existingArr[1]
-                        let newConf = conf.replacingOccurrences(of: existingPass, with: rpcpass)
-                        try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-                    }
+        guard let conf = conf(stringPath: lightningConfPath) else { return }
+        let arr = conf.split(separator: "\n")
+        guard arr.count > 0  else { return }
+        for item in arr {
+            if item.hasPrefix("bitcoin-rpcpassword") {
+                let existingArr = item.split(separator: "=")
+                if existingArr.count == 2 {
+                    let existingPass = existingArr[1]
+                    let newConf = conf.replacingOccurrences(of: existingPass, with: rpcpass)
+                    try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
                 }
             }
         }
@@ -246,22 +240,19 @@ struct BitcoinCore: View {
         guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
         guard let dataDir = env["DATADIR"] else { return }
         let bitcoinConfPath = dataDir + "/bitcoin.conf"
-        guard let bitcoinConfUrl = URL(string: bitcoinConfPath) else { return }
-        if fileExists(path: bitcoinConfPath) {
-            guard let conf = conf(url: bitcoinConfUrl) else { return }
-            let newConf = """
+        guard let conf = conf(stringPath: bitcoinConfPath) else { return }
+        let newConf = """
             \(creds.rpcAuth)
             \(conf)
             """
-            try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
-            let passData = Data(creds.rpcPassword.utf8)
-            updateJMConf(key: "rpc_password", value: creds.rpcPassword)
-            updateCLNConfig(rpcpass: creds.rpcPassword)
-            guard let encryptedPass = Crypto.encrypt(passData) else { return }
-            DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
-                guard updated else { return }
-                runScript(script: .killBitcoind)
-            }
+        try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
+        let passData = Data(creds.rpcPassword.utf8)
+        updateJMConf(key: "rpc_password", value: creds.rpcPassword)
+        updateCLNConfig(rpcpass: creds.rpcPassword)
+        guard let encryptedPass = Crypto.encrypt(passData) else { return }
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+            guard updated else { return }
+            runScript(script: .killBitcoind)
         }
     }
     

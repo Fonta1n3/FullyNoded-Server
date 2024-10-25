@@ -108,7 +108,7 @@ struct ContentView: View {
                                         .foregroundStyle(.gray)
                                     EmptyView()
                                         .onReceive(timerForLightningInstall) { _ in
-                                            if FileManager.default.fileExists(atPath: "/usr/local/bin/lightningd") {
+                                            if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd") {
                                                 lightningInstalled = true
                                                 self.timerForLightningInstall.upstream.connect().cancel()
                                             }
