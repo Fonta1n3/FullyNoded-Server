@@ -39,16 +39,16 @@ struct TaggedReleasesView: View {
             .padding([.top, .leading, .trailing])
             
             if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
+                let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
+                var arch = "arm64"
                 Text("Written by \(login)")
                     .padding(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
-                let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
-                var arch = "arm64"
-    #if arch(x86_64)
-                arch = "x86_64"
-    #endif
-                //http://6hasakffvppilxgehrswmffqurlcjjjhd76jgvaqmsg6ul25s7t3rzyd.onion/
+                    .onAppear {
+#if arch(x86_64)
+            arch = "x86_64"
+#endif
+                    }
                 Text(verbatim: "Downloading from https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
                     .padding(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -193,7 +193,7 @@ struct TaggedReleasesView: View {
                     let shaURL = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
                     let binaryPrefix = "bitcoin-\(processedVersion)"
                     let shasumsSignedUrl = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-                    installNow(binaryName: binaryName, macosURL: macosURL, shaURL: shaURL, version: processedVersion, prefix: binaryPrefix, sigsUrl: shasumsSignedUrl)
+                    installNow(binaryName: binaryName, version: processedVersion, prefix: binaryPrefix)
                     startCheckingForBitcoinInstall = true
                 }
             }
@@ -235,8 +235,8 @@ struct TaggedReleasesView: View {
         }
     }
     
-        func installNow(binaryName: String, macosURL: String, shaURL: String, version: String, prefix: String, sigsUrl: String) {
-            let env = ["BINARY_NAME":binaryName, "MACOS_URL":macosURL, "SHA_URL":shaURL, "VERSION":version, "PREFIX":prefix, "SIGS_URL": sigsUrl]
+        func installNow(binaryName: String, version: String, prefix: String) {
+            let env = ["BINARY_NAME":binaryName, "VERSION":version]
             let ud = UserDefaults.standard
             ud.set(prefix, forKey: "binaryPrefix")
             ud.set(binaryName, forKey: "macosBinary")

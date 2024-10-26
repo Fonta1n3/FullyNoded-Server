@@ -122,11 +122,6 @@ struct BitcoinCore: View {
             }
             .padding(.leading)
             Button {
-                print("update")
-            } label: {
-                Text("Update")
-            }
-            Button {
                 openFile(file: "bitcoin.conf")
             } label: {
                 Text("bitcoin.conf")

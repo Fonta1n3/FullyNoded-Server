@@ -2,27 +2,10 @@
 
 
 BINARY_NAME=$1
-MACOS_URL=$2
-SHA_URL=$3
-SIGS_URL=$4
-VERSION=$5
+VERSION=$2
 
 function installBitcoin() {
-#### Do this via URLSession over Tor instead
-#  echo "Downloading $SHA_URL"
-#  curl $SHA_URL -o ~/.fullynoded/BitcoinCore/SHA256SUMS -s
-#  echo "Saved to ~/.fullynoded/BitcoinCore/SHA256SUMS"
-#  
-#  echo "Downloading $SIGS_URL"
-#  curl $SIGS_URL -o ~/.fullynoded/BitcoinCore/SHA256SUMS.asc -s
-#  echo "Saved to ~/.fullynoded/BitcoinCore/SHA256SUMS.asc"
-#  
-#  echo "Downloading Bitcoin Core $VERSION from $MACOS_URL"
   cd ~/.fullynoded/BitcoinCore
-#  curl $MACOS_URL -o ~/.fullynoded/BitcoinCore/$BINARY_NAME --progress-bar
-  
-##################
-
   echo "Checking sha256 checksums $BINARY_NAME against provided SHA256SUMS"
   ACTUAL_SHA=$(shasum -a 256 $BINARY_NAME | awk '{print $1}')
   EXPECTED_SHA=$(grep $BINARY_NAME SHA256SUMS | awk '{print $1}')
