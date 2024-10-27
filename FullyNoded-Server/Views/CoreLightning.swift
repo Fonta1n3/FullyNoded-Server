@@ -172,9 +172,11 @@ struct CoreLightning: View {
                         self.lnlink = nil
                     }
                 }
+            if let onionHost = onionHost {
+                Text(onionHost)
+                    .textSelection(.enabled)
+            }
         }
-        
-        
         Spacer()
         HStack() {
             Label(logOutput, systemImage: "info.circle")

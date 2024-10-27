@@ -193,12 +193,26 @@ struct BitcoinCore: View {
     }
     
     private func conf(stringPath: String) -> String? {
-        guard fileExists(path: stringPath), let url = URL(string: stringPath), let conf = try? Data(contentsOf: url),
-                let string = String(data: conf, encoding: .utf8) else {
-            print("no conf")
+        guard fileExists(path: stringPath) else {
+            #if DEBUG
+            print("file does not exists at: \(stringPath)")
+            #endif
             return nil
         }
-        return string
+        
+        let url = URL(fileURLWithPath: stringPath)
+        if let conf = try? Data(contentsOf: url) {
+            guard let string = String(data: conf, encoding: .utf8) else {
+                showMessage(message: "Can not encode data as utf8 string.")
+                return nil
+            }
+            return string
+        } else if let conf = try? String(contentsOf: url) {
+            return conf
+        } else {
+            showMessage(message: "No contents found.")
+            return nil
+        }
     }
     
     private func updateJMConf(key: String, value: String) {
@@ -232,21 +246,59 @@ struct BitcoinCore: View {
     }
     
     private func refreshRPCAuth() {
-        guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
-        guard let dataDir = env["DATADIR"] else { return }
+        // First remove all "FullyNoded-Server" users from the bitcoin.conf
+        guard let newCreds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else {
+            showMessage(message: "Unable to create rpc creds.")
+            return
+        }
+        
+        guard let dataDir = env["DATADIR"] else {
+            showMessage(message: "Unable to get DATADIR from env.")
+            return
+        }
+        
         let bitcoinConfPath = dataDir + "/bitcoin.conf"
-        guard let conf = conf(stringPath: bitcoinConfPath) else { return }
+        
+        guard let conf = conf(stringPath: bitcoinConfPath) else {
+            return
+        }
+        
+        var removeFullyNodedUser = conf
+        let confArr = conf.split(separator: "\n")
+        
+        for item in confArr {
+            if item.hasPrefix("rpcauth=FullyNoded-Server") {
+                removeFullyNodedUser = removeFullyNodedUser.replacingOccurrences(of: item, with: "")
+            }
+        }
+        
+        removeFullyNodedUser = removeFullyNodedUser.replacingOccurrences(of: "^\\s*", with: "", options: .regularExpression)
+        
         let newConf = """
-            \(creds.rpcAuth)
-            \(conf)
+            \(newCreds.rpcAuth)
+            \(removeFullyNodedUser)
             """
-        try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
-        let passData = Data(creds.rpcPassword.utf8)
-        updateJMConf(key: "rpc_password", value: creds.rpcPassword)
-        updateCLNConfig(rpcpass: creds.rpcPassword)
-        guard let encryptedPass = Crypto.encrypt(passData) else { return }
+        
+        guard ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)) != nil) else {
+            showMessage(message: "Can not write the new conf.")
+            return
+        }
+        
+        let passData = Data(newCreds.rpcPassword.utf8)
+        
+        updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
+        updateCLNConfig(rpcpass: newCreds.rpcPassword)
+        
+        guard let encryptedPass = Crypto.encrypt(passData) else {
+            showMessage(message: "Can't encrypt rpcpass data.")
+            return
+        }
+        
         DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
-            guard updated else { return }
+            guard updated else {
+                showMessage(message: "BitcoinRPCCreds update failed")
+                return
+            }
             runScript(script: .killBitcoind)
         }
     }

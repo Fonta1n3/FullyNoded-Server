@@ -159,46 +159,31 @@ struct TaggedReleasesView: View {
         self.message = message
     }
     
+    private func writeData(data: Data?, filePath: String) -> Bool {
+        guard let data = data else { return false }
+        let filePath = URL(fileURLWithPath: filePath)
+        return ((try? data.write(to: filePath)) != nil)
+    }
+    
     private func downloadSHA256SUMS(processedVersion: String, arch: String) {
         let urlSHA256SUMS = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
         description = "Downloading SHA256SUMS file from \(urlSHA256SUMS)"
-        let task = URLSession.shared.downloadTask(with: URL(string: urlSHA256SUMS)!) { localURL, urlResponse, error in
-            if let localURL = localURL {
-                if let data = try? Data(contentsOf: localURL) {
-                    print(localURL)
-                    let filePath = URL(fileURLWithPath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS")
-                    guard ((try? data.write(to: filePath)) != nil) else {
-                        return
-                    }
-                    downloadSigs(processedVersion: processedVersion, arch: arch)
-                }
-            }
+        downloadTask(url: URL(string: urlSHA256SUMS)!) { data in
+            guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS") else { return }
+            downloadSigs(processedVersion: processedVersion, arch: arch)
         }
-        task.resume()
     }
     
     private func downloadSigs(processedVersion: String, arch: String) {
         let urlSigs = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-        description = "Downloading th signed SHA256SUMS file from \(urlSigs)"
-        let task = URLSession.shared.downloadTask(with: URL(string: urlSigs)!) { localURL, urlResponse, error in
-            isAnimating = false
-            if let localURL = localURL {
-                if let data = try? Data(contentsOf: localURL) {
-                    let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS.asc")
-                    guard ((try? data.write(to: filePath)) != nil) else {
-                        return
-                    }
-                    let binaryName  = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-                    let macosURL = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-                    let shaURL = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
-                    let binaryPrefix = "bitcoin-\(processedVersion)"
-                    let shasumsSignedUrl = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
-                    installNow(binaryName: binaryName, version: processedVersion, prefix: binaryPrefix)
-                    startCheckingForBitcoinInstall = true
-                }
-            }
+        description = "Downloading the signed SHA256SUMS file from \(urlSigs)"
+        downloadTask(url: URL(string: urlSigs)!) { data in
+            guard writeData(data: data, filePath: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS.asc") else { return }
+            let binaryName  = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
+            let binaryPrefix = "bitcoin-\(processedVersion)"
+            installNow(binaryName: binaryName, version: processedVersion, prefix: binaryPrefix)
+            startCheckingForBitcoinInstall = true
         }
-        task.resume()
     }
     
     private func install(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
@@ -215,55 +200,53 @@ struct TaggedReleasesView: View {
             macOSUrl = "\(clearnet)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
         }
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
-        InstallBitcoinCore.checkExistingConf { ready in
+        CreateFNDirConfigureCore.checkExistingConf { ready in
             if ready {
                 isAnimating = true
-                let task = URLSession.shared.downloadTask(with: URL(string: macOSUrl)!) { localURL, urlResponse, error in
-                    if let localURL = localURL {
-                        if let data = try? Data(contentsOf: localURL) {
-                            print(localURL)
-                            let filePath = URL(fileURLWithPath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
-                            guard ((try? data.write(to: filePath)) != nil) else {
-                                return
-                            }
-                            downloadSHA256SUMS(processedVersion: processedVersion, arch: arch)
-                        }
-                    }
+                downloadTask(url: URL(string: macOSUrl)!) { data in
+                    guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
+                    downloadSHA256SUMS(processedVersion: processedVersion, arch: arch)
                 }
-                task.resume()
             }
         }
     }
     
-        func installNow(binaryName: String, version: String, prefix: String) {
-            let env = ["BINARY_NAME":binaryName, "VERSION":version]
-            let ud = UserDefaults.standard
-            ud.set(prefix, forKey: "binaryPrefix")
-            ud.set(binaryName, forKey: "macosBinary")
-            ud.set(version, forKey: "version")
-            description = "Launching terminal to run a script to check the provided sha256sums against our own, verifying gpg sigs and unpack the tarball. "
-            isAnimating = false
-            runScript(script: .launchInstaller, env: env)
-        }
-        
-        func runScript(script: SCRIPT, env: [String:String]) {
-            let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-            taskQueue.async {
-                let resource = script.stringValue
-                guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-                let stdOut = Pipe()
-                let stdErr = Pipe()
-                let task = Process()
-                task.launchPath = path
-                task.environment = env
-                task.standardOutput = stdOut
-                task.standardError = stdErr
-                task.launch()
-                task.waitUntilExit()
+    private func downloadTask(url: URL, completion: @escaping (Data?) -> Void) {
+        let task = URLSession.shared.downloadTask(with: url) { localURL, urlResponse, error in
+            guard error == nil else {
+                showMessage(message: error!.localizedDescription)
+                completion(nil)
+                return
             }
+            guard let localURL = localURL else {
+                showMessage(message: "Downloading \(url) failed.")
+                completion(nil)
+                return
+            }
+            guard let data = try? Data(contentsOf: localURL) else {
+                showMessage(message: "No data in local url.")
+                completion(nil)
+                return
+            }
+            
+            completion((data))
         }
+        task.resume()
+    }
     
-    private func checkForBitcoinCore(script: SCRIPT, env: [String: String]) {
+    
+    func installNow(binaryName: String, version: String, prefix: String) {
+        let env = ["BINARY_NAME":binaryName, "VERSION":version]
+        let ud = UserDefaults.standard
+        ud.set(prefix, forKey: "binaryPrefix")
+        ud.set(binaryName, forKey: "macosBinary")
+        ud.set(version, forKey: "version")
+        description = "Launching terminal to run a script to check the provided sha256sums against our own, verifying gpg sigs and unpack the tarball. "
+        isAnimating = false
+        runScript(script: .launchInstaller, env: env)
+    }
+    
+    private func runScript(script: SCRIPT, env: [String: String]) {
         #if DEBUG
         print("run script: \(script.stringValue)")
         #endif

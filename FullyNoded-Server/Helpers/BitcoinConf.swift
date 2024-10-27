@@ -13,13 +13,10 @@ class BitcoinConf {
         let d = Defaults.shared
         let prune = d.prune
         let txindex = d.txindex
-        //let walletDisabled = d.walletdisabled
-        var rpcauth = "#rpcauth="
         let rpcuser = "FullyNoded-Server"
         
         guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return nil }
-        rpcauth = rpcAuthCreds.rpcAuth
-        //UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
+        let rpcauth = rpcAuthCreds.rpcAuth
         let data = Data(rpcAuthCreds.rpcPassword.utf8)
         
         guard let encryptedPass = Crypto.encrypt(data) else {
@@ -32,11 +29,9 @@ class BitcoinConf {
             
             UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
         }
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "test") ?? "")
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "signet") ?? "")
         
         return """
+        \(rpcauth)
         server=1
         prune=\(prune)
         txindex=\(txindex)
@@ -46,26 +41,6 @@ class BitcoinConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
-        #proxy=127.0.0.1:19150
-        #listen=1
-        #discover=1
-        \(rpcauth)
-        [main]
-        rpcport=8332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [test]
-        rpcport=18332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [regtest]
-        rpcport=18443
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [signet]
-        rpcport=38332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
         """
     }
     
