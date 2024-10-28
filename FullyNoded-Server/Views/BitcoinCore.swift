@@ -21,6 +21,7 @@ struct BitcoinCore: View {
     @State private var env: [String: String] = [:]
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
+    @State private var blockchainInfo: BlockchainInfo? = nil
     private let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
@@ -29,7 +30,12 @@ struct BitcoinCore: View {
         HStack() {
             Image(systemName: "server.rack")
                 .padding(.leading)
-            Text("Bitcoin Core Server")
+            if let version = env["VERSION"] {
+                Text("Bitcoin Core Server v\(version)")
+            } else {
+                Text("Bitcoin Core Server")
+            }
+            
             Spacer()
             Button {
                 isBitcoinCoreRunning()
@@ -37,6 +43,9 @@ struct BitcoinCore: View {
                 Image(systemName: "arrow.clockwise")
             }
             .padding([.trailing])
+            
+            
+            
         }
         .padding([.top])
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -82,7 +91,12 @@ struct BitcoinCore: View {
                 } label: {
                     Text("Stop")
                 }
+                
+                if let blockchainInfo = blockchainInfo {
+                    
+                }
             }
+            
             EmptyView()
                 .onReceive(timerForBitcoinStatus) { _ in
                     isBitcoinCoreRunning()
@@ -90,6 +104,36 @@ struct BitcoinCore: View {
         }
         .padding([.leading, .bottom])
         .frame(maxWidth: .infinity, alignment: .leading)
+        
+        if let blockchainInfo = blockchainInfo {
+            if blockchainInfo.progressString == "Fully verified" {
+                Label {
+                    Text(blockchainInfo.progressString)
+                } icon: {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(.green)
+                }
+                .padding([.leading, .bottom])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Label {
+                    Text(blockchainInfo.progressString)
+                } icon: {
+                    Image(systemName: "xmark.seal")
+                        .foregroundStyle(.orange)
+                }
+                .padding([.leading, .bottom])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Label {
+                Text("Blockheight: " + "\(blockchainInfo.blockheight)")
+            } icon: {
+                Image(systemName: "square.stack.3d.up")
+            }
+            .padding([.leading, .bottom])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+            
         
         Label("Network", systemImage: "network")
             .padding(.leading)
@@ -193,19 +237,32 @@ struct BitcoinCore: View {
     }
     
     private func conf(stringPath: String) -> String? {
-        guard fileExists(path: stringPath), let url = URL(string: stringPath), let conf = try? Data(contentsOf: url),
-                let string = String(data: conf, encoding: .utf8) else {
-            print("no conf")
+        guard fileExists(path: stringPath) else {
+            #if DEBUG
+            print("file does not exists at: \(stringPath)")
+            #endif
             return nil
         }
-        return string
+        
+        let url = URL(fileURLWithPath: stringPath)
+        if let conf = try? Data(contentsOf: url) {
+            guard let string = String(data: conf, encoding: .utf8) else {
+                showMessage(message: "Can not encode data as utf8 string.")
+                return nil
+            }
+            return string
+        } else if let conf = try? String(contentsOf: url) {
+            return conf
+        } else {
+            showMessage(message: "No contents found.")
+            return nil
+        }
     }
     
     private func updateJMConf(key: String, value: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard let conf = conf(stringPath: jmConfPath) else { return }
         let arr = conf.split(separator: "\n")
-        guard arr.count > 0  else { return }
         for item in arr {
             if item.hasPrefix("\(key) =") {
                 let newConf = conf.replacingOccurrences(of: item, with: key + " = " + value)
@@ -218,35 +275,65 @@ struct BitcoinCore: View {
         let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
         guard let conf = conf(stringPath: lightningConfPath) else { return }
         let arr = conf.split(separator: "\n")
-        guard arr.count > 0  else { return }
         for item in arr {
-            if item.hasPrefix("bitcoin-rpcpassword") {
-                let existingArr = item.split(separator: "=")
-                if existingArr.count == 2 {
-                    let existingPass = existingArr[1]
-                    let newConf = conf.replacingOccurrences(of: existingPass, with: rpcpass)
-                    try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-                }
+            if item.hasPrefix("bitcoin-rpcpassword=") {
+                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
+                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
             }
         }
     }
     
     private func refreshRPCAuth() {
-        guard let creds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else { return }
-        guard let dataDir = env["DATADIR"] else { return }
+        // First remove all "FullyNoded-Server" users from the bitcoin.conf
+        guard let newCreds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else {
+            showMessage(message: "Unable to create rpc creds.")
+            return
+        }
+        
+        let dataDir = Defaults.shared.dataDir
+        
         let bitcoinConfPath = dataDir + "/bitcoin.conf"
-        guard let conf = conf(stringPath: bitcoinConfPath) else { return }
+        
+        guard let conf = conf(stringPath: bitcoinConfPath) else {
+            return
+        }
+        
+        var removeFullyNodedUser = conf
+        let confArr = conf.split(separator: "\n")
+        
+        for item in confArr {
+            if item.hasPrefix("rpcauth=FullyNoded-Server") {
+                removeFullyNodedUser = removeFullyNodedUser.replacingOccurrences(of: item, with: "")
+            }
+        }
+        
+        removeFullyNodedUser = removeFullyNodedUser.replacingOccurrences(of: "^\\s*", with: "", options: .regularExpression)
+        
         let newConf = """
-            \(creds.rpcAuth)
-            \(conf)
+            \(newCreds.rpcAuth)
+            \(removeFullyNodedUser)
             """
-        try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)
-        let passData = Data(creds.rpcPassword.utf8)
-        updateJMConf(key: "rpc_password", value: creds.rpcPassword)
-        updateCLNConfig(rpcpass: creds.rpcPassword)
-        guard let encryptedPass = Crypto.encrypt(passData) else { return }
+        
+        guard ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)) != nil) else {
+            showMessage(message: "Can not write the new conf.")
+            return
+        }
+        
+        let passData = Data(newCreds.rpcPassword.utf8)
+        
+        updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
+        updateCLNConfig(rpcpass: newCreds.rpcPassword)
+        
+        guard let encryptedPass = Crypto.encrypt(passData) else {
+            showMessage(message: "Can't encrypt rpcpass data.")
+            return
+        }
+        
         DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
-            guard updated else { return }
+            guard updated else {
+                showMessage(message: "BitcoinRPCCreds update failed")
+                return
+            }
             runScript(script: .killBitcoind)
         }
     }
@@ -268,7 +355,7 @@ struct BitcoinCore: View {
                 "BINARY_NAME": envValues.binaryName,
                 "VERSION": envValues.version,
                 "PREFIX": envValues.prefix,
-                "DATADIR": envValues.dataDir,
+                "DATADIR": Defaults.shared.dataDir,
                 "CHAIN": envValues.chain
             ]
             isBitcoinCoreRunning()
@@ -400,7 +487,7 @@ struct BitcoinCore: View {
                         if network == "main" {
                             network = "bitcoin"
                         }
-                        let newConf = string.replacingOccurrences(of: existingNetwork, with: network)
+                        let newConf = string.replacingOccurrences(of: item, with: "network=" + network)
                         try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
                     }
                 }
@@ -452,24 +539,31 @@ struct BitcoinCore: View {
     
     
     private func showBitcoinLog() {
-        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-        var path:URL?
+        let chain = Defaults.shared.chain
+        var path: URL?
+        
+        print(Defaults.shared.dataDir)
         
         switch chain {
         case "main":
-            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/debug.log")
+            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/debug.log")
         case "test":
-            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/testnet3/debug.log")
+            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/testnet3/debug.log")
         case "regtest":
-            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/regtest/debug.log")
+            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/regtest/debug.log")
         case "signet":
-            path = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Application Support/Bitcoin/signet/debug.log")
+            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/signet/debug.log")
         default:
             break
         }
         
-        guard let path = path, let log = try? String(contentsOf: path, encoding: .utf8) else {
-            print("can not get \(chain) debug.log")
+        guard let path = path else {
+            print("can not get path")
+            return
+        }
+        
+        guard let log = try? String(contentsOf: path, encoding: .utf8) else {
+            print("can't get log, path: \(path)")
             return
         }
         
@@ -482,9 +576,9 @@ struct BitcoinCore: View {
                 if lastLogItem.contains("Shutdown: done") {
                     isRunning = false
                 }
-                if lastLogItem.contains("ThreadRPCServer incorrect password") {
-                    showMessage(message: lastLogItem)
-                }
+//                if lastLogItem.contains("ThreadRPCServer incorrect password") {
+//                    showMessage(message: lastLogItem)
+//                }
             }
         }
     }
@@ -493,7 +587,7 @@ struct BitcoinCore: View {
         isAnimating = true
         BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
             isAnimating = false
-            guard error == nil else {
+            guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {
                     if !error.contains("Could not connect to the server") {
                         isRunning = true
@@ -517,6 +611,9 @@ struct BitcoinCore: View {
                 }
                 return
             }
+            
+            let blockchainInfo = BlockchainInfo(result)
+            self.blockchainInfo = blockchainInfo
             isRunning = true
             showBitcoinLog()
         }

@@ -98,14 +98,14 @@ class DataManager: NSObject {
         
         guard let results = try? context.fetch(fetchRequest), results.count > 0 else { completion(false); return }
         
-        for data in results {
-            data.setValue(newValue, forKey: keyToUpdate)
+        //for data in results[0] {
+            results[0].setValue(newValue, forKey: keyToUpdate)
             do {
                 try context.save()
                 completion(true)
             } catch {
                 completion(false)
             }
-        }
+        //}
     }
 }

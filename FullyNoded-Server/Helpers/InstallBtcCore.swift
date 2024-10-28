@@ -7,122 +7,60 @@
 
 import Foundation
 
-class InstallBitcoinCore {
-    class func checkExistingConf(completion: @escaping (Bool) -> Void) {
-        var proxyExists = false
-        var onlynetExists = false
-        var discoverExists = false
-        var listenExists = false
-        //var externalIpExists = false
-        var fullynodedServerUserExists = false
-        
+class CreateFNDirConfigureCore {
+    
+    class func checkForExistingConf(completion: @escaping (Bool) -> Void) {
         BitcoinConf.getBitcoinConf { (conf, error) in
-            guard let conf = conf, !error, conf.count > 0 else {
-                if let defaultConf = BitcoinConf.bitcoinConf() {
-                    self.setBitcoinConf(defaultConf, completion: completion)
-                } else {
-//                    simpleAlert(message: "Something went wrong...", info: "Unable to create the default bitcoin.conf, please let us know about this bug.", buttonLabel: "OK")
-                }
-                return
-            }
-            
-            var rpcauth = "#rpcauth="
-            let rpcuser = "FullyNoded-Server"
-            guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return }
-            rpcauth = rpcAuthCreds.rpcAuth
-            //UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
-            let data = Data(rpcAuthCreds.rpcPassword.utf8)
-            
-            guard let encryptedPass = Crypto.encrypt(data) else {
-                print("unable to encrypt rpc pass.")
-                return
-            }
-            
-            DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
-                guard saved else { return }
-                
-                UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
-                
-                var updatedConf = conf
-                
-                for (i, setting) in conf.enumerated() {
-                    if setting.contains("=") {
-                        let arr = setting.components(separatedBy: "=")
-                        let k = arr[0]
-                        let existingValue = arr[1]
-                        
-                        switch k {
-                        case "rpcauth":
-                            if existingValue.hasPrefix("\(rpcuser):") {
-                                fullynodedServerUserExists = true
-                                updatedConf[i] = rpcauth
-                            }
-                            
-    //                    case "rpcwhitelist":
-    //                        if existingValue.hasPrefix("\(rpcuser):") {
-    //                            fullynodedServerWhitelistExists = true
-    //                        }
-                            
-                        case "onlynet", "#onlynet":
-                            onlynetExists = true
-                            
-//                        case "externalip":
-//                            externalIpExists = true
-                            
-                        case "discover", "#discover":
-                            discoverExists = true
-                            
-                        case "blocksdir":
-                            UserDefaults.standard.setValue(existingValue, forKey: "blockDir")
-                            
-                        case "testnet", "regtest", "signet":
-                            if existingValue != "" {
-    //                            simpleAlert(message: "Incompatible bitcoin.conf setting!", info: "GordianServer allows you to run multiple networks simultaneously, we do this by specifying which chain we want to launch as a command line argument. Specifying a network in your bitcoin.conf is not compatible with this approach, please remove the line in your conf file which specifies a network.", buttonLabel: "OK")
-                            }
-                            
-                        case "proxy", "#proxy":
-                            proxyExists = true
-                            
-                        case "listen", "#listen":
-                            listenExists = true
-                            
-                        default:
-                            break
-                        }
+            if let existingBitcoinConf = conf {
+                for item in existingBitcoinConf {
+                    let arr = item.split(separator: "=")
+                    let value = arr[1]
+                    if item.hasPrefix("prune=") {
+                        UserDefaults.standard.setValue(Int(value), forKey: "prune")
+                    }
+                    if item.hasPrefix("txindex=") {
+                        UserDefaults.standard.setValue(Int(value), forKey: "txindex")
                     }
                 }
+                let rpcuser = "FullyNoded-Server"
+                guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else {
+                    completion(false)
+                    print("unable to generate rpc auth creds.")
+                    return
+                }
+                let rpcauth = rpcAuthCreds.rpcAuth
+                let data = Data(rpcAuthCreds.rpcPassword.utf8)
                 
-                var bitcoinConf = updatedConf.joined(separator: "\n")
-                
-                if !fullynodedServerUserExists {
-                    bitcoinConf = rpcauth + "\n" + bitcoinConf
+                guard let encryptedPass = Crypto.encrypt(data) else {
+                    #if DEBUG
+                    print("Unable to encrypt rpc pass.")
+                    #endif
+                    completion(false)
+                    return
+                }
+                updateRpcCreds(encryptedPass: encryptedPass, rpcUser: rpcuser) { updated in
+                    guard updated else {
+                        #if DEBUG
+                        print("Unable to save new password.")
+                        #endif
+                        completion(false)
+                        return
+                    }
+                    
+                    var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
+                    updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
+                    setBitcoinConf(updatedBitcoinConf, completion: completion)
                 }
                 
-    //            if !fullynodedServerWhitelistExists {
-    //                bitcoinConf = "rpcwhitelist=\(rpcuser):\(rpcWhiteList)\n" + bitcoinConf
-    //            }
-                
-                if !proxyExists {
-                    bitcoinConf = "proxy=127.0.0.1:19050\n" + bitcoinConf
+            } else {
+                if let defaultConf = BitcoinConf.newBitcoinConf() {
+                    self.setBitcoinConf(defaultConf, completion: completion)
+                } else {
+                    #if DEBUG
+                    print("Error fetching bitcoin.conf: \(error).")
+                    #endif
+                    completion(false)
                 }
-                
-                if !listenExists {
-                    bitcoinConf = "listen=1\n" + bitcoinConf
-                }
-                
-                if !discoverExists {
-                    bitcoinConf = "discover=1\n" + bitcoinConf
-                }
-                
-                if !onlynetExists {
-                    bitcoinConf = "#onlynet=onion\n" + bitcoinConf
-                }
-                
-//                if !externalIpExists {
-//                    bitcoinConf = "externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")\n" + bitcoinConf
-//                }
-                
-                setBitcoinConf(bitcoinConf, completion: completion)
             }
         }
     }
@@ -141,25 +79,14 @@ class InstallBitcoinCore {
     
     class func writeFile(_ path: String, _ fileContents: String) -> Bool {
         let filePath = URL(fileURLWithPath: path)
-        
-        guard let file = fileContents.data(using: .utf8) else {
-            //simpleAlert(message: "There was an issue...", info: "Unable to convert the bitcoin.conf to data.", buttonLabel: "OK")
-            return false
-        }
-        
-        do {
-            try file.write(to: filePath)
-            return true
-        } catch {
-            return false
-        }
+        guard let file = fileContents.data(using: .utf8) else { return false }
+        return ((try? file.write(to: filePath)) != nil)
     }
     
     class func setBitcoinConf(_ bitcoinConf: String, completion: @escaping (Bool) -> Void) {
         if BitcoinConf.setBitcoinConf(bitcoinConf) {
             setFullyNodedDirectory(completion: completion)
         } else {
-            //simpleAlert(message: "There was an issue...", info: "Unable to create the bitcoin.conf, please let us know about this bug.", buttonLabel: "OK")
             completion((false))
         }
     }
@@ -171,7 +98,6 @@ class InstallBitcoinCore {
             createBitcoinCoreDirectory(completion: completion)
         } else {
             completion((false))
-            //simpleAlert(message: "There was an issue...", info: "Unable to create the fullynoded.log, please let us know about this bug.", buttonLabel: "OK")
         }
     }
     
@@ -183,12 +109,24 @@ class InstallBitcoinCore {
                 try fileManager.removeItem(atPath: path)
             }
             createDirectory(path, completion: completion)
-            //getURLs()
             completion((true))
             
         } catch {
-            //simpleAlert(message: "Something went wrong...", info: "When checking for the \(path) folder we got an error: \(error.localizedDescription)", buttonLabel: "OK")
             completion((false))
+        }
+    }
+    
+    class func updateRpcCreds(encryptedPass: Data, rpcUser: String, completion: @escaping (Bool) -> Void) {
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
+            if let _ = existingCreds {
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                    completion(updated)
+                }
+            } else {
+                DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                    completion(saved)
+                }
+            }
         }
     }
 }

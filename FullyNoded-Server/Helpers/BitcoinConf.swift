@@ -9,34 +9,30 @@ import Foundation
 
 class BitcoinConf {
     
-    static func bitcoinConf() -> String? {
+    static func newBitcoinConf() -> String? {
         let d = Defaults.shared
         let prune = d.prune
         let txindex = d.txindex
-        //let walletDisabled = d.walletdisabled
-        var rpcauth = "#rpcauth="
         let rpcuser = "FullyNoded-Server"
-        
         guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return nil }
-        rpcauth = rpcAuthCreds.rpcAuth
-        //UserDefaults.standard.setValue(rpcAuthCreds.rpcPassword, forKey: "rpcpassword")
+        let rpcauth = rpcAuthCreds.rpcAuth
         let data = Data(rpcAuthCreds.rpcPassword.utf8)
-        
-        guard let encryptedPass = Crypto.encrypt(data) else {
-            print("unable to encrypt rpc pass.")
-            return nil
+        guard let encryptedPass = Crypto.encrypt(data) else { return nil }
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
+            if let _ = existingCreds {
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                    guard updated else { return }
+                    UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+                }
+            } else {
+                DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                    guard saved else { return }
+                    UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+                }
+            }
         }
-        
-        DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
-            guard saved else { return }
-            
-            UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
-        }
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "main") ?? "")
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "test") ?? "")
-        //externalip=\(TorClient.sharedInstance.p2pHostname(chain: "signet") ?? "")
-        
         return """
+        \(rpcauth)
         server=1
         prune=\(prune)
         txindex=\(txindex)
@@ -46,26 +42,6 @@ class BitcoinConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
-        #proxy=127.0.0.1:19150
-        #listen=1
-        #discover=1
-        \(rpcauth)
-        [main]
-        rpcport=8332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [test]
-        rpcport=18332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [regtest]
-        rpcport=18443
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
-        [signet]
-        rpcport=38332
-        rpcallowip=127.0.0.1
-        rpcbind=127.0.0.1
         """
     }
     
@@ -76,30 +52,20 @@ class BitcoinConf {
     
     static func getBitcoinConf(completion: @escaping ((conf: [String]?, error: Bool)) -> Void) {
         let path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/bitcoin.conf")
-        
         guard let bitcoinConf = try? String(contentsOf: path, encoding: .utf8) else {
             completion((nil, false))
             return
         }
-        
         let conf = bitcoinConf.components(separatedBy: "\n")
         completion((conf, false))
     }
     
     class func writeFile(_ path: String, _ fileContents: String) -> Bool {
         let filePath = URL(fileURLWithPath: path)
-        
         guard let file = fileContents.data(using: .utf8) else {
-            //simpleAlert(message: "There was an issue...", info: "Unable to convert the bitcoin.conf to data.", buttonLabel: "OK")
             return false
         }
-        
-        do {
-            try file.write(to: filePath)
-            return true
-        } catch {
-            return false
-        }
+        return ((try? file.write(to: filePath)) != nil)
     }
     
     class func setBitcoinConf(_ bitcoinConf: String) -> Bool {
@@ -111,12 +77,8 @@ class BitcoinConf {
     class func createDirectory(_ path: String) {
         let directory = URL(fileURLWithPath: path, isDirectory: true).path
         
-        do {
-            try FileManager.default.createDirectory(atPath: directory,
-                                                    withIntermediateDirectories: true,
-                                                    attributes: [FileAttributeKey.posixPermissions: 0o700])
-        } catch {
-            print("\(path) previously created.")
-        }
+        try? FileManager.default.createDirectory(atPath: directory,
+                                                withIntermediateDirectories: true,
+                                                attributes: [FileAttributeKey.posixPermissions: 0o700])
     }
 }

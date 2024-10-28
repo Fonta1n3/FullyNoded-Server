@@ -17,10 +17,14 @@ function unpackTarball() {
     mkdir joinmarket-$TAG_NAME && tar -zxvf joinmarket-$TAG_NAME.tar.gz -C joinmarket-$TAG_NAME --strip-components 1
     cd joinmarket-$TAG_NAME
     ./install.sh --without-qt --disable-secp-check
-    source jmvenv/bin/activate
-    cd scripts
-    python wallet-tool.py generate
-    echo "Install complete."
+    # Only run wallet-tool.py if no joinmarket.cfg exists.
+    if [ ! -f "/Users/$(whoami)/Library/Application Support/joinmarket/joinmarket.cfg" ]; then
+        source jmvenv/bin/activate
+        cd scripts
+        python wallet-tool.py generate
+        deactivate
+    fi
+    echo "Join Market Install complete."
     exit 1
 }
 
