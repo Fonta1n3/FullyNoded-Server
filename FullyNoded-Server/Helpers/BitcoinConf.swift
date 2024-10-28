@@ -9,27 +9,28 @@ import Foundation
 
 class BitcoinConf {
     
-    static func bitcoinConf() -> String? {
+    static func newBitcoinConf() -> String? {
         let d = Defaults.shared
         let prune = d.prune
         let txindex = d.txindex
         let rpcuser = "FullyNoded-Server"
-        
         guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else { return nil }
         let rpcauth = rpcAuthCreds.rpcAuth
         let data = Data(rpcAuthCreds.rpcPassword.utf8)
-        
-        guard let encryptedPass = Crypto.encrypt(data) else {
-            print("unable to encrypt rpc pass.")
-            return nil
+        guard let encryptedPass = Crypto.encrypt(data) else { return nil }
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
+            if let _ = existingCreds {
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                    guard updated else { return }
+                    UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+                }
+            } else {
+                DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                    guard saved else { return }
+                    UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
+                }
+            }
         }
-        
-        DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
-            guard saved else { return }
-            
-            UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
-        }
-        
         return """
         \(rpcauth)
         server=1
@@ -51,30 +52,20 @@ class BitcoinConf {
     
     static func getBitcoinConf(completion: @escaping ((conf: [String]?, error: Bool)) -> Void) {
         let path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/bitcoin.conf")
-        
         guard let bitcoinConf = try? String(contentsOf: path, encoding: .utf8) else {
             completion((nil, false))
             return
         }
-        
         let conf = bitcoinConf.components(separatedBy: "\n")
         completion((conf, false))
     }
     
     class func writeFile(_ path: String, _ fileContents: String) -> Bool {
         let filePath = URL(fileURLWithPath: path)
-        
         guard let file = fileContents.data(using: .utf8) else {
-            //simpleAlert(message: "There was an issue...", info: "Unable to convert the bitcoin.conf to data.", buttonLabel: "OK")
             return false
         }
-        
-        do {
-            try file.write(to: filePath)
-            return true
-        } catch {
-            return false
-        }
+        return ((try? file.write(to: filePath)) != nil)
     }
     
     class func setBitcoinConf(_ bitcoinConf: String) -> Bool {
@@ -86,12 +77,8 @@ class BitcoinConf {
     class func createDirectory(_ path: String) {
         let directory = URL(fileURLWithPath: path, isDirectory: true).path
         
-        do {
-            try FileManager.default.createDirectory(atPath: directory,
-                                                    withIntermediateDirectories: true,
-                                                    attributes: [FileAttributeKey.posixPermissions: 0o700])
-        } catch {
-            print("\(path) previously created.")
-        }
+        try? FileManager.default.createDirectory(atPath: directory,
+                                                withIntermediateDirectories: true,
+                                                attributes: [FileAttributeKey.posixPermissions: 0o700])
     }
 }

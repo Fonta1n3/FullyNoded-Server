@@ -20,6 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     
+    @State private var torProgress = 0.0
     @State private var showError = false
     @State private var message = ""
     @State private var services: [Service] = []
@@ -29,7 +30,6 @@ struct ContentView: View {
     @State private var xcodeSelectInstalled = false
     @State private var promptToInstallXcode = false
     @State private var promptToInstallBitcoin = false
-    @State private var promptToInstallJoinMarket = false
     @State private var startCheckingForBitcoinInstall = false
     @State private var startCheckingForLightningInstall = false
     @State private var bitcoinInstallSuccess = false
@@ -53,8 +53,8 @@ struct ContentView: View {
         "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
         "version": "26.2",
         "prefix": "bitcoin-26.2",
-        "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
-        "chain": "signet"
+        "dataDir": Defaults.shared.dataDir,
+        "chain": Defaults.shared.chain
     ])
     
     @State private var env: [String: String] = [:]
@@ -66,13 +66,78 @@ struct ContentView: View {
                 ForEach(services) { service in
                     NavigationLink {
                         if service.name == "Bitcoin Core" {
-                            BitcoinCore()
+                            if bitcoinCoreInstalled {
+                                BitcoinCore()
+                            } else {
+                                Home(
+                                    showBitcoinCoreInstallButton: true,
+                                    env: env,
+                                    showJoinMarketInstallButton: false,
+                                    jmTaggedReleases: []
+                                )
+                            }
                         }
                         if service.name == "Core Lightning" {
-                            CoreLightning()
+                            if lightningInstalled {
+                                CoreLightning()
+                            } else {
+                                if bitcoinCoreInstalled {
+                                    Button("Install Core Lightning") {
+                                        installLightning()
+                                    }
+                                } else {
+                                    Text("First install Bitcoin Core.")
+                                }
+                                Home(
+                                    showBitcoinCoreInstallButton: false,
+                                    env: [:],
+                                    showJoinMarketInstallButton: false,
+                                    jmTaggedReleases: []
+                                )
+                            }
+                            
                         }
                         if service.name == "Join Market" {
-                            JoinMarket()
+                            if joinMarketInstalled {
+                                JoinMarket()
+                            } else {
+                                if !bitcoinCoreInstalled {
+                                    Text("First install Bitcoin Core.")
+                                }
+                                Home(
+                                    showBitcoinCoreInstallButton: false,
+                                    env: env,
+                                    showJoinMarketInstallButton: true,
+                                    jmTaggedReleases: jmTaggedReleases
+                                )
+                            }
+                        }
+                        if service.name == "Tor" {
+                            HStack() {
+                                if torProgress < 100.0 {
+                                    ProgressView("Tor bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
+                                        .padding([.leading, .trailing])
+                                        .frame(alignment: .topLeading)
+                                } else {
+                                    if torRunning {
+                                        Image(systemName: "circle.fill")
+                                            .foregroundStyle(.green)
+                                            .padding([.leading])
+                                    } else {
+                                        Image(systemName: "circle.fill")
+                                            .foregroundStyle(.orange)
+                                            .padding([.leading])
+                                    }
+                                }
+                            }
+                            
+                            
+                            Home(
+                                showBitcoinCoreInstallButton: false,
+                                env: [:],
+                                showJoinMarketInstallButton: false,
+                                jmTaggedReleases: []
+                            )
                         }
                     } label: {
                         HStack() {
@@ -92,6 +157,7 @@ struct ContentView: View {
                                                 if FileManager.default.fileExists(atPath: tempPath) {
                                                     bitcoinCoreInstalled = true
                                                     self.timerForBitcoinInstall.upstream.connect().cancel()
+                                                    getJmRelease()
                                                 }
                                             }
                                             
@@ -137,13 +203,23 @@ struct ContentView: View {
                             }
                             
                             if service.name == "Tor" {
-                                if torRunning {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.green)
+                                if torProgress < 100.0 {
+                                    ProgressView()
+                                        //.padding(.leading)
+                                    #if os(macOS)
+                                        .scaleEffect(0.5)
+                                    #endif
                                 } else {
-                                    Image(systemName: "xmark")
-                                        .foregroundStyle(.gray)
+                                    if torRunning {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.gray)
+                                    }
                                 }
+                                
+                                
                                 
                                 EmptyView()
                                     .onReceive(timerForTor) { _ in
@@ -155,14 +231,20 @@ struct ContentView: View {
                     }
                 }
             }
-            Home(
-                showBitcoinCoreInstallButton: promptToInstallBitcoin,
-                env: env,
-                showJoinMarketInstallButton: !joinMarketInstalled,
-                jmTaggedReleases: jmTaggedReleases
-            )
+//            Home(
+//                showBitcoinCoreInstallButton: promptToInstallBitcoin,
+//                env: env,
+//                showJoinMarketInstallButton: !joinMarketInstalled,
+//                jmTaggedReleases: jmTaggedReleases
+//            )
         }
         .onAppear(perform: {
+            if TorClient.sharedInstance.state == .connected {
+                torProgress = 100.0
+            }
+            TorClient.sharedInstance.showProgress = { progress in
+                torProgress = Double(progress)
+            }
             getSavedValues()
             
         })
@@ -221,11 +303,12 @@ struct ContentView: View {
             var lightningEnv: [String: String] = [:]
             lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
             lightningEnv["RPC_PASSWORD"] = rpcPass
-            lightningEnv["DATA_DIR"] = bitcoinEnvValues.dataDir.replacingOccurrences(of: " ", with: "*")
+            lightningEnv["DATA_DIR"] = Defaults.shared.dataDir.replacingOccurrences(of: " ", with: "*")
             lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
             var network = "bitcoin"
-            if bitcoinEnvValues.chain != "main" {
-                 network = bitcoinEnvValues.chain
+            print("Defaults.shared.chain: \(Defaults.shared.chain)")
+            if Defaults.shared.chain != "main" {
+                 network = Defaults.shared.chain
             }
             lightningEnv["NETWORK"] = network
             
@@ -234,14 +317,17 @@ struct ContentView: View {
     }
     
     private func getSavedValues() {
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { creds in
+            print("creds.count: \(creds?.count)")
+        }
         DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
             guard let bitcoinEnv = bitcoinEnv else {
                 let dict = [
                     "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
                     "version": "26.2",
                     "prefix": "bitcoin-26.2",
-                    "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
-                    "chain": "signet"
+                    "dataDir": Defaults.shared.dataDir,
+                    "chain": Defaults.shared.chain
                 ]
                 
                 DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
@@ -254,7 +340,7 @@ struct ContentView: View {
                         "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                         "VERSION": self.bitcoinEnvValues.version,
                         "PREFIX": self.bitcoinEnvValues.prefix,
-                        "DATADIR": self.bitcoinEnvValues.dataDir,
+                        "DATADIR": Defaults.shared.dataDir,
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
@@ -272,7 +358,7 @@ struct ContentView: View {
                 "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                 "VERSION": self.bitcoinEnvValues.version,
                 "PREFIX": self.bitcoinEnvValues.prefix,
-                "DATADIR": self.bitcoinEnvValues.dataDir,
+                "DATADIR": Defaults.shared.dataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
@@ -313,7 +399,6 @@ struct ContentView: View {
         LatestJoinMarketRelease.get { (releases, error) in
             if let releases = releases {
                 jmTaggedReleases = releases
-                promptToInstallJoinMarket = true
             }
         }
     }

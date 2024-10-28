@@ -16,6 +16,8 @@ struct TaggedReleasesView: View {
     @State private var isAnimating = false
     @State private var showError = false
     @State private var message = ""
+    @State private var dataDir = Defaults.shared.dataDir
+    @State private var txIndex = Defaults.shared.txindex
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
     
     let taggedReleases: TaggedReleases
@@ -37,6 +39,43 @@ struct TaggedReleasesView: View {
                 }
             }
             .padding([.top, .leading, .trailing])
+                        
+            HStack() {
+                Text("Data Directory:")
+                Label(dataDir, systemImage: "")
+                Button("Update") {
+                    chooseDataDir()
+                }
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("Do not update the data directory unless you want to save your Bitcoin Core data in a custom location like an external hard drive.")
+                .padding([.leading])
+                .foregroundStyle(.secondary)
+            
+            HStack() {
+                if txIndex == 0 {
+                    Label("Pruned node", systemImage: "")
+                    
+                    
+                    Button("Do not prune") {
+                        UserDefaults.standard.setValue(1, forKey: "txindex")
+                        UserDefaults.standard.setValue(0, forKey: "prune")
+                        txIndex = 1
+                    }
+                } else {
+                    Label("Full node", systemImage: "")
+                    
+                    Button("Prune") {
+                        UserDefaults.standard.setValue(0, forKey: "txindex")
+                        UserDefaults.standard.setValue(1000, forKey: "prune")
+                        txIndex = 0
+                    }
+                }
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
                 let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
@@ -45,9 +84,9 @@ struct TaggedReleasesView: View {
                     .padding(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .onAppear {
-#if arch(x86_64)
-            arch = "x86_64"
-#endif
+                #if arch(x86_64)
+                        arch = "x86_64"
+                #endif
                     }
                 Text(verbatim: "Downloading from https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz")
                     .padding(.leading)
@@ -77,23 +116,20 @@ struct TaggedReleasesView: View {
                 .padding(.leading)
                 
                 Text(description)
+                    .padding([.leading, .trailing])
                 
                 if startCheckingForBitcoinInstall {
                     EmptyView()
                         .onReceive(timerForBitcoinInstall) { _ in
                             let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)/bin/bitcoind"
                             if FileManager.default.fileExists(atPath: tempPath) {
-                                //showMessage(message: "Bitcoin Core install completed ✓")
                                 bitcoinCoreInstallComplete = true
-                                
                                 // save new envValues! and update lightning config if it exists
                                 let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
                                 if FileManager.default.fileExists(atPath: lightningConfPath) {
                                     // get the config
-                                    
                                     guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
                                             let string = String(data: conf, encoding: .utf8) else {
-                                        print("no conf")
                                         return
                                     }
                                     let arr = string.split(separator: "\n")
@@ -107,7 +143,6 @@ struct TaggedReleasesView: View {
                                                 let newConf = string.replacingOccurrences(of: existingCliPath, with: newPath)
                                                 try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
                                             }
-                                            
                                         }
                                     }
                                 }
@@ -132,6 +167,29 @@ struct TaggedReleasesView: View {
             }
     }
     
+    private func chooseDataDir() {
+        let folderChooserPoint = CGPoint(x: 0, y: 0)
+                let folderChooserSize = CGSize(width: 500, height: 600)
+                let folderChooserRectangle = CGRect(origin: folderChooserPoint, size: folderChooserSize)
+                let folderPicker = NSOpenPanel(contentRect: folderChooserRectangle, styleMask: .utilityWindow, backing: .buffered, defer: true)
+                
+                folderPicker.canChooseDirectories = true
+                folderPicker.canChooseFiles = true
+                folderPicker.allowsMultipleSelection = true
+                folderPicker.canDownloadUbiquitousContents = true
+                folderPicker.canResolveUbiquitousConflicts = true
+                
+                folderPicker.begin { response in
+                    
+                    if response == .OK {
+                        let pickedFolder = folderPicker.urls[0].path().replacingOccurrences(of: "%20", with: " ")
+                        UserDefaults.standard.setValue("\(pickedFolder.dropLast())", forKey: "dataDir")
+                        self.dataDir = "\(pickedFolder.dropLast())"
+                        updateCLNConfig(key: "bitcoin-datadir=")
+                    }
+                }
+    }
+    
     private func saveEnvVaules(version: String) {
         DataManager.deleteAllData(entityName: "BitcoinEnv") { deleted in
             guard deleted else { return }
@@ -140,8 +198,8 @@ struct TaggedReleasesView: View {
                 "binaryName": "bitcoin-\(version)-arm64-apple-darwin.tar.gz",
                 "version": version,
                 "prefix": "bitcoin-\(version)",
-                "dataDir": "/Users/\(NSUserName())/Library/Application Support/Bitcoin",
-                "chain": UserDefaults.standard.string(forKey: "chain") ?? "signet"
+                "dataDir": Defaults.shared.dataDir,
+                "chain": Defaults.shared.chain
             ]
             
             DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
@@ -200,8 +258,8 @@ struct TaggedReleasesView: View {
             macOSUrl = "\(clearnet)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
         }
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
-        CreateFNDirConfigureCore.checkExistingConf { ready in
-            if ready {
+        CreateFNDirConfigureCore.checkForExistingConf { startDownload in
+            if startDownload {
                 isAnimating = true
                 downloadTask(url: URL(string: macOSUrl)!) { data in
                     guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
@@ -228,12 +286,65 @@ struct TaggedReleasesView: View {
                 completion(nil)
                 return
             }
-            
             completion((data))
         }
         task.resume()
     }
     
+    private func fileExists(path: String) -> Bool {
+        return FileManager.default.fileExists(atPath: path)
+    }
+    
+    private func conf(stringPath: String) -> String? {
+        guard fileExists(path: stringPath) else {
+            #if DEBUG
+            print("file does not exists at: \(stringPath)")
+            #endif
+            return nil
+        }
+        
+        let url = URL(fileURLWithPath: stringPath)
+        if let conf = try? Data(contentsOf: url) {
+            guard let string = String(data: conf, encoding: .utf8) else {
+                showMessage(message: "Can not encode data as utf8 string.")
+                return nil
+            }
+            return string
+        } else if let conf = try? String(contentsOf: url) {
+            return conf
+        } else {
+            showMessage(message: "No contents found.")
+            return nil
+        }
+    }
+    
+    private func updateCLNConfig(key: String) {
+        // key = "bitcoin-datadir="
+        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+        guard let conf = conf(stringPath: lightningConfPath) else { return }
+        let arr = conf.split(separator: "\n")
+        for item in arr {
+            if item.hasPrefix(key) {
+                if key.hasPrefix("bitcoin-datadir") {
+                    writeConf(conf: conf, key: key, value: Defaults.shared.dataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
+                } else if key.hasPrefix("bitcoin-rpcpassword") {
+                    DataManager.retrieve(entityName: "BitcoinRPCCreds") { creds in
+                        guard let creds = creds else { return }
+                        guard let encryptedPass = creds["password"] as? Data else { return }
+                        guard let decryptedPass = Crypto.decrypt(encryptedPass) else { return }
+                        guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else { return }
+                        writeConf(conf: conf, key: key, value: rpcPass, lightningConfPath: lightningConfPath, itemToReplace: item)
+                    }
+                }
+                
+            }
+        }
+    }
+    
+    private func writeConf(conf: String, key: String, value: String, lightningConfPath: String, itemToReplace: Substring) {
+        let newConf = conf.replacingOccurrences(of: itemToReplace, with: key + value)
+        try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+    }
     
     func installNow(binaryName: String, version: String, prefix: String) {
         let env = ["BINARY_NAME":binaryName, "VERSION":version]
@@ -243,6 +354,7 @@ struct TaggedReleasesView: View {
         ud.set(version, forKey: "version")
         description = "Launching terminal to run a script to check the provided sha256sums against our own, verifying gpg sigs and unpack the tarball. "
         isAnimating = false
+        updateCLNConfig(key: "bitcoin-rpcpassword=")
         runScript(script: .launchInstaller, env: env)
     }
     

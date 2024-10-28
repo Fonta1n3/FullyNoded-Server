@@ -122,3 +122,21 @@ extension String {
         return self.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-")
     }
 }
+
+public extension BlockchainInfo {
+    var size: String {
+        return "\(self.size_on_disk/1000000000) gb"
+    }
+    
+    var progressString: String {
+        if self.verificationprogress > 0.9999 {
+            return "Fully verified"
+        } else {
+            return "\(Int(self.verificationprogress*100))% verified"
+        }
+    }
+    
+    var diffString: String {
+        return "Difficulty \(Int(self.difficulty / 1000000000000).withCommas) trillion"
+    }
+}

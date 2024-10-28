@@ -163,18 +163,29 @@ struct JoinMarketTaggedReleasesView: View {
     
     private func updateConf(key: String, value: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        if FileManager.default.fileExists(atPath: jmConfPath) {
-            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)),
-                  let string = String(data: conf, encoding: .utf8) else {
-                print("no jm conf")
-                return
-            }
-            let arr = string.split(separator: "\n")
-            guard arr.count > 0  else { return }
-            for item in arr {
-                if item.hasPrefix("\(key) =") {
-                    let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
-                    try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+        guard FileManager.default.fileExists(atPath: jmConfPath) else {
+            print("file does not exist: \(jmConfPath)")
+            return
+        }
+        
+        guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
+            print("no jm conf")
+            return
+        }
+        
+        guard let string = String(data: conf, encoding: .utf8) else {
+            print("cant get string")
+            return
+        }
+        
+        let arr = string.split(separator: "\n")
+        for item in arr {
+            if item.hasPrefix("\(key) =") {
+                let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
+                if (try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)) == nil {
+                    print("failed writing to jm config")
+                } else {
+                    print("wrote to joinmarket.cfg")
                 }
             }
         }

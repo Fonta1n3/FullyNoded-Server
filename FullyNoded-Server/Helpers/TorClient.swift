@@ -27,6 +27,9 @@ class TorClient: NSObject, URLSessionDelegate {
     public var state: TorState = .none
     public var cert:Data?
     
+    public var showProgress: (((Int)) -> Void)?
+    public var torConnected: (((Bool)) -> Void)?
+    
     static let sharedInstance = TorClient()
     private var config: TorConfiguration = TorConfiguration()
     private var thread: TorThread?
@@ -123,7 +126,7 @@ class TorClient: NSObject, URLSessionDelegate {
                                 if arguments != nil {
                                     if arguments!["PROGRESS"] != nil {
                                         let progress = Int(arguments!["PROGRESS"]!)!
-                                        print(progress)
+                                        self.showProgress?((progress))
                                         weakDelegate?.torConnProgress(progress)
                                         if progress >= 100 {
                                             self.controller?.removeObserver(progressObs)
