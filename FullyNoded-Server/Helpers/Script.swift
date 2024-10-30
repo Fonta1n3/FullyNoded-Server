@@ -8,6 +8,7 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case reindex
     case stopJm
     case launchJmStarter
     case startJm
@@ -43,6 +44,8 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .reindex:
+            return "Reindex"
         case .stopJm:
             return "StopJm"
         case .launchJmStarter:

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A0632AF2CD06B470059FAD4 /* Reindex.command */; };
 		0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E192CA4715400899F84 /* TorClient.swift */; };
 		0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E1C2CADC15400899F84 /* KillBitcoind.command */; };
 		0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E1E2CADC5CF00899F84 /* Torrc.swift */; };
@@ -78,6 +79,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0A0632AF2CD06B470059FAD4 /* Reindex.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Reindex.command; sourceTree = "<group>"; };
 		0A573E192CA4715400899F84 /* TorClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorClient.swift; sourceTree = "<group>"; };
 		0A573E1B2CA47BC900899F84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0A573E1C2CADC15400899F84 /* KillBitcoind.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = KillBitcoind.command; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 				0AD7BE202CC2B1F100428D02 /* StartJm.command */,
 				0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */,
 				0AD7BE242CC2BCEF00428D02 /* StopJm.command */,
+				0A0632AF2CD06B470059FAD4 /* Reindex.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -416,6 +419,7 @@
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
 				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,
+				0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */,
 				0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
 				0A573E312CB577D100899F84 /* GetRune.command in Resources */,

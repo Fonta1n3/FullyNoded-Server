@@ -22,6 +22,7 @@ struct BitcoinCore: View {
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
     @State private var blockchainInfo: BlockchainInfo? = nil
+    @State private var promptToReindex = false
     private let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
@@ -43,9 +44,6 @@ struct BitcoinCore: View {
                 Image(systemName: "arrow.clockwise")
             }
             .padding([.trailing])
-            
-            
-            
         }
         .padding([.top])
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -90,10 +88,6 @@ struct BitcoinCore: View {
                     stopBitcoinCore()
                 } label: {
                     Text("Stop")
-                }
-                
-                if let blockchainInfo = blockchainInfo {
-                    
                 }
             }
             
@@ -180,6 +174,19 @@ struct BitcoinCore: View {
             } label: {
                 Text("Refresh RPC Authentication")
             }
+            Button {
+                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+            } label: {
+                Text("Data")
+            }
+            if Defaults.shared.prune != 0 {
+                Button {
+                    promptToReindex = true
+                } label: {
+                    Text("Reindex")
+                }
+            }
+            
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -229,6 +236,16 @@ struct BitcoinCore: View {
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+        .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed?", isPresented: $promptToReindex) {
+            Button("Reindex now", role: .destructive) {
+                if !isRunning {
+                    isAnimating = true
+                    runScript(script: .reindex)
+                } else {
+                    showMessage(message: "Bitcoin Core must stopped before redindexing.")
+                }
+            }
         }
     }
     

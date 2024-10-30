@@ -18,6 +18,20 @@ class BitcoinConf {
         let rpcauth = rpcAuthCreds.rpcAuth
         let data = Data(rpcAuthCreds.rpcPassword.utf8)
         guard let encryptedPass = Crypto.encrypt(data) else { return nil }
+        saveCreds(rpcuser: rpcuser, encryptedPass: encryptedPass)
+        return """
+        \(rpcauth)
+        server=1
+        prune=\(prune)
+        txindex=\(txindex)
+        dbcache=\(optimumCache)
+        fallbackfee=0.00009
+        blocksdir=\(d.blocksDir)
+        deprecatedrpc=create_bdb
+        """
+    }
+    
+    static func saveCreds(rpcuser: String, encryptedPass: Data) {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
             if let _ = existingCreds {
                 DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
@@ -31,18 +45,6 @@ class BitcoinConf {
                 }
             }
         }
-        return """
-        \(rpcauth)
-        server=1
-        prune=\(prune)
-        txindex=\(txindex)
-        dbcache=\(optimumCache)
-        maxconnections=20
-        maxuploadtarget=500
-        fallbackfee=0.00009
-        blocksdir=\(d.blocksDir)
-        deprecatedrpc=create_bdb
-        """
     }
     
     static var optimumCache: Int {
