@@ -245,12 +245,17 @@ struct TaggedReleasesView: View {
     }
     
     private func install(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
-        let processedVersion = taggedRelease.tagName!.replacingOccurrences(of: "v", with: "")
+        guard let tagName = taggedRelease.tagName else {
+            showMessage(message: "No tagged name.")
+            return
+        }
+        let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
         var arch = "arm64"
         #if arch(x86_64)
         arch = "x86_64"
         #endif
         
+        // The onion for bitcoincore.org wasn't working for me... will try again. clearnet hardcoded for now.
         let onion = "http://6hasakffvppilxgehrswmffqurlcjjjhd76jgvaqmsg6ul25s7t3rzyd.onion"
         let clearnet = "https://bitcoincore.org"
         var macOSUrl = "\(onion)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"

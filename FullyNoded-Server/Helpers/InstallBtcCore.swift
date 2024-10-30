@@ -14,12 +14,13 @@ class CreateFNDirConfigureCore {
             if let existingBitcoinConf = conf {
                 for item in existingBitcoinConf {
                     let arr = item.split(separator: "=")
-                    let value = arr[1]
+                    guard arr.count > 1  else { return }
+                    guard let value = Int(arr[1]) else { return }
                     if item.hasPrefix("prune=") {
-                        UserDefaults.standard.setValue(Int(value), forKey: "prune")
+                        UserDefaults.standard.setValue(value, forKey: "prune")
                     }
                     if item.hasPrefix("txindex=") {
-                        UserDefaults.standard.setValue(Int(value), forKey: "txindex")
+                        UserDefaults.standard.setValue(value, forKey: "txindex")
                     }
                 }
                 let rpcuser = "FullyNoded-Server"

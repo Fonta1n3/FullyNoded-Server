@@ -35,15 +35,15 @@ class Defaults {
             if ud.object(forKey: "txindex") == nil {
                 ud.set(0, forKey: "txindex")
             }
-            if ud.object(forKey: "walletdisabled") == nil {
-                ud.set(0, forKey: "walletdisabled")
-            }
+//            if ud.object(forKey: "walletdisabled") == nil {
+//                ud.set(0, forKey: "walletdisabled")
+//            }
             if ud.object(forKey: "nodeLabel") == nil {
                 ud.set("StandUp Node", forKey: "nodeLabel")
             }
-            if ud.object(forKey: "autoStart") == nil {
-                ud.setValue(true, forKey: "autoStart")
-            }
+//            if ud.object(forKey: "autoStart") == nil {
+//                ud.setValue(true, forKey: "autoStart")
+//            }
             completion()
         }
         
@@ -65,14 +65,16 @@ class Defaults {
                         self.ud.setValue(existingValue, forKey: "blocksDir")
                         
                    case "prune":
-                        self.ud.set(Int(existingValue), forKey: "prune")
-                        if Int(existingValue) == 1 {
+                        guard let int = Int(existingValue) else { return }
+                        self.ud.set(int, forKey: "prune")
+                        if int == 1 {
                             self.ud.set(0, forKey: "txindex")
                         }
                         
                     case "txindex":
-                        self.ud.set(Int(existingValue), forKey: "txindex")
-                        if Int(existingValue) == 1 {
+                        guard let int = Int(existingValue) else { return }
+                        self.ud.set(int, forKey: "txindex")
+                        if int == 1 {
                             self.ud.set(0, forKey: "prune")
                         }
                         
@@ -81,20 +83,17 @@ class Defaults {
                     }
                 }
             }
-            
-            
-            
             setLocals()
         }
     }
     
-    var autoRefresh: Bool {
-        return ud.object(forKey: "autoRefresh") as? Bool ?? true
-    }
-    
-    var autoStart: Bool {
-        return ud.object(forKey: "autoStart") as? Bool ?? true
-    }
+//    var autoRefresh: Bool {
+//        return ud.object(forKey: "autoRefresh") as? Bool ?? true
+//    }
+//    
+//    var autoStart: Bool {
+//        return ud.object(forKey: "autoStart") as? Bool ?? true
+//    }
     
     var dataDir: String {
         return ud.object(forKey: "dataDir") as? String ?? "/Users/\(NSUserName())/Library/Application Support/Bitcoin"

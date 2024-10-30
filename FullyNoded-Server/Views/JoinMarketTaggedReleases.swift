@@ -33,7 +33,7 @@ struct JoinMarketTaggedReleasesView: View {
                 .onReceive(timerForJoinMarketInstall) { _ in
                     let jmwalletdPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName.replacingOccurrences(of: "v", with: ""))/scripts/jmwalletd.py"
                     let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-                    if FileManager.default.fileExists(atPath: jmwalletdPath) && FileManager.default.fileExists(atPath: jmConfigPath) {
+                    if fileExists(path: jmConfigPath), fileExists(path: jmwalletdPath) {
                         configureJm()
                     } else {
                         startCheckingForJoinMarketInstall = true
@@ -45,17 +45,12 @@ struct JoinMarketTaggedReleasesView: View {
             HStack() {
                 ProgressView()
                     .scaleEffect(0.5)
-                
                 Text("Installing and configuring Join Market \(tagName). (wait for the terminal script to complete)")
-                
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding([.leading, .top])
             
             Spacer()
-            
-            
-            
         } else {
             if !joinMarketInstallComplete {
                 Picker("Select a Join Market version to install:", selection: $taggedRelease) {
@@ -84,7 +79,7 @@ struct JoinMarketTaggedReleasesView: View {
                     Text(verbatim: taggedRelease.body ?? "")
                                         .padding([.leading, .bottom])
                                         .frame(maxWidth: .infinity, alignment: .leading)
-    //
+                    
                                     HStack() {
                                         let url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/blob/master/docs/release-notes/release-notes-\(tagName.replacingOccurrences(of: "v", with: "")).md"
                     
@@ -103,8 +98,6 @@ struct JoinMarketTaggedReleasesView: View {
                     .padding(.leading)
                     
                     Text(description)
-                    
-                    
                 }
             } else {
                 Text("Join Market installed ✓")
@@ -118,7 +111,6 @@ struct JoinMarketTaggedReleasesView: View {
                     Button("OK", role: .cancel) {}
                 }
         }
-        
     }
     
     
@@ -163,21 +155,15 @@ struct JoinMarketTaggedReleasesView: View {
     
     private func updateConf(key: String, value: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard FileManager.default.fileExists(atPath: jmConfPath) else {
-            print("file does not exist: \(jmConfPath)")
-            return
-        }
-        
+        guard fileExists(path: jmConfPath) else { return }
         guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
             print("no jm conf")
             return
         }
-        
         guard let string = String(data: conf, encoding: .utf8) else {
             print("cant get string")
             return
         }
-        
         let arr = string.split(separator: "\n")
         for item in arr {
             if item.hasPrefix("\(key) =") {
@@ -195,6 +181,10 @@ struct JoinMarketTaggedReleasesView: View {
         isAnimating = false
         showError = true
         self.message = message
+    }
+    
+    private func fileExists(path: String) -> Bool {
+        return FileManager.default.fileExists(atPath: path)
     }
     
     private func download(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
@@ -215,46 +205,27 @@ struct JoinMarketTaggedReleasesView: View {
             return
         }
         
-        let task = URLSession.shared.downloadTask(with: tarballUrl) { localURL, urlResponse, error in
-            guard error == nil else {
-                showMessage(message: error!.localizedDescription)
-                return
-            }
-            
-            guard let localURL = localURL else {
-                showMessage(message: "No local url.")
-                return
-            }
-            
-            guard let data = try? Data(contentsOf: localURL) else {
-                showMessage(message: "No data in local url.")
-                return
-            }
-            
+        downloadTask(url: tarballUrl) { data in
+            guard let data = data else { return }
             let dirPath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket")
-            if !FileManager.default.fileExists(atPath: dirPath.path()) {
+            if !fileExists(path: "/Users/\(NSUserName())/.fullynoded/JoinMarket") {
                 do {
                     try FileManager.default.createDirectory(atPath: dirPath.path(), withIntermediateDirectories: true, attributes: nil)
                 } catch {
                     showMessage(message: error.localizedDescription)
                 }
             }
-            
             let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz")
             guard ((try? data.write(to: filePath)) != nil) else {
                 showMessage(message: "Writing file failed.")
                 return
             }
-            
             guard let assetsURLCheck = taggedRelease.assetsURL, let assetsUrl = URL(string: assetsURLCheck), let author = taggedRelease.author, let authorName = author.login else {
                 showMessage(message: "No assets url.")
                 return
             }
-            
             downloadPublicKey(url: assetsUrl, tagName: tagName, author: authorName)
         }
-        
-        task.resume()
     }
     
     func downloadPublicKey(url: URL, tagName: String, author: String) {
@@ -265,30 +236,17 @@ struct JoinMarketTaggedReleasesView: View {
             pubkeyUrlRoot += "AdamGibson.asc"
         }
         guard let pubKeyUrl = URL(string: pubkeyUrlRoot) else { return }
-        let task = URLSession.shared.downloadTask(with: pubKeyUrl) { localURL, urlResponse, error in
-            guard error == nil else {
-                showMessage(message: error!.localizedDescription)
+        downloadTask(url: pubKeyUrl) { data in
+            guard let data = data else {
                 return
             }
-            guard let localURL = localURL else {
-                showMessage(message: "No local url.")
-                return
-            }
-            guard let data = try? Data(contentsOf: localURL) else {
-                showMessage(message: "No data in local url.")
-                return
-            }
-            
             let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/\(author).asc")
-            
             guard ((try? data.write(to: filePath)) != nil) else {
                 showMessage(message: "Writing file failed.")
                 return
             }
-            
             fetchAssets(url: url, tagName: tagName, author: author)
         }
-        task.resume()
     }
     
     func fetchAssets(url: URL, tagName: String, author: String) {
@@ -329,28 +287,45 @@ struct JoinMarketTaggedReleasesView: View {
         task.resume()
     }
     
-    
-    func downloadTarBallSig(url: URL, tagName: String, author: String) {
+    private func downloadTask(url: URL, completion: @escaping (Data?) -> Void) {
         var request = URLRequest(url: url)
         request.addValue("application/octet-stream", forHTTPHeaderField: "Accept")
         request.addValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        
         let task = URLSession.shared.downloadTask(with: request) { localURL, urlResponse, error in
-            if let localURL = localURL {
-                if let data = try? Data(contentsOf: localURL) {
-                    
-                    let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
-                    guard ((try? data.write(to: filePath)) != nil) else {
-                        showMessage(message: "Unable to write file: Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
-                        return
-                    }
-                    // Now we can run install script.
-                    runScript(script: .launchJMInstaller, env: ["TAG_NAME": tagName, "AUTHOR": author])
-                    UserDefaults.standard.setValue(tagName, forKey: "tagName")
-                }
+            guard error == nil else {
+                showMessage(message: error!.localizedDescription)
+                completion(nil)
+                return
             }
+            guard let localURL = localURL else {
+                showMessage(message: "Downloading \(url) failed.")
+                completion(nil)
+                return
+            }
+            guard let data = try? Data(contentsOf: localURL) else {
+                showMessage(message: "No data in local url.")
+                completion(nil)
+                return
+            }
+            completion((data))
         }
         task.resume()
+    }
+    
+    
+    func downloadTarBallSig(url: URL, tagName: String, author: String) {
+        downloadTask(url: url) { data in
+            guard let data = data else {
+                return
+            }
+            let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
+            guard ((try? data.write(to: filePath)) != nil) else {
+                showMessage(message: "Unable to write file: Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz.asc")
+                return
+            }
+            runScript(script: .launchJMInstaller, env: ["TAG_NAME": tagName, "AUTHOR": author])
+            UserDefaults.standard.setValue(tagName, forKey: "tagName")
+        }
     }
     
     func runScript(script: SCRIPT, env: [String: String]) {
@@ -369,6 +344,5 @@ struct JoinMarketTaggedReleasesView: View {
             task.waitUntilExit()
         }
     }
-    
 }
 
