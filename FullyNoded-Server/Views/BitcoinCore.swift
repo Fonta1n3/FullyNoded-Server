@@ -160,14 +160,16 @@ struct BitcoinCore: View {
             }
             .padding(.leading)
             Button {
-                openFile(file: "bitcoin.conf")
+                openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
             } label: {
                 Text("bitcoin.conf")
             }
-            Button {
-                openFile(file: "debug.log")
-            } label: {
-                Text("Log")
+            if let debugPath = debugLogPath() {
+                Button {
+                    openFile(file: debugPath)
+                } label: {
+                    Text("debug.log")
+                }
             }
             Button {
                 refreshRPCAuth()
@@ -364,7 +366,7 @@ struct BitcoinCore: View {
     }
     
     private func initialLoad() {
-        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
         DataManager.retrieve(entityName: "BitcoinEnv") { env in
             guard let env = env else { return }
             let envValues = BitcoinEnvValues(dictionary: env)
@@ -426,8 +428,7 @@ struct BitcoinCore: View {
     }
     
     private func openFile(file: String) {
-        let d = Defaults.shared.dataDir
-        let env = ["FILE": "\(d)/\(file)"]
+        let env = ["FILE": "\(file)"]
         openConf(script: .openFile, env: env, args: []) { _ in }
     }
     
@@ -442,6 +443,7 @@ struct BitcoinCore: View {
         UserDefaults.standard.setValue(port, forKey: "port")
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
         self.env["CHAIN"] = chain
+        self.blockchainInfo = nil
         DataManager.update(keyToUpdate: "chain", newValue: chain, entity: "BitcoinEnv") { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
@@ -556,28 +558,9 @@ struct BitcoinCore: View {
     
     
     private func showBitcoinLog() {
-        let chain = Defaults.shared.chain
-        var path: URL?
+        guard let debugPath = debugLogPath() else { return }
         
-        print(Defaults.shared.dataDir)
-        
-        switch chain {
-        case "main":
-            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/debug.log")
-        case "test":
-            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/testnet3/debug.log")
-        case "regtest":
-            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/regtest/debug.log")
-        case "signet":
-            path = URL(fileURLWithPath: "\(Defaults.shared.dataDir)/signet/debug.log")
-        default:
-            break
-        }
-        
-        guard let path = path else {
-            print("can not get path")
-            return
-        }
+        let path = URL(fileURLWithPath: debugPath)
         
         guard let log = try? String(contentsOf: path, encoding: .utf8) else {
             print("can't get log, path: \(path)")
@@ -593,11 +576,26 @@ struct BitcoinCore: View {
                 if lastLogItem.contains("Shutdown: done") {
                     isRunning = false
                 }
-//                if lastLogItem.contains("ThreadRPCServer incorrect password") {
-//                    showMessage(message: lastLogItem)
-//                }
             }
         }
+    }
+    
+    private func debugLogPath() -> String? {
+        let chain = Defaults.shared.chain
+        var debugLogPath: String?
+        switch chain {
+        case "main":
+            debugLogPath = "\(Defaults.shared.dataDir)/debug.log"
+        case "test":
+            debugLogPath = "\(Defaults.shared.dataDir)/testnet3/debug.log"
+        case "regtest":
+            debugLogPath = "\(Defaults.shared.dataDir)/regtest/debug.log"
+        case "signet":
+            debugLogPath = "\(Defaults.shared.dataDir)/signet/debug.log"
+        default:
+            break
+        }
+        return debugLogPath
     }
     
     private func isBitcoinCoreRunning() {

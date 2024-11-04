@@ -14,13 +14,15 @@ class CreateFNDirConfigureCore {
             if let existingBitcoinConf = conf {
                 for item in existingBitcoinConf {
                     let arr = item.split(separator: "=")
-                    guard arr.count > 1  else { return }
-                    guard let value = Int(arr[1]) else { return }
-                    if item.hasPrefix("prune=") {
-                        UserDefaults.standard.setValue(value, forKey: "prune")
-                    }
-                    if item.hasPrefix("txindex=") {
-                        UserDefaults.standard.setValue(value, forKey: "txindex")
+                    if arr.count > 1 {
+                        if let value = Int(arr[1])  {
+                            if item.hasPrefix("prune=") {
+                                UserDefaults.standard.setValue(value, forKey: "prune")
+                            }
+                            if item.hasPrefix("txindex=") {
+                                UserDefaults.standard.setValue(value, forKey: "txindex")
+                            }
+                        }
                     }
                 }
                 let rpcuser = "FullyNoded-Server"
@@ -121,10 +123,12 @@ class CreateFNDirConfigureCore {
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
             if let _ = existingCreds {
                 DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                    UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(updated)
                 }
             } else {
                 DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                    UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(saved)
                 }
             }

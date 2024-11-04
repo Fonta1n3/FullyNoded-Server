@@ -242,6 +242,8 @@ struct ContentView: View {
         .onAppear(perform: {
             if TorClient.sharedInstance.state == .connected {
                 torProgress = 100.0
+            } else {
+                TorClient.sharedInstance.start(delegate: nil)
             }
             TorClient.sharedInstance.showProgress = { progress in
                 torProgress = Double(progress)

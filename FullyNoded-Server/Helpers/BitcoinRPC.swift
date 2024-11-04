@@ -17,11 +17,7 @@ class BitcoinRPC {
         let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
         
         let nodeIp = "127.0.0.1:\(port)"
-        
-        guard let user = UserDefaults.standard.string(forKey: "rpcuser") else {
-            completion((nil, "No rpc user saved."))
-            return
-        }
+        let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
         
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { [weak self] creds in
             guard let self = self else { return }

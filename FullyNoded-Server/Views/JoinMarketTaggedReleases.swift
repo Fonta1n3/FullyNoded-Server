@@ -23,8 +23,8 @@ struct JoinMarketTaggedReleasesView: View {
     
     init(taggedReleases: TaggedReleases, existingVersion: String) {
         self.taggedReleases = taggedReleases
-        self.taggedRelease = taggedReleases[0]
         self.existingVersion = existingVersion
+        self.taggedRelease = taggedReleases[0]
     }
     
     var body: some View {
