@@ -160,7 +160,7 @@ struct BitcoinCore: View {
             }
             .padding(.leading)
             Button {
-                openFile(file: "bitcoin.conf")
+                openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
             } label: {
                 Text("bitcoin.conf")
             }
@@ -428,8 +428,7 @@ struct BitcoinCore: View {
     }
     
     private func openFile(file: String) {
-        let d = Defaults.shared.dataDir
-        let env = ["FILE": "\(d)/\(file)"]
+        let env = ["FILE": "\(file)"]
         openConf(script: .openFile, env: env, args: []) { _ in }
     }
     
