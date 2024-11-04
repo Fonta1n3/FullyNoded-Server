@@ -7,7 +7,11 @@
 - xcode command line tools
 
 ## Installation
+On first use you will get a prompt about Fully Noded using an item on your keychain, this is an encryption key we create and use within the app to encrypt and decrypt sensitive data like your rpc password.
+
 Currently only a testing version has been released, if you would like to help test it can be downloaded via github [releases](https://github.com/Fonta1n3/FullyNoded-Server/releases).
+
+Download the latest release, verify the signatures (you can find instructions in the very first testing release) and open the dmg.
 
 ## What does it do?
 Turns your macmini or macbook into a Bitcoin server powerhouse all powered locally via bash scripts and swift.
