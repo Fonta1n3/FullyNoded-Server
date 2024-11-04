@@ -2,13 +2,16 @@
 ⚠️ Currently in Alpha, 🛠 WIP! Use at your own risk.
 
 ## Requirements
-macOS Silicon (arm64) only for now.
+- macOS M1/M2/M3/M? Silicon (arm64)
+- brew
+- xcode command line tools
 
 ## Installation
 Currently only a testing version has been released, if you would like to help test it can be downloaded via github [releases](https://github.com/Fonta1n3/FullyNoded-Server/releases).
 
 ## What does it do?
 Turns your macmini or macbook into a Bitcoin server powerhouse all powered locally via bash scripts and swift.
+Use it to power apps like Fully Noded and Sparrow, sovereignly.
 
 Installs and configures the following services on your mac:
 - Bitcoin Core
