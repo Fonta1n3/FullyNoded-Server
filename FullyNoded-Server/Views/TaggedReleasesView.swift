@@ -10,6 +10,7 @@ import SwiftUI
 struct TaggedReleasesView: View {
     
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    @State private var prune = false
     @State private var bitcoinCoreInstallComplete = false
     @State private var startCheckingForBitcoinInstall = false
     @State private var description = ""
@@ -25,8 +26,8 @@ struct TaggedReleasesView: View {
     
     init(taggedReleases: TaggedReleases, existingVersion: String) {
         self.taggedReleases = taggedReleases
-        self.taggedRelease = taggedReleases[0]
         self.existingVersion = existingVersion
+        self.taggedRelease = taggedReleases[0]
     }
     
     var body: some View {
@@ -40,42 +41,7 @@ struct TaggedReleasesView: View {
             }
             .padding([.top, .leading, .trailing])
                         
-            HStack() {
-                Text("Data Directory:")
-                Label(dataDir, systemImage: "")
-                Button("Update") {
-                    chooseDataDir()
-                }
-            }
-            .padding([.leading, .trailing])
-            .frame(maxWidth: .infinity, alignment: .leading)
             
-            Text("Do not update the data directory unless you want to save your Bitcoin Core data in a custom location like an external hard drive.")
-                .padding([.leading])
-                .foregroundStyle(.secondary)
-            
-            HStack() {
-                if txIndex == 0 {
-                    Label("Pruned node", systemImage: "")
-                    
-                    
-                    Button("Do not prune") {
-                        UserDefaults.standard.setValue(1, forKey: "txindex")
-                        UserDefaults.standard.setValue(0, forKey: "prune")
-                        txIndex = 1
-                    }
-                } else {
-                    Label("Full node", systemImage: "")
-                    
-                    Button("Prune") {
-                        UserDefaults.standard.setValue(0, forKey: "txindex")
-                        UserDefaults.standard.setValue(1000, forKey: "prune")
-                        txIndex = 0
-                    }
-                }
-            }
-            .padding([.leading, .trailing])
-            .frame(maxWidth: .infinity, alignment: .leading)
             
             if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
                 let processedVersion = tagName.replacingOccurrences(of: "v", with: "")
@@ -99,6 +65,45 @@ struct TaggedReleasesView: View {
                 }
                 .padding([.leading, .bottom])
                 .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Label("Configuration options", systemImage: "gear")
+                    .padding(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                HStack() {
+                    Text("Data Directory:")
+                    Label(dataDir, systemImage: "")
+                    Button("Update") {
+                        chooseDataDir()
+                    }
+                }
+                .padding([.leading, .trailing])
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text("Do not update the data directory unless you want to save your Bitcoin Core data in a custom location like an external hard drive.")
+                    .padding([.leading])
+                    .foregroundStyle(.secondary)
+                
+                HStack() {
+                    Toggle("Prune", isOn: $prune)
+                        .onChange(of: prune) { oldValue, newValue in
+                            if newValue {
+                                UserDefaults.standard.setValue(0, forKey: "txindex")
+                                UserDefaults.standard.setValue(1000, forKey: "prune")
+                                txIndex = 0
+                            } else {
+                                UserDefaults.standard.setValue(1, forKey: "txindex")
+                                UserDefaults.standard.setValue(0, forKey: "prune")
+                            }
+                        }
+                }
+                .padding([.leading, .trailing])
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text("Pruning your node reduces the amount of disc space Bitcoin Core will use.")
+                    .padding([.leading])
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack() {
                     if isAnimating {
@@ -160,6 +165,7 @@ struct TaggedReleasesView: View {
         }
         Spacer()
             .onAppear {
+                prune = !((Defaults.shared.prune) == 0)
                 taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
             }
             .alert(message, isPresented: $showError) {
@@ -264,6 +270,7 @@ struct TaggedReleasesView: View {
         }
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
         CreateFNDirConfigureCore.checkForExistingConf { startDownload in
+            print("startDownload")
             if startDownload {
                 isAnimating = true
                 downloadTask(url: URL(string: macOSUrl)!) { data in
