@@ -2,7 +2,7 @@
 ⚠️ Currently in Alpha, 🛠 WIP! Use at your own risk.
 
 ## Requirements
-- macOS M1/M2/M3/M? Silicon (arm64)
+- macOS 14.0 - M1/M2/M3/M? Silicon - arm64
 - brew
 - xcode command line tools
 
