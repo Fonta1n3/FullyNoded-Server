@@ -16,7 +16,7 @@ function unpackTarball() {
     /opt/homebrew/bin/gpg --verify joinmarket-$TAG_NAME.tar.gz.asc joinmarket-$TAG_NAME.tar.gz
     mkdir joinmarket-$TAG_NAME && tar -zxvf joinmarket-$TAG_NAME.tar.gz -C joinmarket-$TAG_NAME --strip-components 1
     cd joinmarket-$TAG_NAME
-    ./install.sh --without-qt --disable-secp-check
+    ./install.sh --without-qt
     # Only run wallet-tool.py if no joinmarket.cfg exists.
     if [ ! -f "/Users/$(whoami)/Library/Application Support/joinmarket/joinmarket.cfg" ]; then
         source jmvenv/bin/activate

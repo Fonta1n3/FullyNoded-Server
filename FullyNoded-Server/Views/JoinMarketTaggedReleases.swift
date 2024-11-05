@@ -289,8 +289,6 @@ struct JoinMarketTaggedReleasesView: View {
     
     private func downloadTask(url: URL, completion: @escaping (Data?) -> Void) {
         var request = URLRequest(url: url)
-        request.addValue("application/octet-stream", forHTTPHeaderField: "Accept")
-        request.addValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         let task = URLSession.shared.downloadTask(with: request) { localURL, urlResponse, error in
             guard error == nil else {
                 showMessage(message: error!.localizedDescription)
