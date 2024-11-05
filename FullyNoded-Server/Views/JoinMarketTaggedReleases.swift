@@ -129,7 +129,13 @@ struct JoinMarketTaggedReleasesView: View {
         updateConf(key: "rpc_wallet_file", value: "jm_wallet")
         
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
-            guard let rpcCreds = rpcCreds, let encryptedPassword = rpcCreds["password"] as? Data, let decryptedPass = Crypto.decrypt(encryptedPassword), let stringPass = String(data: decryptedPass, encoding: .utf8) else { return }
+            guard let rpcCreds = rpcCreds, 
+                    let encryptedPassword = rpcCreds["password"] as? Data,
+                    let decryptedPass = Crypto.decrypt(encryptedPassword),
+                  let stringPass = String(data: decryptedPass, encoding: .utf8) else {
+                showMessage(message: "Unable to get rpc creds to congifure JM.")
+                return
+            }
             
             updateConf(key: "rpc_password", value: stringPass)
             updateConf(key: "rpc_user", value: "FullyNoded-Server")

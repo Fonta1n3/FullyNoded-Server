@@ -111,6 +111,11 @@ struct JoinMarket: View {
             } label: {
                 Text("joinmarket.cfg")
             }
+            Button {
+                configureJm()
+            } label: {
+                Text("Configure JM")
+            }
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,6 +162,75 @@ struct JoinMarket: View {
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func configureJm() {
+        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "signet"
+        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+        switch chain {
+        case "main": chain = "mainnet"
+        case "regtest": chain = "testnet"
+        case "test": chain = "testnet"
+        default:
+            break
+        }
+        updateConf(key: "network", value: chain)
+        updateConf(key: "rpc_port", value: port)
+        updateConf(key: "rpc_wallet_file", value: "jm_wallet")
+        
+        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
+            guard let rpcCreds = rpcCreds,
+                    let encryptedPassword = rpcCreds["password"] as? Data,
+                    let decryptedPass = Crypto.decrypt(encryptedPassword),
+                  let stringPass = String(data: decryptedPass, encoding: .utf8) else {
+                showMessage(message: "Unable to get rpc creds to congifure JM.")
+                return
+            }
+            
+            updateConf(key: "rpc_password", value: stringPass)
+            updateConf(key: "rpc_user", value: "FullyNoded-Server")
+            
+            BitcoinRPC.shared.command(method: "createwallet", params: ["wallet_name": "jm_wallet", "descriptors": false]) { (result, error) in
+                guard error == nil else {
+                    if !error!.contains("Database already exists.") {
+                        showMessage(message: error!)
+                    }
+                    isAnimating = false
+                    return
+                }
+                
+                showMessage(message: "Join Market configured ✓")
+                isAnimating = false
+            }
+        }
+    }
+    
+    private func fileExists(path: String) -> Bool {
+        return FileManager.default.fileExists(atPath: path)
+    }
+    
+    private func updateConf(key: String, value: String) {
+        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+        guard fileExists(path: jmConfPath) else { return }
+        guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
+            print("no jm conf")
+            return
+        }
+        guard let string = String(data: conf, encoding: .utf8) else {
+            print("cant get string")
+            return
+        }
+        let arr = string.split(separator: "\n")
+        for item in arr {
+            if item.hasPrefix("\(key) =") {
+                let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
+                if (try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)) == nil {
+                    print("failed writing to jm config")
+                } else {
+                    print("wrote to joinmarket.cfg")
+                }
+            }
         }
     }
     

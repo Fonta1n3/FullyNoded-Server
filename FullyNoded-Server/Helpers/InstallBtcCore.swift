@@ -12,6 +12,8 @@ class CreateFNDirConfigureCore {
     class func checkForExistingConf(completion: @escaping (Bool) -> Void) {
         BitcoinConf.getBitcoinConf { (conf, error) in
             if let existingBitcoinConf = conf {
+                var createBdbExists = false
+                // check if deprecatedrpc=create_bdb exists, if not add it.
                 for item in existingBitcoinConf {
                     let arr = item.split(separator: "=")
                     if arr.count > 1 {
@@ -21,6 +23,9 @@ class CreateFNDirConfigureCore {
                             }
                             if item.hasPrefix("txindex=") {
                                 UserDefaults.standard.setValue(value, forKey: "txindex")
+                            }
+                            if item.contains("deprecatedrpc=create_bdb") {
+                                createBdbExists = true
                             }
                         }
                     }
@@ -51,6 +56,10 @@ class CreateFNDirConfigureCore {
                     }
                     
                     var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
+                    if !createBdbExists {
+                        // For Join Market to work...
+                        updatedBitcoinConf = "deprecatedrpc=create_bdb" + "\n" + updatedBitcoinConf
+                    }
                     updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
                     setBitcoinConf(updatedBitcoinConf, completion: completion)
                 }
