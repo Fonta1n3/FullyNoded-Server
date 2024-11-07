@@ -115,6 +115,7 @@ struct JoinMarketTaggedReleasesView: View {
     
     
     private func configureJm() {
+        print("configureJm")
         var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "signet"
         let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
         switch chain {
@@ -163,11 +164,11 @@ struct JoinMarketTaggedReleasesView: View {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard fileExists(path: jmConfPath) else { return }
         guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
-            print("no jm conf")
+            showMessage(message: "No Join Market conf.")
             return
         }
         guard let string = String(data: conf, encoding: .utf8) else {
-            print("cant get string")
+            showMessage(message: "Can not convert JM config data to string.")
             return
         }
         let arr = string.split(separator: "\n")
@@ -175,9 +176,7 @@ struct JoinMarketTaggedReleasesView: View {
             if item.hasPrefix("\(key) =") {
                 let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
                 if (try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)) == nil {
-                    print("failed writing to jm config")
-                } else {
-                    print("wrote to joinmarket.cfg")
+                    showMessage(message: "Failed writing to JM config.")
                 }
             }
         }
@@ -294,7 +293,7 @@ struct JoinMarketTaggedReleasesView: View {
     }
     
     private func downloadTask(url: URL, completion: @escaping (Data?) -> Void) {
-        var request = URLRequest(url: url)
+        let request = URLRequest(url: url)
         let task = URLSession.shared.downloadTask(with: request) { localURL, urlResponse, error in
             guard error == nil else {
                 showMessage(message: error!.localizedDescription)

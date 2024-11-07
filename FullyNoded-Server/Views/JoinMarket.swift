@@ -134,7 +134,7 @@ struct JoinMarket: View {
             Image(nsImage: qrImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 200, height: 200)
+                .frame(width: 300, height: 300)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading)
                 .onAppear {

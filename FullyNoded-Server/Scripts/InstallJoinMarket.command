@@ -21,7 +21,7 @@ function unpackTarball() {
     if [ ! -f "/Users/$(whoami)/Library/Application Support/joinmarket/joinmarket.cfg" ]; then
         source jmvenv/bin/activate
         cd scripts
-        python wallet-tool.py generate
+        python3 wallet-tool.py generate
         deactivate
     fi
     echo "Join Market Install complete."
