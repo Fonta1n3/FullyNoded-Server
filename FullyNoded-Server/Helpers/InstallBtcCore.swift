@@ -9,60 +9,77 @@ import Foundation
 
 class CreateFNDirConfigureCore {
     
-    class func checkForExistingConf(completion: @escaping (Bool) -> Void) {
+    class func checkForExistingConf(updatedPruneValue: Int?, completion: @escaping (Bool) -> Void) {
+        var existingPruneValue: Int?
         BitcoinConf.getBitcoinConf { (conf, error) in
             if let existingBitcoinConf = conf {
                 var createBdbExists = false
+                
+                func setNow() {
+                    let rpcuser = "FullyNoded-Server"
+                    guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else {
+                        completion(false)
+                        print("unable to generate rpc auth creds.")
+                        return
+                    }
+                    let rpcauth = rpcAuthCreds.rpcAuth
+                    let data = Data(rpcAuthCreds.rpcPassword.utf8)
+                    
+                    guard let encryptedPass = Crypto.encrypt(data) else {
+                        #if DEBUG
+                        print("Unable to encrypt rpc pass.")
+                        #endif
+                        completion(false)
+                        return
+                    }
+                    updateRpcCreds(encryptedPass: encryptedPass, rpcUser: rpcuser) { updated in
+                        guard updated else {
+                            #if DEBUG
+                            print("Unable to save new password.")
+                            #endif
+                            completion(false)
+                            return
+                        }
+                        
+                        var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
+                        if !createBdbExists {
+                            // For Join Market to work...
+                            updatedBitcoinConf = "deprecatedrpc=create_bdb" + "\n" + updatedBitcoinConf
+                            if let updatedPruneValue = updatedPruneValue, let existingPruneValue = existingPruneValue {
+                                updatedBitcoinConf = updatedBitcoinConf.replacingOccurrences(of: "prune=\(existingPruneValue)", with: "prune=\(updatedPruneValue)")
+                            }
+                        }
+                        updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
+                        setBitcoinConf(updatedBitcoinConf, completion: completion)
+                    }
+                }
                 // check if deprecatedrpc=create_bdb exists, if not add it.
-                for item in existingBitcoinConf {
+                for (i, item) in existingBitcoinConf.enumerated() {
                     let arr = item.split(separator: "=")
                     if arr.count > 1 {
                         if let value = Int(arr[1])  {
                             if item.hasPrefix("prune=") {
-                                UserDefaults.standard.setValue(value, forKey: "prune")
+                                if let updatedPruneValue = updatedPruneValue {
+                                    UserDefaults.standard.setValue(updatedPruneValue, forKey: "prune")
+                                    existingPruneValue = value
+                                }
                             }
                             if item.hasPrefix("txindex=") {
                                 UserDefaults.standard.setValue(value, forKey: "txindex")
                             }
+                            
+                        } else {
+                            // deprecatedrpc=create_bdb
                             if item.contains("deprecatedrpc=create_bdb") {
                                 createBdbExists = true
                             }
                         }
                     }
+                    if i + 1 == existingBitcoinConf.count {
+                        setNow()
+                    }
                 }
-                let rpcuser = "FullyNoded-Server"
-                guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else {
-                    completion(false)
-                    print("unable to generate rpc auth creds.")
-                    return
-                }
-                let rpcauth = rpcAuthCreds.rpcAuth
-                let data = Data(rpcAuthCreds.rpcPassword.utf8)
                 
-                guard let encryptedPass = Crypto.encrypt(data) else {
-                    #if DEBUG
-                    print("Unable to encrypt rpc pass.")
-                    #endif
-                    completion(false)
-                    return
-                }
-                updateRpcCreds(encryptedPass: encryptedPass, rpcUser: rpcuser) { updated in
-                    guard updated else {
-                        #if DEBUG
-                        print("Unable to save new password.")
-                        #endif
-                        completion(false)
-                        return
-                    }
-                    
-                    var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
-                    if !createBdbExists {
-                        // For Join Market to work...
-                        updatedBitcoinConf = "deprecatedrpc=create_bdb" + "\n" + updatedBitcoinConf
-                    }
-                    updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
-                    setBitcoinConf(updatedBitcoinConf, completion: completion)
-                }
                 
             } else {
                 if let defaultConf = BitcoinConf.newBitcoinConf() {

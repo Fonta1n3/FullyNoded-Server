@@ -27,7 +27,6 @@ struct ContentView: View {
     @State private var bitcoinCoreInstalled = false
     @State private var lightningInstalled = false
     @State private var joinMarketInstalled = false
-    @State private var xcodeSelectInstalled = false
     @State private var promptToInstallXcode = false
     @State private var promptToInstallBitcoin = false
     @State private var startCheckingForBitcoinInstall = false
@@ -75,8 +74,7 @@ struct ContentView: View {
                                     jmTaggedReleases: []
                                 )
                             }
-                        }
-                        if service.name == "Core Lightning" {
+                        } else if service.name == "Core Lightning" {
                             if lightningInstalled {
                                 CoreLightning()
                             } else {
@@ -95,8 +93,7 @@ struct ContentView: View {
                                 )
                             }
                             
-                        }
-                        if service.name == "Join Market" {
+                        } else if service.name == "Join Market" {
                             if joinMarketInstalled {
                                 JoinMarket()
                             } else {
@@ -110,8 +107,7 @@ struct ContentView: View {
                                     jmTaggedReleases: jmTaggedReleases
                                 )
                             }
-                        }
-                        if service.name == "Tor" {
+                        } else if service.name == "Tor" {
                             HStack() {
                                 if torProgress < 100.0 {
                                     ProgressView("Tor bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
@@ -131,8 +127,6 @@ struct ContentView: View {
                                     }
                                 }
                             }
-                            
-                            
                             Home(
                                 showBitcoinCoreInstallButton: false,
                                 env: [:],
@@ -220,8 +214,6 @@ struct ContentView: View {
                                     }
                                 }
                                 
-                                
-                                
                                 EmptyView()
                                     .onReceive(timerForTor) { _ in
                                         self.torRunning = TorClient.sharedInstance.state == .connected
@@ -229,27 +221,20 @@ struct ContentView: View {
                             }
                             Text(service.name)
                         }
+                        
                     }
                 }
             }
-//            Home(
-//                showBitcoinCoreInstallButton: promptToInstallBitcoin,
-//                env: env,
-//                showJoinMarketInstallButton: !joinMarketInstalled,
-//                jmTaggedReleases: jmTaggedReleases
-//            )
         }
         .onAppear(perform: {
-            if TorClient.sharedInstance.state == .connected {
-                torProgress = 100.0
-            } else {
-                TorClient.sharedInstance.start(delegate: nil)
-            }
-            TorClient.sharedInstance.showProgress = { progress in
-                torProgress = Double(progress)
-            }
-            getSavedValues()
-            
+            /// For testing fresh install.
+//            DataManager.deleteAllData(entityName: "BitcoinRPCCreds") { deleted in
+//                print("deleted: \(deleted)")
+//                let domain = Bundle.main.bundleIdentifier!
+//                UserDefaults.standard.removePersistentDomain(forName: domain)
+//                UserDefaults.standard.synchronize()
+//            }
+            checkForXcode()
         })
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
             Button("OK") {
@@ -265,6 +250,11 @@ struct ContentView: View {
                 runScript(script: .installHomebrew, env: [:])
             }
         }
+        .alert("Install Xcode Command Line Tools? This is required for Fully Noded - Server to function.", isPresented: $promptToInstallXcode, actions: {
+            Button("OK", role: .cancel) {
+                runScript(script: .installXcode, env: [:])
+            }
+        })
         .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
             Button("OK", role: .cancel) {
                 runScript(script: .checkForBitcoin, env: env)
@@ -278,6 +268,40 @@ struct ContentView: View {
             Button("OK", role: .cancel) {
                 runScript(script: .installXcode, env: env)
             }
+        }
+    }
+    
+    private func checkForXcode() {
+        ScriptUtil.runScript(script: .checkXcodeSelect, env: nil, args: nil) { (output, data, errorMess) in
+            guard let output = output else {
+                showMessage(message: errorMess ?? "Unknown error checking for xcode select.")
+                return
+            }
+            if output.contains("XCode select installed") {
+                promptToInstallXcode = false
+                checkForBrew()
+            } else if output.contains("XCode select not installed") {
+                promptToInstallXcode = true
+            }
+        }
+    }
+    
+    private func checkForBrew() {
+        ScriptUtil.runScript(script: .checkForBrew, env: nil, args: nil) { (output, data, errorMess) in
+            guard let output = output, output != "" else {
+                promptToInstallBrew = true
+                return
+            }
+            
+            if TorClient.sharedInstance.state == .connected {
+                torProgress = 100.0
+            } else {
+                TorClient.sharedInstance.start(delegate: nil)
+            }
+            TorClient.sharedInstance.showProgress = { progress in
+                torProgress = Double(progress)
+            }
+            getSavedValues()
         }
     }
     
@@ -309,7 +333,6 @@ struct ContentView: View {
             lightningEnv["DATA_DIR"] = Defaults.shared.dataDir.replacingOccurrences(of: " ", with: "*")
             lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
             var network = "bitcoin"
-            print("Defaults.shared.chain: \(Defaults.shared.chain)")
             if Defaults.shared.chain != "main" {
                  network = Defaults.shared.chain
             }
@@ -320,9 +343,6 @@ struct ContentView: View {
     }
     
     private func getSavedValues() {
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { creds in
-            print("creds.count: \(creds?.count)")
-        }
         DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
             guard let bitcoinEnv = bitcoinEnv else {
                 let dict = [
@@ -465,15 +485,15 @@ struct ContentView: View {
         case .checkForBitcoin:
             parseBitcoindVersionResponse(result: result)
 
-        case .checkXcodeSelect:
-            parseXcodeSelectResult(result: result)
+//        case .checkXcodeSelect:
+//            parseXcodeSelectResult(result: result)
             
-        case .checkForBrew:
-            if result != "" {
-                runScript(script: .lightningInstalled, env: env)
-            } else {
-                promptToInstallBrew = true
-            }
+//        case .checkForBrew:
+//            if result != "" {
+//                runScript(script: .lightningInstalled, env: env)
+//            } else {
+//                promptToInstallBrew = true
+//            }
             
         case .lightningInstalled:
             if result.hasPrefix("Installed") {

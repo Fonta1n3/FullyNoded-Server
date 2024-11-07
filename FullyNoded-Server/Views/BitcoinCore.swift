@@ -36,7 +36,15 @@ struct BitcoinCore: View {
             } else {
                 Text("Bitcoin Core Server")
             }
-            
+            if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload {
+                Label {
+                    Text("Downloading the blockchain...")
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                }
+            }
             Spacer()
             Button {
                 isBitcoinCoreRunning()
@@ -91,6 +99,36 @@ struct BitcoinCore: View {
                 }
             }
             
+            if let blockchainInfo = blockchainInfo {
+                if blockchainInfo.progressString == "Fully verified" {
+                    Label {
+                        Text(blockchainInfo.progressString)
+                    } icon: {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(.green)
+                    }
+                    //.padding([.leading])
+                    //.frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Label {
+                        Text(blockchainInfo.progressString)
+                    } icon: {
+                        Image(systemName: "xmark.seal")
+                            .foregroundStyle(.orange)
+                    }
+                    //.padding([.leading])
+                    //.frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Label {
+                    Text("Blockheight: " + "\(blockchainInfo.blockheight)")
+                } icon: {
+                    Image(systemName: "square.stack.3d.up")
+                }
+                //.padding([.leading])
+               // .frame(maxWidth: .infinity, alignment: .leading)
+                
+            }
+            
             EmptyView()
                 .onReceive(timerForBitcoinStatus) { _ in
                     isBitcoinCoreRunning()
@@ -99,34 +137,7 @@ struct BitcoinCore: View {
         .padding([.leading, .bottom])
         .frame(maxWidth: .infinity, alignment: .leading)
         
-        if let blockchainInfo = blockchainInfo {
-            if blockchainInfo.progressString == "Fully verified" {
-                Label {
-                    Text(blockchainInfo.progressString)
-                } icon: {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(.green)
-                }
-                .padding([.leading, .bottom])
-                .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Label {
-                    Text(blockchainInfo.progressString)
-                } icon: {
-                    Image(systemName: "xmark.seal")
-                        .foregroundStyle(.orange)
-                }
-                .padding([.leading, .bottom])
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            Label {
-                Text("Blockheight: " + "\(blockchainInfo.blockheight)")
-            } icon: {
-                Image(systemName: "square.stack.3d.up")
-            }
-            .padding([.leading, .bottom])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        
             
         
         Label("Network", systemImage: "network")

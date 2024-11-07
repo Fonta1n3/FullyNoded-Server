@@ -11,6 +11,7 @@ struct TaggedReleasesView: View {
     
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     @State private var prune = false
+    @State private var prunedAmount = ""
     @State private var bitcoinCoreInstallComplete = false
     @State private var startCheckingForBitcoinInstall = false
     @State private var description = ""
@@ -91,19 +92,21 @@ struct TaggedReleasesView: View {
                                 UserDefaults.standard.setValue(0, forKey: "txindex")
                                 UserDefaults.standard.setValue(1000, forKey: "prune")
                                 txIndex = 0
+                                prunedAmount = "\(Double(Defaults.shared.prune) / 0.00104858)"
                             } else {
                                 UserDefaults.standard.setValue(1, forKey: "txindex")
                                 UserDefaults.standard.setValue(0, forKey: "prune")
                             }
+                            
                         }
+                    if prune {
+                        TextField("", text: $prunedAmount)
+                        Text("The amount in giga bytes the blockchain will consume.")
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding([.leading, .trailing])
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text("Pruning your node reduces the amount of disc space Bitcoin Core will use.")
-                    .padding([.leading])
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack() {
                     if isAnimating {
@@ -166,6 +169,9 @@ struct TaggedReleasesView: View {
         Spacer()
             .onAppear {
                 prune = !((Defaults.shared.prune) == 0)
+                if prune {
+                    prunedAmount = "\((Double(Defaults.shared.prune) * 0.00104858).rounded(toPlaces: 1))"
+                }
                 taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
             }
             .alert(message, isPresented: $showError) {
@@ -251,6 +257,12 @@ struct TaggedReleasesView: View {
     }
     
     private func install(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
+        var newPruneAmount: Int?
+        if prune, let dblAmount = Double(prunedAmount) {
+            let mebibytes = Int(dblAmount * 953.674)
+            UserDefaults.standard.setValue("\(mebibytes)", forKey: "prune")
+            newPruneAmount = mebibytes
+        }
         guard let tagName = taggedRelease.tagName else {
             showMessage(message: "No tagged name.")
             return
@@ -269,7 +281,8 @@ struct TaggedReleasesView: View {
             macOSUrl = "\(clearnet)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
         }
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
-        CreateFNDirConfigureCore.checkForExistingConf { startDownload in
+        
+        CreateFNDirConfigureCore.checkForExistingConf(updatedPruneValue: newPruneAmount) { startDownload in
             print("startDownload")
             if startDownload {
                 isAnimating = true
@@ -331,7 +344,6 @@ struct TaggedReleasesView: View {
     }
     
     private func updateCLNConfig(key: String) {
-        // key = "bitcoin-datadir="
         let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
         guard let conf = conf(stringPath: lightningConfPath) else { return }
         let arr = conf.split(separator: "\n")
