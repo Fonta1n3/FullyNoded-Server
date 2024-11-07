@@ -3,8 +3,7 @@
 
 ## Requirements
 - macOS 14.0 - M1/M2/M3/M? Silicon - arm64
-- brew
-- xcode command line tools
+- Python 3.10 for Join Market, should be located at `/Library/Frameworks/Python.framework/Versions`, if not a good guide can be found [here](https://www.codingforentrepreneurs.com/guides/install-python-on-macos).
 
 ## Installation
 On first use you will get a prompt about Fully Noded using an item on your keychain, this is an encryption key we create and use within the app to encrypt and decrypt sensitive data like your rpc password.
