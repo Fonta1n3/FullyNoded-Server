@@ -110,13 +110,49 @@ public enum SCRIPT: String {
     }
 }
 
-public enum BTCCONF: String {
-    case prune = "prune"
-    case txindex = "txindex"
-    case mainnet = "mainnet"
-    case testnet = "testnet"
-    case regtest = "regtest"
-    case disablewallet = "disablewallet"
-    case datadir = "datadir"
-    case blocksdir = "blocksdir"
+//public enum BTCCONF: String {
+//    case prune = "prune"
+//    case txindex = "txindex"
+//    case mainnet = "mainnet"
+//    case testnet = "testnet"
+//    case regtest = "regtest"
+//    case disablewallet = "disablewallet"
+//    case datadir = "datadir"
+//    case blocksdir = "blocksdir"
+//}
+
+public enum ScriptUtil {
+    static func runScript(script: SCRIPT, env: [String: String]?, args: [String]?, completion: @escaping ((output: String?, rawData: Data?, errorMessage: String?)) -> (Void)) {
+        #if DEBUG
+        print("run script: \(script.stringValue)")
+        #endif
+        
+        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
+        taskQueue.async {
+            let resource = script.stringValue
+            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
+            let stdOut = Pipe()
+            let stdErr = Pipe()
+            let task = Process()
+            task.launchPath = path
+            if let args = args {
+                task.arguments = args
+            }
+            if let env = env {
+                task.environment = env
+            }
+            
+            task.standardOutput = stdOut
+            task.standardError = stdErr
+            task.launch()
+            task.waitUntilExit()
+            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
+            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8)
+            let errorOutput = String(data: errData, encoding: .utf8)
+            completion((output, data, errorOutput))
+        }
+    }
 }
+
+

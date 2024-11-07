@@ -17,6 +17,7 @@ struct CoreLightning: View {
     @State private var nodeId = ""
     @State private var publicUrl = ""
     @State private var lnlink: String?
+    @State private var localLnlink: String?
     @State private var plasmaExists = false
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var onionHost: String? = nil
@@ -117,11 +118,13 @@ struct CoreLightning: View {
             .padding([.leading, .top])
             .frame(maxWidth: .infinity, alignment: .leading)
         
-        Button("Connect Plasma via LNLink", systemImage: "qrcode") {
-            showQr()
+        Button("Connect Plasma remotely via LNLink", systemImage: "qrcode") {
+            getLnLink(isLocal: false)
         }
         .padding([.leading, .trailing])
         .frame(maxWidth: .infinity, alignment: .leading)
+        
+        
         
         if let qrImage = qrImage {
             Image(nsImage: qrImage)
@@ -137,18 +140,6 @@ struct CoreLightning: View {
                     }
                 }
         }
-        
-            if plasmaExists {
-                if let lnlink = self.lnlink {
-                    Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
-                        .padding([.leading])
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            } else {
-                Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
-                    .padding([.leading])
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
         
         Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
             self.onionHost = TorClient.sharedInstance.hostnames()?[5]
@@ -176,7 +167,27 @@ struct CoreLightning: View {
                 Text(onionHost)
                     .textSelection(.enabled)
             }
+        }        
+        
+        if plasmaExists {
+            Button("Connect Plasma Locally") {
+                getLnLink(isLocal: true)
+            }
+            .padding([.leading])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let lnlink = self.localLnlink {
+                Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+        } else {
+            Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        
         Spacer()
         HStack() {
             Label(logOutput, systemImage: "info.circle")
@@ -201,7 +212,7 @@ struct CoreLightning: View {
     }
     
     private func showQr() {
-        getPublicUrl()
+        getPublicUrl(isLocal: false)
     }
     
     private func startLightning() {
@@ -310,30 +321,66 @@ struct CoreLightning: View {
         }
     }
     
-    func getPublicUrl() {
-        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
-        guard let config = try? Data(contentsOf: path) else {
-            print("Unable to get ngrok.log.")
-            return
+    func getLnLink(isLocal: Bool) {
+        ScriptUtil.runScript(script: .lightningNodeId, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard let data = rawData else {
+                return
+            }
+            
+            guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
+            self.nodeId = info.id
+            getRune(isLocal: isLocal)
         }
-        guard let stringValue = String(data: config, encoding: .utf8) else {
-            print("Unable to convert log data to utf8 string.")
-            return
-        }
-        let array = stringValue.split(separator: "\n")
-        var anyAddr = false
-        for item in array {
-            if item.hasPrefix("addr=") {
-                anyAddr = true
-                let itemArr = item.split(separator: "=")
-                self.publicUrl = "\(itemArr[1])"
-                runScript(script: .lightningNodeId)
+    }
+    
+    func getRune(isLocal: Bool) {
+        ScriptUtil.runScript(script: .getRune, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard let data = rawData else { return }
+            guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
+            if !isLocal {
+                let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+                if publicUrl != "" {
+                    self.qrImage = publicLnLink.qrQode
+                }
+            } else {
+                self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
+            }
+            if let onionHost = self.onionHost {
+                self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
             }
         }
-        if !anyAddr {
+    }
+    
+    func getPublicUrl(isLocal: Bool) {
+        if isLocal {
+            self.publicUrl = "127.0.0.1:9735"
             runScript(script: .lightningNodeId)
-            showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
+        } else {
+            let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
+            guard let config = try? Data(contentsOf: path) else {
+                print("Unable to get ngrok.log.")
+                return
+            }
+            guard let stringValue = String(data: config, encoding: .utf8) else {
+                print("Unable to convert log data to utf8 string.")
+                return
+            }
+            let array = stringValue.split(separator: "\n")
+            var anyAddr = false
+            for item in array {
+                if item.hasPrefix("addr=") {
+                    anyAddr = true
+                    let itemArr = item.split(separator: "=")
+                    self.publicUrl = "\(itemArr[1])"
+                    runScript(script: .lightningNodeId)
+                }
+            }
+            if !anyAddr {
+                runScript(script: .lightningNodeId)
+                showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
+            }
         }
+        
     }
     
     func parseDataResponse(script: SCRIPT, data: Data) {
@@ -344,7 +391,7 @@ struct CoreLightning: View {
             if publicUrl != "" {
                 self.qrImage = publicLnLink.qrQode
             }
-            self.lnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
+            self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
             if let onionHost = self.onionHost {
                 self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
             }
