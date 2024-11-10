@@ -26,129 +26,186 @@ struct JoinMarket: View {
     
     
     var body: some View {
-        HStack() {
-            Image(systemName: "server.rack")
-                .padding(.leading)
-            
-            Text("Join Market Server")
-            Spacer()
-            
-            Button {
-                isAutoRefreshing = false
-                isJoinMarketRunning()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding([.trailing])
-        }
-        .padding([.top])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-                    .padding([.leading])
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .padding([.leading])
-                }
-                Text("Running")
-                    .onAppear {
-                        isAutoRefreshing = true
-                    }
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                        .padding([.leading])
-                }
-                Text("Stopped")
-            }
-            if !isRunning {
+        Spacer()
+        VStack() {
+            HStack() {
+                Image(systemName: "server.rack")
+                    .padding(.leading)
+                
+                Text("Join Market Server")
+                Spacer()
+                
                 Button {
-                    startJoinMarket()
-                } label: {
-                    Text("Start")
-                }
-            } else {
-                Button {
-                    stopJoinMarket()
-                } label: {
-                    Text("Stop")
-                }
-            }
-            EmptyView()
-                .onReceive(timerForStatus) { _ in
+                    isAutoRefreshing = false
                     isJoinMarketRunning()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
                 }
-        }
-        .padding([.leading, .bottom])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label(selectedChain.capitalized, systemImage: "network")
-            .padding([.leading, .bottom])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Button {
-                openFile(file: "joinmarket.cfg")
-            } label: {
-                Text("joinmarket.cfg")
+                .padding([.trailing])
             }
-            Button {
-                configureJm()
-            } label: {
-                Text("Configure JM")
-            }
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Quick Connect", systemImage: "qrcode")
-            .padding([.leading, .top])
+            //.padding([.])
             .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Button("Connect Fully Noded - Join Market", systemImage: "qrcode") {
-            showConnectUrls()
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let qrImage = qrImage {
-            Image(nsImage: qrImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 300, height: 300)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.qrImage = nil
-                        self.url = nil
+            
+            HStack() {
+                if isAnimating {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                        .padding([.leading])
+                }
+                if isRunning {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.green)
+                            .padding([.leading])
+                    }
+                    Text("Running")
+                        .onAppear {
+                            isAutoRefreshing = true
+                        }
+                } else {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.red)
+                            .padding([.leading])
+                    }
+                    Text("Stopped")
+                }
+                if !isRunning {
+                    Button {
+                        startJoinMarket()
+                    } label: {
+                        Text("Start")
+                    }
+                } else {
+                    Button {
+                        stopJoinMarket()
+                    } label: {
+                        Text("Stop")
                     }
                 }
-            if let url = url {
-                Link("Connect Fully Noded - Join Market", destination: URL(string: url)!)
-                    .padding([.leading, .bottom])
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                EmptyView()
+                    .onReceive(timerForStatus) { _ in
+                        isJoinMarketRunning()
+                    }
             }
+            .padding([.leading])
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Network", systemImage: "network")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text(selectedChain)
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Utilities", systemImage: "wrench.and.screwdriver")
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Button {
+                    openFile(file: "joinmarket.cfg")
+                } label: {
+                    Text("joinmarket.cfg")
+                }
+                Button {
+                    configureJm()
+                } label: {
+                    Text("Configure JM")
+                }
+                Button {
+                    //openFile(file: "")
+                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "/Users/\(NSUserName())/Library/Application Support/joinmarket")
+                    
+                } label: {
+                    Text("Data Dir")
+                }
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Quick Connect", systemImage: "qrcode")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Button("Connect Fully Noded - Join Market", systemImage: "qrcode") {
+                showConnectUrls()
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let qrImage = qrImage {
+                Image(nsImage: qrImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 300, height: 300)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                            self.qrImage = nil
+                            self.url = nil
+                        }
+                    }
+                if let url = url {
+                    Link("Connect Fully Noded - Join Market", destination: URL(string: url)!)
+                        .padding([.leading, .bottom])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            
+            //        if let hostnames = TorClient.sharedInstance.hostnames() {
+            //            Text(hostnames[0] + ":" + "28183")
+            //        }
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
         
         Spacer()
         
