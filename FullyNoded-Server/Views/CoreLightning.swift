@@ -24,169 +24,217 @@ struct CoreLightning: View {
     @State private var quickConnectClnRest: String? = nil
     
     var body: some View {
-        HStack() {
-            Image(systemName: "server.rack")
-                .padding(.leading)
-            
-            Text("Core Lightning Server")
-            Spacer()
-            Button {
-                isLightningOn()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding(.trailing)
-        }
-        .padding([.top])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {            
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding(.leading)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .padding(.leading)
-                }
-                Text("Running")
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding(.leading)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                        .padding(.leading)
-                }
-                Text("Stopped")
-            }
-            
-            if !isRunning {
+        Spacer()
+        VStack() {
+            HStack() {
+                Image(systemName: "server.rack")
+                    .padding(.leading)
+                
+                Text("Core Lightning Server")
+                Spacer()
                 Button {
-                    startLightning()
+                    isLightningOn()
                 } label: {
-                    Text("Start")
+                    Image(systemName: "arrow.clockwise")
                 }
-            } else {
-                Button {
-                    stopLightning()
-                } label: {
-                    Text("Stop")
+                .padding(.trailing)
+            }
+            //.padding([.top])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                if isAnimating {
+                    ProgressView()
+                        .scaleEffect(0.5)
                 }
-            }
-            
-        }
-        .padding([.leading])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label(selectedChain.capitalized, systemImage: "network")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Button {
-                let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
-                openConf(script: .openFile, env: env, args: []) { _ in }
-            } label: {
-                Text("Config")
-            }
-            .padding(.leading)
-            
-            Button {
-                let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
-                openConf(script: .openFile, env: env, args: []) { _ in }
-            } label: {
-                Text("Log")
-            }
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Quick Connect", systemImage: "qrcode")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Button("Connect Plasma remotely via LNLink", systemImage: "qrcode") {
-            getLnLink(isLocal: false)
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        
-        
-        if let qrImage = qrImage {
-            Image(nsImage: qrImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.qrImage = nil
-                        self.lnlink = nil
+                if isRunning {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding(.leading)
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.green)
+                            .padding(.leading)
+                    }
+                    Text("Running")
+                } else {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding(.leading)
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.red)
+                            .padding(.leading)
+                    }
+                    Text("Stopped")
+                }
+                
+                if !isRunning {
+                    Button {
+                        startLightning()
+                    } label: {
+                        Text("Start")
+                    }
+                } else {
+                    Button {
+                        stopLightning()
+                    } label: {
+                        Text("Stop")
                     }
                 }
-        }
-        
-        Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
-            self.onionHost = TorClient.sharedInstance.hostnames()?[5]
-            runScript(script: .getRune)
-        }
-        .padding([.leading])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let quickConnectClnRest = self.quickConnectClnRest {
-            let qr = quickConnectClnRest.qrQode
-            Image(nsImage: qr)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.quickConnectClnRest = nil
-                        self.onionHost = nil
-                        self.lnlink = nil
-                    }
-                }
-            if let onionHost = onionHost {
-                Text(onionHost)
-                    .textSelection(.enabled)
+                
             }
-        }        
+            .padding([.leading])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
         
-        if plasmaExists {
-            Button("Connect Plasma Locally") {
-                getLnLink(isLocal: true)
+        
+        VStack() {
+            Label("Network", systemImage: "network")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text(selectedChain)
+                .padding([.leading])
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Utilities", systemImage: "wrench.and.screwdriver")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Button {
+                    let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
+                    openConf(script: .openFile, env: env, args: []) { _ in }
+                } label: {
+                    Text("Config")
+                }
+                .padding(.leading)
+                
+                Button {
+                    let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
+                    openConf(script: .openFile, env: env, args: []) { _ in }
+                } label: {
+                    Text("Log")
+                }
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        
+        VStack() {
+            Label("Quick Connect", systemImage: "qrcode")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Button("Connect Plasma remotely via LNLink", systemImage: "qrcode") {
+                getLnLink(isLocal: false)
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            
+            
+            if let qrImage = qrImage {
+                Image(nsImage: qrImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                            self.qrImage = nil
+                            self.lnlink = nil
+                        }
+                    }
+            }
+            
+            Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
+                self.onionHost = TorClient.sharedInstance.hostnames()?[5]
+                runScript(script: .getRune)
             }
             .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            if let lnlink = self.localLnlink {
-                Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
+            if let quickConnectClnRest = self.quickConnectClnRest {
+                let qr = quickConnectClnRest.qrQode
+                Image(nsImage: qr)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                            self.quickConnectClnRest = nil
+                            self.onionHost = nil
+                            self.lnlink = nil
+                        }
+                    }
+                if let onionHost = onionHost {
+                    Text(onionHost)
+                        .textSelection(.enabled)
+                }
+            }
+            
+            if plasmaExists {
+                Button("Connect Plasma Locally") {
+                    getLnLink(isLocal: true)
+                }
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                if let lnlink = self.localLnlink {
+                    Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
+                        .padding([.leading])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+            } else {
+                Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
                     .padding([.leading])
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
-        } else {
-            Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
-                .padding([.leading])
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
         
         Spacer()
         HStack() {

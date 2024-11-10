@@ -28,215 +28,252 @@ struct BitcoinCore: View {
     
     
     var body: some View {
-        HStack() {
-            Image(systemName: "server.rack")
-                .padding(.leading)
-            if let version = env["VERSION"] {
-                Text("Bitcoin Core Server v\(version)")
-            } else {
-                Text("Bitcoin Core Server")
+        Spacer()
+        VStack() {
+            
+            HStack() {
+                Image(systemName: "server.rack")
+                    .padding(.leading)
+                if let version = env["VERSION"] {
+                    Text("Bitcoin Core Server v\(version)")
+                } else {
+                    Text("Bitcoin Core Server")
+                }
+                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload {
+                    Label {
+                        Text("Downloading the blockchain...")
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                    }
+                }
+                Spacer()
+                Button {
+                    isBitcoinCoreRunning()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .padding([.trailing])
             }
-            if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload {
-                Label {
-                    Text("Downloading the blockchain...")
-                        .foregroundStyle(.secondary)
-                } icon: {
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                if isAnimating {
                     ProgressView()
                         .scaleEffect(0.5)
+                        .padding([.leading])
                 }
+                if isRunning {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.green)
+                            .padding([.leading])
+                    }
+                    Text("Running")
+                } else {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.red)
+                            .padding([.leading])
+                    }
+                    Text("Stopped")
+                }
+                if !isRunning {
+                    Button {
+                        startBitcoinCore()
+                    } label: {
+                        Text("Start")
+                    }
+                } else {
+                    Button {
+                        stopBitcoinCore()
+                    } label: {
+                        Text("Stop")
+                    }
+                }
+                
+                if let blockchainInfo = blockchainInfo {
+                    if blockchainInfo.progressString == "Fully verified" {
+                        Label {
+                            Text(blockchainInfo.progressString)
+                        } icon: {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                        }
+                    } else {
+                        Label {
+                            Text(blockchainInfo.progressString)
+                        } icon: {
+                            Image(systemName: "xmark.seal")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    Label {
+                        Text("Blockheight: " + "\(blockchainInfo.blockheight)")
+                    } icon: {
+                        Image(systemName: "square.stack.3d.up")
+                    }
+                }
+                
+                EmptyView()
+                    .onReceive(timerForBitcoinStatus) { _ in
+                        isBitcoinCoreRunning()
+                    }
             }
-            Spacer()
-            Button {
-                isBitcoinCoreRunning()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding([.trailing])
+            .padding([.leading, .bottom])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
         }
         .padding([.top])
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
         
-        HStack() {
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-                    .padding([.leading])
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .padding([.leading])
-                }
-                Text("Running")
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                        .padding([.leading])
-                }
-                Text("Stopped")
-            }
-            if !isRunning {
-                Button {
-                    startBitcoinCore()
-                } label: {
-                    Text("Start")
-                }
-            } else {
-                Button {
-                    stopBitcoinCore()
-                } label: {
-                    Text("Stop")
-                }
-            }
+        
+        VStack() {
+            Label("Network", systemImage: "network")
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
-            if let blockchainInfo = blockchainInfo {
-                if blockchainInfo.progressString == "Fully verified" {
-                    Label {
-                        Text(blockchainInfo.progressString)
-                    } icon: {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
+            HStack() {
+                Picker("", selection: $selectedChain) {
+                    ForEach(chains, id: \.self) {
+                        Text($0)
                     }
-                    //.padding([.leading])
-                    //.frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    Label {
-                        Text(blockchainInfo.progressString)
-                    } icon: {
-                        Image(systemName: "xmark.seal")
-                            .foregroundStyle(.orange)
-                    }
-                    //.padding([.leading])
-                    //.frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Label {
-                    Text("Blockheight: " + "\(blockchainInfo.blockheight)")
-                } icon: {
-                    Image(systemName: "square.stack.3d.up")
-                }
-                //.padding([.leading])
-               // .frame(maxWidth: .infinity, alignment: .leading)
-                
-            }
-            
-            EmptyView()
-                .onReceive(timerForBitcoinStatus) { _ in
+                .onChange(of: selectedChain) {
+                    updateChain(chain: selectedChain)
                     isBitcoinCoreRunning()
                 }
-        }
-        .padding([.leading, .bottom])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        
-            
-        
-        Label("Network", systemImage: "network")
-            .padding(.leading)
+                .frame(width: 150)
+            }
+            .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Picker("", selection: $selectedChain) {
-                ForEach(chains, id: \.self) {
-                    Text($0)
-                }
-            }
-            .onChange(of: selectedChain) {
-                updateChain(chain: selectedChain)
-                isBitcoinCoreRunning()
-            }
-            .frame(width: 150)
-        }
-        .padding([.leading, .trailing, .bottom])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Button {
-                runScript(script: .launchVerifier)
-            } label: {
-                Text("Verify")
-            }
-            .padding(.leading)
-            Button {
-                openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
-            } label: {
-                Text("bitcoin.conf")
-            }
-            if let debugPath = debugLogPath() {
-                Button {
-                    openFile(file: debugPath)
-                } label: {
-                    Text("debug.log")
-                }
-            }
-            Button {
-                refreshRPCAuth()
-            } label: {
-                Text("Refresh RPC Authentication")
-            }
-            Button {
-                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
-            } label: {
-                Text("Data")
-            }
-            if Defaults.shared.prune != 0 {
-                Button {
-                    promptToReindex = true
-                } label: {
-                    Text("Reindex")
-                }
-            }
             
         }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Quick Connect", systemImage: "qrcode")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Button("Connect Fully Noded", systemImage: "qrcode") {
-            connectFN()
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let qrImage = qrImage {
-            Image(nsImage: qrImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    setSensitiveDataToNil()
-                }
-        }
+                .padding([.leading, .trailing])
+        )
         
-        if let fullyNodedUrl = fullyNodedUrl {
-            Link("Connect Fully Noded", destination: URL(string: fullyNodedUrl)!)
+        VStack() {
+            Label("Utilities", systemImage: "wrench.and.screwdriver")
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Button {
+                    runScript(script: .launchVerifier)
+                } label: {
+                    Text("Verify")
+                }
+                .padding(.leading)
+                Button {
+                    openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
+                } label: {
+                    Text("bitcoin.conf")
+                }
+                if let debugPath = debugLogPath() {
+                    Button {
+                        openFile(file: debugPath)
+                    } label: {
+                        Text("debug.log")
+                    }
+                }
+                Button {
+                    refreshRPCAuth()
+                } label: {
+                    Text("Refresh RPC Authentication")
+                }
+                Button {
+                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+                } label: {
+                    Text("Data")
+                }
+                if Defaults.shared.prune != 0 {
+                    Button {
+                        promptToReindex = true
+                    } label: {
+                        Text("Reindex")
+                    }
+                }
+                
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        
+        
+        VStack() {
+            Label("Quick Connect", systemImage: "qrcode")
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Button("Connect Fully Noded", systemImage: "qrcode") {
+                connectFN()
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let qrImage = qrImage {
+                Image(nsImage: qrImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        setSensitiveDataToNil()
+                    }
+            }
+            
+            if let fullyNodedUrl = fullyNodedUrl {
+                Link("Connect Fully Noded", destination: URL(string: fullyNodedUrl)!)
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            if let unifyUrl = unifyUrl {
+                Link("Connect Unify", destination: URL(string: unifyUrl)!)
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        
-        if let unifyUrl = unifyUrl {
-            Link("Connect Unify", destination: URL(string: unifyUrl)!)
-                .padding([.leading, .bottom])
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        }
+                .padding([.leading, .trailing])
+        )
         
         Spacer()
         
