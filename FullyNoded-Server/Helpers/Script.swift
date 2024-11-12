@@ -8,6 +8,8 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case launchIncreaseGapLimit
+    case increaseGapLimit
     case reindex
     case stopJm
     case launchJmStarter
@@ -44,6 +46,10 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .launchIncreaseGapLimit:
+            return "LaunchIncreaseGapLimit"
+        case .increaseGapLimit:
+            return "IncreaseGapLimit"
         case .reindex:
             return "Reindex"
         case .stopJm:

@@ -31,6 +31,13 @@ extension Double {
         let exahashesPerSecond = self / 1000000000000000000.0
         return "\(Int(exahashesPerSecond)) EX/s"
     }
+    
+    var avoidNotation: String {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.maximumFractionDigits = 8
+        numberFormatter.numberStyle = .decimal
+        return numberFormatter.string(for: self) ?? ""
+    }
 }
 
 extension Int {

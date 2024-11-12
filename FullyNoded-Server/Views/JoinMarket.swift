@@ -9,6 +9,9 @@ import SwiftUI
 
 struct JoinMarket: View {
     
+    @State private var walletName = ""
+    @State private var gapLimit = ""
+    @State private var promptToIncreaseGapLimit = false
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
@@ -115,6 +118,7 @@ struct JoinMarket: View {
             
             Text(selectedChain)
                 .padding([.leading])
+                .padding(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
@@ -143,11 +147,39 @@ struct JoinMarket: View {
                     Text("Configure JM")
                 }
                 Button {
-                    //openFile(file: "")
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "/Users/\(NSUserName())/Library/Application Support/joinmarket")
                     
                 } label: {
                     Text("Data Dir")
+                }
+                Button {
+                    
+                } label: {
+                    Text("Increase gap limit")
+                }
+                Button {
+                    BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+                        guard error == nil, let result = result as? [String: Any] else {
+                            showMessage(message: error ?? "Unknown error getblbockchaininfo.")
+                            return
+                        }
+                        guard let pruneheight = result["pruneheight"] as? Int else {
+                            showMessage(message: "No pruneheight")
+                            return
+                        }
+                        
+                        BitcoinRPC.shared.command(method: "rescanblockchain", params: ["start_height": pruneheight]) { (result, error) in
+                            guard error == nil, let _ = result as? [String: Any] else {
+                                showMessage(message: error ?? "Unknown error rescanblockchain.")
+                                return
+                            }
+                        }
+                        // No response from core when initiating a rescan...
+                        showMessage(message: "Blockchain rescan started.")
+                    }
+                    
+                } label: {
+                    Text("Rescan")
                 }
             }
             .padding([.leading, .trailing])
@@ -220,6 +252,24 @@ struct JoinMarket: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
+        .alert("Increase the gap limit to? (upon completion a rescan will be required).", isPresented: $promptToIncreaseGapLimit) {
+            TextField("Enter the new gap limit", text: $gapLimit)
+            TextField("Enter the wallet name", text: $walletName)
+            Button("OK", action: increaseGapLimit)
+        }
+    }
+    
+    private func increaseGapLimit() {
+        let env: [String: String] = ["TAG_NAME": env["TAG_NAME"]!, "GAP_AMOUNT": gapLimit, "WALLET_NAME": walletName]
+        ScriptUtil.runScript(script: .launchIncreaseGapLimit, env: env, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+            showMessage(message: "Gap limit increased, check the script output to be sure.")
+        }
     }
     
     private func configureJm() {
@@ -235,6 +285,11 @@ struct JoinMarket: View {
         updateConf(key: "network", value: chain)
         updateConf(key: "rpc_port", value: port)
         updateConf(key: "rpc_wallet_file", value: "jm_wallet")
+        updateConf(key: "tor_control_host", value: "/Users/\(NSUserName())/Library/Caches/tor/cp")
+        updateConf(key: "#max_cj_fee_abs", value: "\(Int.random(in: 5000...10000))")
+        updateConf(key: "#max_cj_fee_rel", value: Double.random(in: 0.00002...0.000025).avoidNotation)
+        updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 5000...10000))")
+        updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00002...0.000025).avoidNotation)
         
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
             guard let rpcCreds = rpcCreds,
@@ -252,7 +307,10 @@ struct JoinMarket: View {
                 guard error == nil else {
                     if !error!.contains("Database already exists.") {
                         showMessage(message: error!)
+                    } else {
+                        showMessage(message: "Join Market configured ✓")
                     }
+                
                     isAnimating = false
                     return
                 }
@@ -280,8 +338,9 @@ struct JoinMarket: View {
         }
         let arr = string.split(separator: "\n")
         for item in arr {
+            let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
             if item.hasPrefix("\(key) =") {
-                let newConf = string.replacingOccurrences(of: item, with: key + " = " + value)
+                let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
                 if (try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)) == nil {
                     print("failed writing to jm config")
                 } else {
@@ -315,21 +374,52 @@ struct JoinMarket: View {
     }
     
     private func openFile(file: String) {
-        let env = ["FILE": "/Users/\(NSUserName())/Library/Application Support/joinmarket/\(file)"]
-        
-        openConf(script: .openFile, env: env, args: []) { _ in }
+        let fileEnv = ["FILE": "/Users/\(NSUserName())/Library/Application Support/joinmarket/\(file)"]
+        ScriptUtil.runScript(script: .openFile, env: fileEnv, args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
     }
         
     private func startJoinMarket() {
+        let fm = FileManager.default
+        let path = "/Users/\(NSUserName())/Library/Application Support/joinmarket/wallets"
+
+        if let wallets = try? fm.contentsOfDirectory(atPath: path) {
+            for wallet in wallets {
+                print("Found \(wallet)")
+                if wallet.hasSuffix(".lock") {
+                    // Delete the .lock file
+                    try? fm.removeItem(atPath: path + "/" + wallet)
+                }
+            }
+        }
         isAnimating = true
         env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
-        runScript(script: .launchJmStarter)
+        ScriptUtil.runScript(script: .launchJmStarter, env: self.env, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
     }
     
     private func stopJoinMarket() {
-        runScript(script: .stopJm)
+        ScriptUtil.runScript(script: .stopJm, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
     }
-    
         
     private func isJoinMarketRunning() {
         if !isAutoRefreshing {
@@ -358,70 +448,6 @@ struct JoinMarket: View {
     private func showMessage(message: String) {
         showError = true
         self.message = message
-    }
-    
-    private func runScript(script: SCRIPT) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
-        
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.environment = env
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            task.waitUntilExit()
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                result += errorOutput
-                if errorOutput != "" {
-                    showMessage(message: errorOutput)
-                }
-            }            
-        }
-    }
-    
-    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        let resource = script.stringValue
-        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
-            return
-        }
-        let stdOut = Pipe()
-        let task = Process()
-        task.launchPath = path
-        task.environment = env
-        task.arguments = args
-        task.standardOutput = stdOut
-        task.launch()
-        task.waitUntilExit()
-        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-        var result = ""
-        if let output = String(data: data, encoding: .utf8) {
-            result += output
-            completion(true)
-        } else {
-            completion(false)
-        }
     }
 }
 

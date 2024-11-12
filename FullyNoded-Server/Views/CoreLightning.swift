@@ -39,7 +39,6 @@ struct CoreLightning: View {
                 }
                 .padding(.trailing)
             }
-            //.padding([.top])
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
@@ -98,7 +97,6 @@ struct CoreLightning: View {
                 .padding([.leading, .trailing])
         )
         
-        
         VStack() {
             Label("Network", systemImage: "network")
                 .padding([.leading])
@@ -126,7 +124,7 @@ struct CoreLightning: View {
             HStack() {
                 Button {
                     let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
-                    openConf(script: .openFile, env: env, args: []) { _ in }
+                    openFile(env: env)
                 } label: {
                     Text("Config")
                 }
@@ -134,7 +132,7 @@ struct CoreLightning: View {
                 
                 Button {
                     let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
-                    openConf(script: .openFile, env: env, args: []) { _ in }
+                    openFile(env: env)
                 } label: {
                     Text("Log")
                 }
@@ -151,7 +149,6 @@ struct CoreLightning: View {
                 .padding([.leading, .trailing])
         )
         
-        
         VStack() {
             Label("Quick Connect", systemImage: "qrcode")
                 .padding([.leading])
@@ -162,9 +159,7 @@ struct CoreLightning: View {
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
-            
-            
-            
+                        
             if let qrImage = qrImage {
                 Image(nsImage: qrImage)
                     .resizable()
@@ -182,7 +177,18 @@ struct CoreLightning: View {
             
             Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
                 self.onionHost = TorClient.sharedInstance.hostnames()?[5]
-                runScript(script: .getRune)
+                ScriptUtil.runScript(script: .getRune, env: nil, args: nil) { (output, rawData, errorMessage) in
+                    guard errorMessage == nil else {
+                        if errorMessage != "" {
+                            showMessage(message: errorMessage!)
+                        } else if let data = rawData {
+                            parseDataResponse(script: .getRune, data: data)
+                        }
+                        return
+                    }
+                    guard let output = output, let data = rawData else { return }
+                    parseDataResponse(script: .getRune, data: data)
+                }
             }
             .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,7 +241,6 @@ struct CoreLightning: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding([.leading, .trailing])
         )
-        
         Spacer()
         HStack() {
             Label(logOutput, systemImage: "info.circle")
@@ -247,6 +252,17 @@ struct CoreLightning: View {
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+    }
+    
+    private func openFile(env: [String: String]?) {
+        ScriptUtil.runScript(script: .openFile, env: env, args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
         }
     }
     
@@ -265,17 +281,65 @@ struct CoreLightning: View {
     
     private func startLightning() {
         isAnimating = true
-        runScript(script: .startLightning)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    } else if let output = output {
+                        parseScriptResult(script: .lightingRunning, result: output)
+                    }
+                    return
+                }
+                guard let output = output else { return }
+                parseScriptResult(script: .lightingRunning, result: output)
+            }
+        }
+        ScriptUtil.runScript(script: .startLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseScriptResult(script: .startLightning, result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseScriptResult(script: .startLightning, result: output)
+        }
     }
     
     private func isLightningOn() {
         isAnimating = true
-        runScript(script: .lightingRunning)
+        ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseScriptResult(script: .lightingRunning, result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseScriptResult(script: .lightingRunning, result: output)
+        }
+        
     }
     
     private func stopLightning() {
         isAnimating = true
-        runScript(script: .stopLightning)
+        ScriptUtil.runScript(script: .stopLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseScriptResult(script: .stopLightning, result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseScriptResult(script: .stopLightning, result: output)
+        }
     }
     
     private func stopLightningParse(result: String) {
@@ -304,69 +368,6 @@ struct CoreLightning: View {
     private func showMessage(message: String) {
         showError = true
         self.message = message
-    }
-    
-    private func runScript(script: SCRIPT) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
-        
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            
-            switch script {
-            case .startLightning:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.runScript(script: .lightingRunning)
-                }
-               
-            default:
-                break
-            }
-                        
-            task.waitUntilExit()
-            
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
-            }
-            
-            switch script {
-            case .getRune, .lightningNodeId:
-                parseDataResponse(script: script, data: data)
-                
-            default:
-                break
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                
-                if errorOutput != "", !errorOutput.contains("Your account is limited to 1 simultaneous ngrok agent sessions") {
-                    showMessage(message: errorOutput)
-                    isAnimating = false
-                } else {
-                    parseScriptResult(script: script, result: result)
-                }
-            }
-        }
     }
     
     func getLnLink(isLocal: Bool) {
@@ -402,7 +403,7 @@ struct CoreLightning: View {
     func getPublicUrl(isLocal: Bool) {
         if isLocal {
             self.publicUrl = "127.0.0.1:9735"
-            runScript(script: .lightningNodeId)
+            getNodeID()
         } else {
             let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
             guard let config = try? Data(contentsOf: path) else {
@@ -420,15 +421,30 @@ struct CoreLightning: View {
                     anyAddr = true
                     let itemArr = item.split(separator: "=")
                     self.publicUrl = "\(itemArr[1])"
-                    runScript(script: .lightningNodeId)
+                    getNodeID()
                 }
             }
             if !anyAddr {
-                runScript(script: .lightningNodeId)
+                getNodeID()
                 showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
             }
         }
         
+    }
+    
+    private func getNodeID() {
+        ScriptUtil.runScript(script: .lightningNodeId, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseScriptResult(script: .lightningNodeId, result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseScriptResult(script: .lightningNodeId, result: output)
+        }
     }
     
     func parseDataResponse(script: SCRIPT, data: Data) {
@@ -447,7 +463,7 @@ struct CoreLightning: View {
         case .lightningNodeId:
             guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
             self.nodeId = info.id
-            runScript(script: .getRune)
+            //runScript(script: .getRune)
             
         default:
             break
@@ -482,33 +498,6 @@ struct CoreLightning: View {
             return((item, nil))
         } catch {
             return((nil, "\(error)"))
-        }
-    }
-    
-    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        #if DEBUG
-        print("script: \(script.stringValue)")
-        #endif
-        let resource = script.stringValue
-        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-        let stdOut = Pipe()
-        let task = Process()
-        task.launchPath = path
-        task.environment = env
-        task.arguments = args
-        task.standardOutput = stdOut
-        task.launch()
-        task.waitUntilExit()
-        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-        var result = ""
-        if let output = String(data: data, encoding: .utf8) {
-            #if DEBUG
-            print("result: \(output)")
-            #endif
-            result += output
-            completion(true)
-        } else {
-            completion(false)
         }
     }
 }

@@ -119,7 +119,7 @@ struct BitcoinCore: View {
                         }
                     }
                     Label {
-                        Text("Blockheight: " + "\(blockchainInfo.blockheight)")
+                        Text("Blockheight " + "\(blockchainInfo.blockheight)")
                     } icon: {
                         Image(systemName: "square.stack.3d.up")
                     }
@@ -181,7 +181,16 @@ struct BitcoinCore: View {
             
             HStack() {
                 Button {
-                    runScript(script: .launchVerifier)
+                    ScriptUtil.runScript(script: .launchVerifier, env: env, args: nil) { (_, _, errorMessage) in
+                        guard errorMessage == nil else {
+                            if errorMessage != "" {
+                                showMessage(message: errorMessage!)
+                            } else {
+                                
+                            }
+                            return
+                        }
+                    }
                 } label: {
                     Text("Verify")
                 }
@@ -206,7 +215,7 @@ struct BitcoinCore: View {
                 Button {
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
                 } label: {
-                    Text("Data")
+                    Text("Data Dir")
                 }
                 if Defaults.shared.prune != 0 {
                     Button {
@@ -287,11 +296,19 @@ struct BitcoinCore: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed?", isPresented: $promptToReindex) {
+        .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed? (it can take awhile..)", isPresented: $promptToReindex) {
             Button("Reindex now", role: .destructive) {
                 if !isRunning {
                     isAnimating = true
-                    runScript(script: .reindex)
+                    ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
+                        guard errorMessage == nil else {
+                            if errorMessage != "" {
+                                showMessage(message: errorMessage!)
+                            }
+                            return
+                        }
+                        showMessage(message: "Reindex initiated, this can take awhile..")
+                    }
                 } else {
                     showMessage(message: "Bitcoin Core must stopped before redindexing.")
                 }
@@ -401,7 +418,18 @@ struct BitcoinCore: View {
                 showMessage(message: "BitcoinRPCCreds update failed")
                 return
             }
-            runScript(script: .killBitcoind)
+            ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    } else {
+                        
+                    }
+                    return
+                }
+                guard let output = output else { return }
+                parseScriptResult(script: .killBitcoind, result: output)
+            }
         }
     }
     
@@ -476,8 +504,14 @@ struct BitcoinCore: View {
     }
     
     private func openFile(file: String) {
-        let env = ["FILE": "\(file)"]
-        openConf(script: .openFile, env: env, args: []) { _ in }
+        ScriptUtil.runScript(script: .openFile, env: ["FILE": "\(file)"], args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
     }
     
     private func updateChain(chain: String) {
@@ -564,12 +598,34 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
-        runScript(script: .startBitcoin)
+        ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else {
+                    
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseDidBitcoinStart(result: output)
+        }
     }
     
     private func startBitcoinParse(result: String) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-            self.runScript(script: .didBitcoindStart)
+            ScriptUtil.runScript(script: .didBitcoindStart, env: env, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    } else {
+                        
+                    }
+                    return
+                }
+                guard let output = output else { return }
+                parseScriptResult(script: .didBitcoindStart, result: output)
+            }
         }
     }
     
@@ -686,50 +742,7 @@ struct BitcoinCore: View {
         showError = true
         self.message = message
     }
-    
-    private func runScript(script: SCRIPT) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
         
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.environment = env
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            task.waitUntilExit()
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                result += errorOutput
-                if errorOutput != "" {
-                    showMessage(message: errorOutput)
-                }
-            }
-            
-            parseScriptResult(script: script, result: result)
-        }
-    }
-    
     func parseScriptResult(script: SCRIPT, result: String) {
         switch script {
         case .startBitcoin:
@@ -747,29 +760,6 @@ struct BitcoinCore: View {
             
         default:
             break
-        }
-    }
-    
-    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        let resource = script.stringValue
-        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
-            return
-        }
-        let stdOut = Pipe()
-        let task = Process()
-        task.launchPath = path
-        task.environment = env
-        task.arguments = args
-        task.standardOutput = stdOut
-        task.launch()
-        task.waitUntilExit()
-        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-        var result = ""
-        if let output = String(data: data, encoding: .utf8) {
-            result += output
-            completion(true)
-        } else {
-            completion(false)
         }
     }
 }
