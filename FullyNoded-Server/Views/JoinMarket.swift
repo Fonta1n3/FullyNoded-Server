@@ -181,6 +181,16 @@ struct JoinMarket: View {
                 } label: {
                     Text("Rescan")
                 }
+                Button {
+                    ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
+                        guard let errorMess = errorMessage, errorMess != "" else { 
+                            showMessage(message: "A terminal has launched, read its output, you should be able to go to a browser and visit http://localhost:62601 to see the order book.")
+                            return }
+                        showMessage(message: errorMess)
+                    }
+                } label: {
+                    Text("Order Book")
+                }
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -246,6 +256,7 @@ struct JoinMarket: View {
                 .padding(.all)
         }
         .onAppear(perform: {
+            env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
             selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
             isJoinMarketRunning()
         })

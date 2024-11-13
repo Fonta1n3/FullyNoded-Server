@@ -94,7 +94,6 @@ struct ContentView: View {
                                     Button("Install Core Lightning") {
                                         installLightning()
                                     }
-                                    //.padding([])
                                     Spacer()
                                 } else {
                                     Text("First install Bitcoin Core.")
@@ -176,6 +175,7 @@ struct ContentView: View {
                                         .onReceive(timerForLightningInstall) { _ in
                                             if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd") {
                                                 lightningInstalled = true
+                                                isInstallingLightning = false
                                                 self.timerForLightningInstall.upstream.connect().cancel()
                                             }
                                         }

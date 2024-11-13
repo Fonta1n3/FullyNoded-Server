@@ -78,6 +78,8 @@
 		593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A891E2CE28334001504F0 /* IncreaseGapLimit.command */; };
 		593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */; };
 		593A89232CE511F8001504F0 /* FNIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89222CE511F8001504F0 /* FNIcon.swift */; };
+		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
+		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -157,6 +159,8 @@
 		593A891E2CE28334001504F0 /* IncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IncreaseGapLimit.command; sourceTree = "<group>"; };
 		593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchIncreaseGapLimit.command; sourceTree = "<group>"; };
 		593A89222CE511F8001504F0 /* FNIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FNIcon.swift; sourceTree = "<group>"; };
+		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
+		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -315,6 +319,8 @@
 				0A0632AF2CD06B470059FAD4 /* Reindex.command */,
 				593A891E2CE28334001504F0 /* IncreaseGapLimit.command */,
 				593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */,
+				593A89242CE519B3001504F0 /* LaunchObWatcher.command */,
+				593A89262CE51A35001504F0 /* ObWatcher.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -404,6 +410,7 @@
 				0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */,
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
+				593A89272CE51A35001504F0 /* ObWatcher.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
 				0AD7BE152CBD7AC100428D02 /* LaunchJMInstaller.command in Resources */,
@@ -424,6 +431,7 @@
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
+				593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */,
 				0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */,
 				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,

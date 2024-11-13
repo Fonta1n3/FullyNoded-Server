@@ -8,6 +8,8 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case obWatcher
+    case launchObWatcher
     case launchIncreaseGapLimit
     case increaseGapLimit
     case reindex
@@ -46,6 +48,10 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .obWatcher:
+            return "ObWatcher"
+        case .launchObWatcher:
+            return "LaunchObWatcher"
         case .launchIncreaseGapLimit:
             return "LaunchIncreaseGapLimit"
         case .increaseGapLimit:
