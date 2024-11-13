@@ -28,7 +28,7 @@ struct BitcoinCore: View {
     
     
     var body: some View {
-        Spacer()
+       FNIcon()
         VStack() {
             
             HStack() {

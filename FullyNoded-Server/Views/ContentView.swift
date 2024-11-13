@@ -20,6 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     
+    @State private var isInstallingLightning = false
     @State private var torProgress = 0.0
     @State private var showError = false
     @State private var message = ""
@@ -75,22 +76,29 @@ struct ContentView: View {
                                 )
                             }
                         } else if service.name == "Core Lightning" {
-                            if lightningInstalled {
+                            if isInstallingLightning {
+                                HStack() {
+                                    ProgressView()
+                                        .scaleEffect(0.5)
+                                    Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
+                                }
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .padding([.leading, .top])
+                                
+                            } else if lightningInstalled {
                                 CoreLightning()
                             } else {
+                                FNIcon()
+                                Spacer()
                                 if bitcoinCoreInstalled {
                                     Button("Install Core Lightning") {
                                         installLightning()
                                     }
+                                    //.padding([])
+                                    Spacer()
                                 } else {
                                     Text("First install Bitcoin Core.")
                                 }
-                                Home(
-                                    showBitcoinCoreInstallButton: false,
-                                    env: [:],
-                                    showJoinMarketInstallButton: false,
-                                    jmTaggedReleases: []
-                                )
                             }
                             
                         } else if service.name == "Join Market" {
@@ -108,6 +116,7 @@ struct ContentView: View {
                                 )
                             }
                         } else if service.name == "Tor" {
+                            FNIcon()
                             HStack() {
                                 if torProgress < 100.0 {
                                     ProgressView("Tor bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
@@ -127,12 +136,8 @@ struct ContentView: View {
                                     }
                                 }
                             }
-                            Home(
-                                showBitcoinCoreInstallButton: false,
-                                env: [:],
-                                showJoinMarketInstallButton: false,
-                                jmTaggedReleases: []
-                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Spacer()
                         }
                     } label: {
                         HStack() {
@@ -247,27 +252,21 @@ struct ContentView: View {
         }
         .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {
-                runScript(script: .installHomebrew, env: [:])
+                ScriptUtil.runScript(script: .installHomebrew, env: nil, args: nil) { (_, _, _) in }
             }
         }
         .alert("Install Xcode Command Line Tools? This is required for Fully Noded - Server to function.", isPresented: $promptToInstallXcode, actions: {
             Button("OK", role: .cancel) {
-                runScript(script: .installXcode, env: [:])
+                ScriptUtil.runScript(script: .installXcode, env: nil, args: nil) { (_, _, _) in }
             }
         })
         .alert("Bitcoin Install complete.", isPresented: $bitcoinInstallSuccess) {
             Button("OK", role: .cancel) {
-                runScript(script: .checkForBitcoin, env: env)
+                checkForBitcoin()
             }
         }
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
-        }
-        
-        .alert("Install XCode command line tools? FullyNoded-Server relies on Xcode command line tools to function.", isPresented: $promptToInstallXcode) {
-            Button("OK", role: .cancel) {
-                runScript(script: .installXcode, env: env)
-            }
         }
     }
     
@@ -306,23 +305,28 @@ struct ContentView: View {
     }
     
     private func installLightning() {
+        isInstallingLightning = true
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
             guard let bitcoinRPCCreds = bitcoinRPCCreds else {
+                isInstallingLightning = false
                 showMessage(message: "NO Bitcoin RPC Creds, create them?")
                 return
             }
             
             guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else {
+                isInstallingLightning = false
                 showMessage(message: "Unable to get encrypted rpc password.")
                 return
             }
             
             guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else {
+                isInstallingLightning = false
                 showMessage(message: "Decrypting rpc password failed.")
                 return
             }
             
             guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else {
+                isInstallingLightning = false
                 showMessage(message: "Encoding rpc password data as utf8 failed.")
                 return
             }
@@ -338,7 +342,15 @@ struct ContentView: View {
             }
             lightningEnv["NETWORK"] = network
             
-            runScript(script: .launchLightningInstall, env: lightningEnv)
+            ScriptUtil.runScript(script: .launchLightningInstall, env: lightningEnv, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    }
+                    return
+                }
+                return
+            }
         }
     }
     
@@ -368,7 +380,7 @@ struct ContentView: View {
                     ]
                     
                     services = [bitcoinCore, coreLightning, joinMarket, tor]
-                    runScript(script: .checkForBitcoin, env: env)
+                    checkForBitcoin()
                 }
                 
                 return
@@ -386,14 +398,28 @@ struct ContentView: View {
             ]
                         
             services = [bitcoinCore, coreLightning, joinMarket, tor]
-            runScript(script: .checkForBitcoin, env: env)
+            checkForBitcoin()
+        }
+    }
+    
+    private func checkForBitcoin() {
+        ScriptUtil.runScript(script: .checkForBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseBitcoindVersionResponse(result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseBitcoindVersionResponse(result: output)
         }
     }
     
     func parseBitcoindVersionResponse(result: String) {
         if result.contains("Bitcoin Core Daemon version") || result.contains("Bitcoin Core version") {
             bitcoinCoreInstalled = true
-            runScript(script: .checkForBrew, env: env)
             let tempPath = "/Users/\(NSUserName())/.fullynoded/installBitcoin.sh"
             if FileManager.default.fileExists(atPath: tempPath) {
                 try? FileManager.default.removeItem(atPath: tempPath)
@@ -426,87 +452,9 @@ struct ContentView: View {
         }
     }
     
-    private func runScript(script: SCRIPT, env: [String: String]) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
-        
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.environment = env
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            task.waitUntilExit()
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                result += errorOutput
-                
-                if errorOutput != "" {
-                    showMessage(message: errorOutput)
-                }
-            }
-            
-            parseScriptResult(script: script, result: result)
-        }
-    }
-    
-    
     private func showMessage(message: String) {
         showError = true
         self.message = message
-    }
-    
-    func parseScriptResult(script: SCRIPT, result: String) {
-        #if DEBUG
-        print("parse \(script.stringValue)")
-        print("result: \(result)")
-        #endif
-        switch script {
-        case .checkForBitcoin:
-            parseBitcoindVersionResponse(result: result)
-
-//        case .checkXcodeSelect:
-//            parseXcodeSelectResult(result: result)
-            
-//        case .checkForBrew:
-//            if result != "" {
-//                runScript(script: .lightningInstalled, env: env)
-//            } else {
-//                promptToInstallBrew = true
-//            }
-            
-        case .lightningInstalled:
-            if result.hasPrefix("Installed") {
-                runScript(script: .lightingRunning, env: env)
-                lightningInstalled = true  
-            } else {
-                lightningInstalled = false
-                promptToInstallLightning = true
-            }
-            
-        default:
-            break
-        }
     }
     
     private func parseXcodeSelectResult(result: String) {

@@ -24,7 +24,7 @@ struct CoreLightning: View {
     @State private var quickConnectClnRest: String? = nil
     
     var body: some View {
-        Spacer()
+        FNIcon()
         VStack() {
             HStack() {
                 Image(systemName: "server.rack")

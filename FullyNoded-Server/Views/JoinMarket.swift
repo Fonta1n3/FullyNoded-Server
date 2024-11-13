@@ -29,7 +29,7 @@ struct JoinMarket: View {
     
     
     var body: some View {
-        Spacer()
+        FNIcon()
         VStack() {
             HStack() {
                 Image(systemName: "server.rack")
@@ -282,14 +282,15 @@ struct JoinMarket: View {
         default:
             break
         }
+        updateConf(key: "tx_fees", value: "7000")//https://github.com/openoms/bitcoin-tutorials/blob/master/joinmarket/README.md
         updateConf(key: "network", value: chain)
         updateConf(key: "rpc_port", value: port)
         updateConf(key: "rpc_wallet_file", value: "jm_wallet")
         updateConf(key: "tor_control_host", value: "/Users/\(NSUserName())/Library/Caches/tor/cp")
-        updateConf(key: "#max_cj_fee_abs", value: "\(Int.random(in: 5000...10000))")
-        updateConf(key: "#max_cj_fee_rel", value: Double.random(in: 0.00002...0.000025).avoidNotation)
-        updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 5000...10000))")
-        updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00002...0.000025).avoidNotation)
+        updateConf(key: "#max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
+        updateConf(key: "#max_cj_fee_rel", value: Double.random(in: 0.00199...0.00243).avoidNotation)
+        updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
+        updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00243...0.00421).avoidNotation)
         
         DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
             guard let rpcCreds = rpcCreds,
