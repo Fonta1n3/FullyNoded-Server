@@ -246,10 +246,15 @@ struct CoreLightning: View {
                 .padding([.leading, .trailing])
         )
         Spacer()
-        HStack() {
-            Label(logOutput, systemImage: "info.circle")
-                .padding(.all)
+        Label {
+            Text(logOutput)
+                .foregroundStyle(.green)
+        } icon: {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.green)
         }
+        .padding(.all)
+        .foregroundStyle(.secondary)
         .onAppear(perform: {
             isLightningOn()
             checkIfPlasmaExists()

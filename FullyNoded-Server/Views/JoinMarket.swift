@@ -237,10 +237,15 @@ struct JoinMarket: View {
         
         Spacer()
         
-        HStack() {
-            Label(logOutput, systemImage: "info.circle")
-                .padding(.all)
+        Label {
+            Text(logOutput)
+                .foregroundStyle(.green)
+        } icon: {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.green)
         }
+        .padding(.all)
+        .foregroundStyle(.secondary)
         .onAppear(perform: {
             env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
             selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
