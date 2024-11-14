@@ -30,7 +30,7 @@ struct CoreLightning: View {
                 Image(systemName: "server.rack")
                     .padding(.leading)
                 
-                Text("Core Lightning Server")
+                Text("Core Lightning Server v24.08.1")
                 Spacer()
                 Button {
                     isLightningOn()
@@ -51,23 +51,27 @@ struct CoreLightning: View {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding(.leading)
+                        Text("Stopping...")
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
                             .padding(.leading)
+                        Text("Running")
                     }
-                    Text("Running")
+                    
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding(.leading)
+                        Text("Starting...")
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
                             .padding(.leading)
+                        Text("Stopped")
                     }
-                    Text("Stopped")
+                    
                 }
                 
                 if !isRunning {
@@ -182,12 +186,12 @@ struct CoreLightning: View {
                         if errorMessage != "" {
                             showMessage(message: errorMessage!)
                         } else if let data = rawData {
-                            parseDataResponse(script: .getRune, data: data)
+                            parseRuneResponse(data: data)
                         }
                         return
                     }
                     guard let output = output, let data = rawData else { return }
-                    parseDataResponse(script: .getRune, data: data)
+                    parseRuneResponse(data: data)
                 }
             }
             .padding([.leading])
@@ -279,6 +283,15 @@ struct CoreLightning: View {
         getPublicUrl(isLocal: false)
     }
     
+    private func parseLightningRunning(output: String) {
+        isAnimating = false
+        if output.contains("Running") {
+            isRunning = true
+        } else if output.contains("Stopped") {
+            isRunning = false
+        }
+    }
+    
     private func startLightning() {
         isAnimating = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -287,25 +300,21 @@ struct CoreLightning: View {
                     if errorMessage != "" {
                         showMessage(message: errorMessage!)
                     } else if let output = output {
-                        parseScriptResult(script: .lightingRunning, result: output)
+                        parseLightningRunning(output: output)
                     }
                     return
                 }
                 guard let output = output else { return }
-                parseScriptResult(script: .lightingRunning, result: output)
+                parseLightningRunning(output: output)
             }
         }
         ScriptUtil.runScript(script: .startLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
-                } else if let output = output {
-                    parseScriptResult(script: .startLightning, result: output)
                 }
                 return
             }
-            guard let output = output else { return }
-            parseScriptResult(script: .startLightning, result: output)
         }
     }
     
@@ -316,14 +325,13 @@ struct CoreLightning: View {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
                 } else if let output = output {
-                    parseScriptResult(script: .lightingRunning, result: output)
+                    parseLightningRunning(output: output)
                 }
                 return
             }
             guard let output = output else { return }
-            parseScriptResult(script: .lightingRunning, result: output)
+            parseLightningRunning(output: output)
         }
-        
     }
     
     private func stopLightning() {
@@ -333,12 +341,12 @@ struct CoreLightning: View {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
                 } else if let output = output {
-                    parseScriptResult(script: .stopLightning, result: output)
+                    stopLightningParse(result: output)
                 }
                 return
             }
             guard let output = output else { return }
-            parseScriptResult(script: .stopLightning, result: output)
+            stopLightningParse(result: output)
         }
     }
     
@@ -437,59 +445,33 @@ struct CoreLightning: View {
             guard errorMessage == nil else {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
-                } else if let output = output {
-                    parseScriptResult(script: .lightningNodeId, result: output)
+                } else if let data = rawData {
+                    parseLigtningNodeId(data: data)
                 }
                 return
             }
-            guard let output = output else { return }
-            parseScriptResult(script: .lightningNodeId, result: output)
+            guard let data = rawData else { return }
+            parseLigtningNodeId(data: data)
         }
     }
     
-    func parseDataResponse(script: SCRIPT, data: Data) {
-        switch script {
-        case .getRune:
-            guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
-            let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
-            if publicUrl != "" {
-                self.qrImage = publicLnLink.qrQode
-            }
-            self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
-            if let onionHost = self.onionHost {
-                self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
-            }
-            
-        case .lightningNodeId:
-            guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
-            self.nodeId = info.id
-            //runScript(script: .getRune)
-            
-        default:
-            break
-        }
+    private func parseLigtningNodeId(data: Data) {
+        guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
+        self.nodeId = info.id
     }
     
-    func parseScriptResult(script: SCRIPT, result: String) {
-        switch script {
-        case .stopLightning:
-            stopLightningParse(result: result)
-            
-        case .lightingRunning:
-            isAnimating = false
-            if result.contains("Running") {
-                isRunning = true
-                
-            } else if result.contains("Stopped") {
-                isRunning = false
-            }
-            
-        default:
-            break
+    private func parseRuneResponse(data: Data) {
+        guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
+        let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+        if publicUrl != "" {
+            self.qrImage = publicLnLink.qrQode
         }
-        
-        showLog()
+        self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
+        if let onionHost = self.onionHost {
+            self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
+        }
     }
+
     
     private func dec(_ codable: Codable.Type, _ jsonData: Data) -> (response: Any?, errorDesc: String?) {
         let decoder = JSONDecoder()

@@ -129,7 +129,7 @@ struct JoinMarketTaggedReleasesView: View {
         updateConf(key: "rpc_port", value: port)
         updateConf(key: "rpc_wallet_file", value: "jm_wallet")
         
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { rpcCreds in
             guard let rpcCreds = rpcCreds, 
                     let encryptedPassword = rpcCreds["password"] as? Data,
                     let decryptedPass = Crypto.decrypt(encryptedPassword),

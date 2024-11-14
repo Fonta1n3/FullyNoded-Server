@@ -80,6 +80,7 @@
 		593A89232CE511F8001504F0 /* FNIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89222CE511F8001504F0 /* FNIcon.swift */; };
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
+		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -161,6 +162,7 @@
 		593A89222CE511F8001504F0 /* FNIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FNIcon.swift; sourceTree = "<group>"; };
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
+		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -211,6 +213,7 @@
 				0AD7BE122CBD6F1000428D02 /* Assets.swift */,
 				0AD7BE1C2CBD923300428D02 /* JMWallet.swift */,
 				0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */,
+				593A89282CE6797C001504F0 /* Entity.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -513,6 +516,7 @@
 				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
 				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
+				593A89292CE6797C001504F0 /* Entity.swift in Sources */,
 				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,

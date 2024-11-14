@@ -60,177 +60,186 @@ struct ContentView: View {
     
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(services) { service in
-                    NavigationLink {
-                        if service.name == "Bitcoin Core" {
-                            if bitcoinCoreInstalled {
-                                BitcoinCore()
-                            } else {
-                                Home(
-                                    showBitcoinCoreInstallButton: true,
-                                    env: env,
-                                    showJoinMarketInstallButton: false,
-                                    jmTaggedReleases: []
-                                )
-                            }
-                        } else if service.name == "Core Lightning" {
-                            if isInstallingLightning {
-                                HStack() {
-                                    ProgressView()
-                                        .scaleEffect(0.5)
-                                    Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .topLeading)
-                                .padding([.leading, .top])
-                                
-                            } else if lightningInstalled {
-                                CoreLightning()
-                            } else {
-                                FNIcon()
-                                Spacer()
-                                if bitcoinCoreInstalled {
-                                    Button("Install Core Lightning") {
-                                        installLightning()
-                                    }
-                                    Spacer()
-                                } else {
-                                    Text("First install Bitcoin Core.")
-                                }
-                            }
-                            
-                        } else if service.name == "Join Market" {
-                            if joinMarketInstalled {
-                                JoinMarket()
-                            } else {
-                                if !bitcoinCoreInstalled {
-                                    Text("First install Bitcoin Core.")
-                                }
-                                Home(
-                                    showBitcoinCoreInstallButton: false,
-                                    env: env,
-                                    showJoinMarketInstallButton: true,
-                                    jmTaggedReleases: jmTaggedReleases
-                                )
-                            }
-                        } else if service.name == "Tor" {
-                            FNIcon()
-                            HStack() {
-                                if torProgress < 100.0 {
-                                    ProgressView("Tor bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
-                                        .padding([.leading, .trailing])
-                                        .frame(alignment: .topLeading)
-                                } else {
-                                    if torRunning {
-                                        Image(systemName: "circle.fill")
-                                            .foregroundStyle(.green)
-                                            .padding([.leading])
-                                        Text("Tor running")
-                                    } else {
-                                        Image(systemName: "circle.fill")
-                                            .foregroundStyle(.orange)
-                                            .padding([.leading])
-                                        Text("Tor stopped")
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            Spacer()
-                        }
-                    } label: {
-                        HStack() {
+            NavigationView {
+                List {
+                    ForEach(services) { service in
+                        NavigationLink {
                             if service.name == "Bitcoin Core" {
                                 if bitcoinCoreInstalled {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.green)
+                                    BitcoinCore()
                                 } else {
-                                    Image(systemName: "xmark")
-                                        .foregroundStyle(.gray)
-                                    EmptyView()
-                                        .onReceive(timerForBitcoinInstall) { _ in
-                                            DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
-                                                guard let bitcoinEnv = bitcoinEnv else { return }
-                                                let envValues = BitcoinEnvValues(dictionary: bitcoinEnv)
-                                                let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(envValues.prefix)/bin/bitcoind"
-                                                if FileManager.default.fileExists(atPath: tempPath) {
-                                                    bitcoinCoreInstalled = true
-                                                    self.timerForBitcoinInstall.upstream.connect().cancel()
-                                                    getJmRelease()
-                                                }
-                                            }
-                                            
-                                        }
+                                    Home(
+                                        showBitcoinCoreInstallButton: true,
+                                        env: env,
+                                        showJoinMarketInstallButton: false,
+                                        jmTaggedReleases: []
+                                    )
                                 }
-                            }
-                            
-                            if service.name == "Core Lightning" {
-                                if lightningInstalled {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.green)
+                            } else if service.name == "Core Lightning" {
+                                if isInstallingLightning {
+                                    HStack() {
+                                        ProgressView()
+                                            .scaleEffect(0.5)
+                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                    .padding([.leading, .top])
+                                    
+                                } else if lightningInstalled {
+                                    CoreLightning()
                                 } else {
-                                    Image(systemName: "xmark")
-                                        .foregroundStyle(.gray)
-                                    EmptyView()
-                                        .onReceive(timerForLightningInstall) { _ in
-                                            if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd") {
-                                                lightningInstalled = true
-                                                isInstallingLightning = false
-                                                self.timerForLightningInstall.upstream.connect().cancel()
-                                            }
+                                    FNIcon()
+                                    Spacer()
+                                    if bitcoinCoreInstalled {
+                                        Button("Install Core Lightning") {
+                                            installLightning()
                                         }
+                                        Spacer()
+                                    } else {
+                                        Text("First install Bitcoin Core.")
+                                    }
                                 }
-                            }
-                            
-                            if service.name == "Join Market" {
+                                
+                            } else if service.name == "Join Market" {
                                 if joinMarketInstalled {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.green)
+                                    JoinMarket()
                                 } else {
-                                    Image(systemName: "xmark")
-                                        .foregroundStyle(.gray)
-                                    EmptyView()
-                                        .onReceive(timerForJMInstall) { _ in
-                                            if let tagName = UserDefaults.standard.string(forKey: "tagName") {
-                                                let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-                                                if FileManager.default.fileExists(atPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py") && FileManager.default.fileExists(atPath: jmConfigPath) {
-                                                    joinMarketInstalled = true
-                                                    self.timerForJMInstall.upstream.connect().cancel()
-                                                }
+                                    if !bitcoinCoreInstalled {
+                                        Text("First install Bitcoin Core.")
+                                    }
+                                    Home(
+                                        showBitcoinCoreInstallButton: false,
+                                        env: env,
+                                        showJoinMarketInstallButton: true,
+                                        jmTaggedReleases: jmTaggedReleases
+                                    )
+                                }
+                            } else if service.name == "Tor" {
+                                FNIcon()
+                                HStack() {
+                                    if torProgress < 100.0 {
+                                        ProgressView("Tor v0.4.8.12 bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
+                                            .padding([.leading, .trailing])
+                                            .frame(alignment: .topLeading)
+                                    } else {
+                                        if torRunning {
+                                            Image(systemName: "circle.fill")
+                                                .foregroundStyle(.green)
+                                                .padding([.leading])
+                                            Text("Tor v0.4.8.12 running")
+                                        } else {
+                                            Image(systemName: "circle.fill")
+                                                .foregroundStyle(.orange)
+                                                .padding([.leading])
+                                            Text("Tor v0.4.8.12 stopped")
+                                        }
+                                    }
+                                    Toggle("", isOn: $torRunning)
+                                        .toggleStyle(SwitchToggleStyle())
+                                        .onChange(of: torRunning) {
+                                            if !torRunning {
+                                                TorClient.sharedInstance.resign()
                                             }
                                         }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
                             }
-                            
-                            if service.name == "Tor" {
-                                if torProgress < 100.0 {
-                                    ProgressView()
-                                        //.padding(.leading)
-                                    #if os(macOS)
-                                        .scaleEffect(0.5)
-                                    #endif
-                                } else {
-                                    if torRunning {
+                        } label: {
+                            HStack() {
+                                if service.name == "Bitcoin Core" {
+                                    if bitcoinCoreInstalled {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(.green)
                                     } else {
                                         Image(systemName: "xmark")
                                             .foregroundStyle(.gray)
+                                        EmptyView()
+                                            .onReceive(timerForBitcoinInstall) { _ in
+                                                DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
+                                                    guard let bitcoinEnv = bitcoinEnv else { return }
+                                                    let envValues = BitcoinEnvValues(dictionary: bitcoinEnv)
+                                                    let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(envValues.prefix)/bin/bitcoind"
+                                                    if FileManager.default.fileExists(atPath: tempPath) {
+                                                        bitcoinCoreInstalled = true
+                                                        self.timerForBitcoinInstall.upstream.connect().cancel()
+                                                        getJmRelease()
+                                                    }
+                                                }
+                                                
+                                            }
                                     }
                                 }
                                 
-                                EmptyView()
-                                    .onReceive(timerForTor) { _ in
-                                        self.torRunning = TorClient.sharedInstance.state == .connected
+                                if service.name == "Core Lightning" {
+                                    if lightningInstalled {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.gray)
+                                        EmptyView()
+                                            .onReceive(timerForLightningInstall) { _ in
+                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd") {
+                                                    lightningInstalled = true
+                                                    isInstallingLightning = false
+                                                    self.timerForLightningInstall.upstream.connect().cancel()
+                                                }
+                                            }
                                     }
+                                }
+                                
+                                if service.name == "Join Market" {
+                                    if joinMarketInstalled {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.gray)
+                                        EmptyView()
+                                            .onReceive(timerForJMInstall) { _ in
+                                                if let tagName = UserDefaults.standard.string(forKey: "tagName") {
+                                                    let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+                                                    if FileManager.default.fileExists(atPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py") && FileManager.default.fileExists(atPath: jmConfigPath) {
+                                                        joinMarketInstalled = true
+                                                        self.timerForJMInstall.upstream.connect().cancel()
+                                                    }
+                                                }
+                                            }
+                                    }
+                                }
+                                
+                                if service.name == "Tor" {
+                                    if torProgress < 100.0 {
+                                        ProgressView()
+#if os(macOS)
+                                            .scaleEffect(0.5)
+#endif
+                                    } else {
+                                        if torRunning {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.green)
+                                        } else {
+                                            Image(systemName: "xmark")
+                                                .foregroundStyle(.gray)
+                                        }
+                                    }
+                                    
+                                    EmptyView()
+                                        .onReceive(timerForTor) { _ in
+                                            self.torRunning = TorClient.sharedInstance.state == .connected
+                                        }
+                                }
+                                Text(service.name)
                             }
-                            Text(service.name)
+                            
                         }
-                        
                     }
                 }
+                Text("Select a service.")
+                    .foregroundStyle(.secondary)
             }
-        }
+        
         .onAppear(perform: {
             /// For testing fresh install.
 //            DataManager.deleteAllData(entityName: "BitcoinRPCCreds") { deleted in
@@ -306,7 +315,7 @@ struct ContentView: View {
     
     private func installLightning() {
         isInstallingLightning = true
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { bitcoinRPCCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { bitcoinRPCCreds in
             guard let bitcoinRPCCreds = bitcoinRPCCreds else {
                 isInstallingLightning = false
                 showMessage(message: "NO Bitcoin RPC Creds, create them?")
@@ -355,7 +364,7 @@ struct ContentView: View {
     }
     
     private func getSavedValues() {
-        DataManager.retrieve(entityName: "BitcoinEnv") { bitcoinEnv in
+        DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
             guard let bitcoinEnv = bitcoinEnv else {
                 let dict = [
                     "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
@@ -365,7 +374,7 @@ struct ContentView: View {
                     "chain": Defaults.shared.chain
                 ]
                 
-                DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
+                DataManager.saveEntity(entityName: .bitcoinEnv, dict: dict) { saved in
                     guard saved else {
                         showMessage(message: "Unable to save default bitcoin env values.")
                         return

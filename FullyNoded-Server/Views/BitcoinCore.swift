@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @State private var rpcAuth = ""
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
@@ -70,23 +71,27 @@ struct BitcoinCore: View {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
+                        Text("Stopping...")
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
                             .padding([.leading])
+                        Text("Running")
                     }
-                    Text("Running")
+                   
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
+                        Text("Starting...")
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
                             .padding([.leading])
+                        Text("Stopped")
                     }
-                    Text("Stopped")
+                   
                 }
                 if !isRunning {
                     Button {
@@ -181,16 +186,7 @@ struct BitcoinCore: View {
             
             HStack() {
                 Button {
-                    ScriptUtil.runScript(script: .launchVerifier, env: env, args: nil) { (_, _, errorMessage) in
-                        guard errorMessage == nil else {
-                            if errorMessage != "" {
-                                showMessage(message: errorMessage!)
-                            } else {
-                                
-                            }
-                            return
-                        }
-                    }
+                    verify()
                 } label: {
                     Text("Verify")
                 }
@@ -213,7 +209,7 @@ struct BitcoinCore: View {
                     Text("Refresh RPC Authentication")
                 }
                 Button {
-                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+                    openDataDir()
                 } label: {
                     Text("Data Dir")
                 }
@@ -238,8 +234,6 @@ struct BitcoinCore: View {
                 .padding([.leading, .trailing])
         )
         
-        
-        
         VStack() {
             Label("Quick Connect", systemImage: "qrcode")
                 .padding([.leading])
@@ -251,6 +245,24 @@ struct BitcoinCore: View {
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
             
+            HStack() {
+                Text("Authorize an additional RPC user:")
+                    .padding([.leading])
+                TextField("rpcauth=FullyNoded:xxxx$xxxx", text: $rpcAuth)
+                    .padding([])
+                if rpcAuth != "" {
+                    Button {
+                        if addRpcAuthToConf() {
+                            rpcAuth = ""
+                            showMessage(message: "RPC user authorized. You will need to restart your node for the change to take effect.")
+                        }
+                    } label: {
+                        Text("Add RPC auth")
+                    }
+                }
+                Spacer()
+            }
+            
             if let qrImage = qrImage {
                 Image(nsImage: qrImage)
                     .resizable()
@@ -258,9 +270,6 @@ struct BitcoinCore: View {
                     .frame(width: 100, height: 100)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
-                    .onAppear {
-                        setSensitiveDataToNil()
-                    }
             }
             
             if let fullyNodedUrl = fullyNodedUrl {
@@ -298,20 +307,41 @@ struct BitcoinCore: View {
         }
         .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed? (it can take awhile..)", isPresented: $promptToReindex) {
             Button("Reindex now", role: .destructive) {
-                if !isRunning {
-                    isAnimating = true
-                    ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
-                        guard errorMessage == nil else {
-                            if errorMessage != "" {
-                                showMessage(message: errorMessage!)
-                            }
-                            return
-                        }
-                        showMessage(message: "Reindex initiated, this can take awhile..")
+                reindex()
+            }
+        }
+    }
+    
+    private func reindex() {
+        if !isRunning {
+            isAnimating = true
+            ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
                     }
-                } else {
-                    showMessage(message: "Bitcoin Core must stopped before redindexing.")
+                    return
                 }
+                showMessage(message: "Reindex initiated, this can take awhile..")
+            }
+        } else {
+            showMessage(message: "Bitcoin Core must stopped before redindexing.")
+        }
+    }
+    
+    private func openDataDir() {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+    }
+    
+    private func verify() {
+        ScriptUtil.runScript(script: .launchVerifier, env: env, args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else {
+                    
+                }
+                return
             }
         }
     }
@@ -374,11 +404,7 @@ struct BitcoinCore: View {
             return
         }
         
-        let dataDir = Defaults.shared.dataDir
-        
-        let bitcoinConfPath = dataDir + "/bitcoin.conf"
-        
-        guard let conf = conf(stringPath: bitcoinConfPath) else {
+        guard let conf = bitcoinConf() else {
             return
         }
         
@@ -398,7 +424,7 @@ struct BitcoinCore: View {
             \(removeFullyNodedUser)
             """
         
-        guard ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)) != nil) else {
+        guard writeBitcoinConf(newConf: newConf) else {
             showMessage(message: "Can not write the new conf.")
             return
         }
@@ -413,7 +439,7 @@ struct BitcoinCore: View {
             return
         }
         
-        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
             guard updated else {
                 showMessage(message: "BitcoinRPCCreds update failed")
                 return
@@ -433,17 +459,40 @@ struct BitcoinCore: View {
         }
     }
     
-    private func setSensitiveDataToNil() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-            self.qrImage = nil
-            self.fullyNodedUrl = nil
-            self.unifyUrl = nil
+    private func bitcoinConfPath() -> String {
+        let dataDir = Defaults.shared.dataDir
+        return dataDir + "/bitcoin.conf"
+    }
+    
+    private func bitcoinConf() -> String? {
+        return conf(stringPath: bitcoinConfPath())
+    }
+    
+    private func writeBitcoinConf(newConf: String) -> Bool {
+        return ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath()), atomically: false, encoding: .utf8)) != nil)
+    }
+    
+    private func addRpcAuthToConf() -> Bool {
+        guard let conf = bitcoinConf() else {
+            return false
         }
+        
+        let newConf = """
+            \(rpcAuth)
+            \(conf)
+            """
+        
+        guard writeBitcoinConf(newConf: newConf) else {
+            showMessage(message: "Can not write the new conf.")
+            return false
+        }
+        
+        return true
     }
     
     private func initialLoad() {
         selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-        DataManager.retrieve(entityName: "BitcoinEnv") { env in
+        DataManager.retrieve(entityName: .bitcoinEnv) { env in
             guard let env = env else { return }
             let envValues = BitcoinEnvValues(dictionary: env)
             self.env = [
@@ -478,28 +527,28 @@ struct BitcoinCore: View {
              break
          }
         
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCred in
+        DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
             guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
-                print("no passwrod")
+                showMessage(message: "No rpc password saved.")
                 return
             }
             
             guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
-                print("cant decrypt")
+                showMessage(message: "Unable to decrypt rpc password data.")
                 return
             }
             
             guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
-                print("cant convert")
+                showMessage(message: "Unable to encode decrypted rpc data to utf8 string.")
                 return
             }
             
-            let url = "http://FullyNoded-Server:\(rpcPass)@\(onionHost)"
+            let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
             
             let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
-            self.fullyNodedUrl = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
-            self.unifyUrl = "unify://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
+            self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
+            self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
         }
     }
     
@@ -526,7 +575,7 @@ struct BitcoinCore: View {
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
         self.env["CHAIN"] = chain
         self.blockchainInfo = nil
-        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: "BitcoinEnv") { updated in
+        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: .bitcoinEnv) { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
                 return
@@ -583,7 +632,6 @@ struct BitcoinCore: View {
                 if item.hasPrefix("network=") {
                     let existingNetworkArr = item.split(separator: "=")
                     if existingNetworkArr.count == 2 {
-                        let existingNetwork = existingNetworkArr[1]
                         var network = chain
                         if network == "main" {
                             network = "bitcoin"

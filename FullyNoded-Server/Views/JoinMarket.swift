@@ -35,7 +35,7 @@ struct JoinMarket: View {
                 Image(systemName: "server.rack")
                     .padding(.leading)
                 
-                Text("Join Market Server")
+                Text("Join Market Server v\(version)")
                 Spacer()
                 
                 Button {
@@ -46,7 +46,6 @@ struct JoinMarket: View {
                 }
                 .padding([.trailing])
             }
-            //.padding([.])
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
@@ -60,26 +59,38 @@ struct JoinMarket: View {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
+                        
+                        Text("Starting...")
+                            .onAppear {
+                                isAutoRefreshing = true
+                            }
+                        
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
                             .padding([.leading])
+                        
+                        Text("Running")
+                            .onAppear {
+                                isAutoRefreshing = true
+                            }
                     }
-                    Text("Running")
-                        .onAppear {
-                            isAutoRefreshing = true
-                        }
+                    
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
+                        
+                        Text("Starting...")
+                            
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
                             .padding([.leading])
+                        Text("Stopped")
                     }
-                    Text("Stopped")
+                    
                 }
                 if !isRunning {
                     Button {
@@ -147,47 +158,22 @@ struct JoinMarket: View {
                     Text("Configure JM")
                 }
                 Button {
-                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "/Users/\(NSUserName())/Library/Application Support/joinmarket")
-                    
+                    openDataDir()
                 } label: {
                     Text("Data Dir")
                 }
                 Button {
-                    
+                    increaseGapLimit()
                 } label: {
                     Text("Increase gap limit")
                 }
                 Button {
-                    BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
-                        guard error == nil, let result = result as? [String: Any] else {
-                            showMessage(message: error ?? "Unknown error getblbockchaininfo.")
-                            return
-                        }
-                        guard let pruneheight = result["pruneheight"] as? Int else {
-                            showMessage(message: "No pruneheight")
-                            return
-                        }
-                        
-                        BitcoinRPC.shared.command(method: "rescanblockchain", params: ["start_height": pruneheight]) { (result, error) in
-                            guard error == nil, let _ = result as? [String: Any] else {
-                                showMessage(message: error ?? "Unknown error rescanblockchain.")
-                                return
-                            }
-                        }
-                        // No response from core when initiating a rescan...
-                        showMessage(message: "Blockchain rescan started.")
-                    }
-                    
+                    rescan()
                 } label: {
                     Text("Rescan")
                 }
                 Button {
-                    ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
-                        guard let errorMess = errorMessage, errorMess != "" else { 
-                            showMessage(message: "A terminal has launched, read its output, you should be able to go to a browser and visit http://localhost:62601 to see the order book.")
-                            return }
-                        showMessage(message: errorMess)
-                    }
+                    orderBook()
                 } label: {
                     Text("Order Book")
                 }
@@ -270,6 +256,41 @@ struct JoinMarket: View {
         }
     }
     
+    private func openDataDir() {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "/Users/\(NSUserName())/Library/Application Support/joinmarket")
+    }
+    
+    private func orderBook() {
+        ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
+            guard let errorMess = errorMessage, errorMess != "" else {
+                showMessage(message: "A terminal has launched, read its output, you should be able to go to a browser and visit http://localhost:62601 to see the order book.")
+                return }
+            showMessage(message: errorMess)
+        }
+    }
+    
+    private func rescan() {
+        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+            guard error == nil, let result = result as? [String: Any] else {
+                showMessage(message: error ?? "Unknown error getblbockchaininfo.")
+                return
+            }
+            guard let pruneheight = result["pruneheight"] as? Int else {
+                showMessage(message: "No pruneheight")
+                return
+            }
+            
+            BitcoinRPC.shared.command(method: "rescanblockchain", params: ["start_height": pruneheight]) { (result, error) in
+                guard error == nil, let _ = result as? [String: Any] else {
+                    showMessage(message: error ?? "Unknown error rescanblockchain.")
+                    return
+                }
+            }
+            // No response from core when initiating a rescan...
+            showMessage(message: "Blockchain rescan started.")
+        }
+    }
+    
     private func increaseGapLimit() {
         let env: [String: String] = ["TAG_NAME": env["TAG_NAME"]!, "GAP_AMOUNT": gapLimit, "WALLET_NAME": walletName]
         ScriptUtil.runScript(script: .launchIncreaseGapLimit, env: env, args: nil) { (output, rawData, errorMessage) in
@@ -303,7 +324,7 @@ struct JoinMarket: View {
         updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
         updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00243...0.00421).avoidNotation)
         
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { rpcCreds in
             guard let rpcCreds = rpcCreds,
                     let encryptedPassword = rpcCreds["password"] as? Data,
                     let decryptedPass = Crypto.decrypt(encryptedPassword),

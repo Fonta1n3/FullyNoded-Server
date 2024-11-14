@@ -203,7 +203,7 @@ struct TaggedReleasesView: View {
     }
     
     private func saveEnvVaules(version: String) {
-        DataManager.deleteAllData(entityName: "BitcoinEnv") { deleted in
+        DataManager.deleteAllData(entityName: .bitcoinEnv) { deleted in
             guard deleted else { return }
             
             let dict = [
@@ -214,7 +214,7 @@ struct TaggedReleasesView: View {
                 "chain": Defaults.shared.chain
             ]
             
-            DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
+            DataManager.saveEntity(entityName: .bitcoinEnv, dict: dict) { saved in
                 guard saved else {
                     showMessage(message: "Unable to save default bitcoin env values.")
                     return
@@ -352,7 +352,7 @@ struct TaggedReleasesView: View {
                 if key.hasPrefix("bitcoin-datadir") {
                     writeConf(conf: conf, key: key, value: Defaults.shared.dataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
                 } else if key.hasPrefix("bitcoin-rpcpassword") {
-                    DataManager.retrieve(entityName: "BitcoinRPCCreds") { creds in
+                    DataManager.retrieve(entityName: .rpcCreds) { creds in
                         guard let creds = creds else { return }
                         guard let encryptedPass = creds["password"] as? Data else { return }
                         guard let decryptedPass = Crypto.decrypt(encryptedPass) else { return }
