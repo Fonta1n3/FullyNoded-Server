@@ -22,6 +22,7 @@ struct CoreLightning: View {
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var onionHost: String? = nil
     @State private var quickConnectClnRest: String? = nil
+    private let timerForStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     
     var body: some View {
         FNIcon()
@@ -190,7 +191,7 @@ struct CoreLightning: View {
                         }
                         return
                     }
-                    guard let output = output, let data = rawData else { return }
+                    guard let _ = output, let data = rawData else { return }
                     parseRuneResponse(data: data)
                 }
             }
@@ -248,17 +249,20 @@ struct CoreLightning: View {
         Spacer()
         Label {
             Text(logOutput)
-                .foregroundStyle(.green)
         } icon: {
             Image(systemName: "info.circle")
-                .foregroundStyle(.green)
         }
         .padding(.all)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.tertiary)
         .onAppear(perform: {
             isLightningOn()
             checkIfPlasmaExists()
         })
+        EmptyView()
+            .onReceive(timerForStatus) { _ in
+                isLightningOn()
+            }
+        
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
@@ -295,6 +299,7 @@ struct CoreLightning: View {
         } else if output.contains("Stopped") {
             isRunning = false
         }
+        showLog()
     }
     
     private func startLightning() {
