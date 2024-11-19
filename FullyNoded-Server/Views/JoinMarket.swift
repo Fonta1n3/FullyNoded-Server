@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct JoinMarket: View {
-    
+    @Environment(\.openURL) var openURL
     @State private var walletName = ""
     @State private var gapLimit = ""
     @State private var promptToIncreaseGapLimit = false
@@ -24,6 +24,7 @@ struct JoinMarket: View {
     @State private var env: [String: String] = [:]
     @State private var url: String?
     @State private var isAutoRefreshing = false
+    @State private var orderBookOpened = false
     private let timerForStatus = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
@@ -209,10 +210,7 @@ struct JoinMarket: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                            self.qrImage = nil
-                            self.url = nil
-                        }
+                        hideQrData()
                     }
                 if let url = url {
                     Link("Connect Fully Noded - Join Market", destination: URL(string: url)!)
@@ -220,10 +218,6 @@ struct JoinMarket: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            
-            //        if let hostnames = TorClient.sharedInstance.hostnames() {
-            //            Text(hostnames[0] + ":" + "28183")
-            //        }
         }
         .padding()
         .cornerRadius(8)
@@ -234,22 +228,9 @@ struct JoinMarket: View {
                 .padding([.leading, .trailing])
         )
         
-        
         Spacer()
-        
-        Label {
-            Text(logOutput)
-                .foregroundStyle(.green)
-        } icon: {
-            Image(systemName: "info.circle")
-                .foregroundStyle(.green)
-        }
-        .padding(.all)
-        .foregroundStyle(.secondary)
         .onAppear(perform: {
-            env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
-            selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
-            isJoinMarketRunning()
+            initialLoad()
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
@@ -259,6 +240,25 @@ struct JoinMarket: View {
             TextField("Enter the wallet name", text: $walletName)
             Button("OK", action: increaseGapLimit)
         }
+        .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.",
+               isPresented: $orderBookOpened) {
+            Button("Open") {
+                openOrderBookNow()
+            }
+        }
+    }
+    
+    private func hideQrData() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            self.qrImage = nil
+            self.url = nil
+        }
+    }
+    
+    private func initialLoad() {
+        env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
+        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        isJoinMarketRunning()
     }
     
     private func openDataDir() {
@@ -266,10 +266,15 @@ struct JoinMarket: View {
     }
     
     private func orderBook() {
+        orderBookOpened = true
+    }
+    
+    private func openOrderBookNow() {
         ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
             guard let errorMess = errorMessage, errorMess != "" else {
-                showMessage(message: "A terminal has launched, read its output, you should be able to go to a browser and visit http://localhost:62601 to see the order book.")
-                return }
+                openURL(URL(string: "http://localhost:62601")!)
+                return
+            }
             showMessage(message: errorMess)
         }
     }
