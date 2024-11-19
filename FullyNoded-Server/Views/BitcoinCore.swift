@@ -297,13 +297,13 @@ struct BitcoinCore: View {
         
         Label {
             Text(logOutput)
-                .foregroundStyle(.green)
+                //.foregroundStyle(.green)
         } icon: {
             Image(systemName: "info.circle")
-                .foregroundStyle(.green)
+                //.foregroundStyle(.green)
         }
         .padding(.all)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.tertiary)
         
         .onAppear(perform: {
             initialLoad()
