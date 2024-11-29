@@ -240,11 +240,8 @@ struct JoinMarket: View {
             TextField("Enter the wallet name", text: $walletName)
             Button("OK", action: increaseGapLimit)
         }
-        .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.",
-               isPresented: $orderBookOpened) {
-            Button("Open") {
-                openOrderBookNow()
-            }
+        .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.", isPresented: $orderBookOpened) {
+            Button("Open", action: openOrderBookNow)
         }
     }
     
@@ -434,7 +431,6 @@ struct JoinMarket: View {
 
         if let wallets = try? fm.contentsOfDirectory(atPath: path) {
             for wallet in wallets {
-                print("Found \(wallet)")
                 if wallet.hasSuffix(".lock") {
                     // Delete the .lock file
                     try? fm.removeItem(atPath: path + "/" + wallet)
@@ -474,7 +470,7 @@ struct JoinMarket: View {
             guard errorDesc == nil else {
                 if errorDesc!.contains("Could not connect to the server.") {
                     isRunning = false
-                } else if !errorDesc!.contains("The request timd out.") {
+                } else if !errorDesc!.contains("The request timed out.") {
                     showMessage(message: errorDesc!)
                 }
                 return

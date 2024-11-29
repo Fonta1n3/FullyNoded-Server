@@ -235,10 +235,11 @@ struct ContentView: View {
                             
                         }
                     }
-                }
+                }.padding()
                 Text("Select a service.")
                     .foregroundStyle(.secondary)
             }
+            //.padding(.all)
         
         .onAppear(perform: {
             /// For testing fresh install.

@@ -247,13 +247,13 @@ struct CoreLightning: View {
                 .padding([.leading, .trailing])
         )
         Spacer()
-        Label {
-            Text(logOutput)
-        } icon: {
-            Image(systemName: "info.circle")
-        }
-        .padding(.all)
-        .foregroundStyle(.tertiary)
+//        Label {
+//            Text(logOutput)
+//        } icon: {
+//            Image(systemName: "info.circle")
+//        }
+//        .padding(.all)
+//        .foregroundStyle(.tertiary)
         .onAppear(perform: {
             isLightningOn()
             checkIfPlasmaExists()
@@ -299,7 +299,6 @@ struct CoreLightning: View {
         } else if output.contains("Stopped") {
             isRunning = false
         }
-        showLog()
     }
     
     private func startLightning() {
@@ -364,22 +363,6 @@ struct CoreLightning: View {
         isAnimating = false
         if result.contains("Shutdown complete") {
             isRunning = false
-            showLog()
-        }
-    }
-    
-    private func showLog() {
-        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/lightning.log")
-        guard let log = try? String(contentsOf: path, encoding: .utf8) else {
-            print("can not get lightning.log")
-            return
-        }
-        let logItems = log.components(separatedBy: "\n")
-        DispatchQueue.main.async {
-            if logItems.count > 2 {
-                let lastLogItem = "\(logItems[logItems.count - 2])"
-                logOutput = lastLogItem
-            }
         }
     }
     
@@ -425,7 +408,7 @@ struct CoreLightning: View {
         } else {
             let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
             guard let config = try? Data(contentsOf: path) else {
-                print("Unable to get ngrok.log.")
+                print("Unable to get config.")
                 return
             }
             guard let stringValue = String(data: config, encoding: .utf8) else {

@@ -297,10 +297,8 @@ struct BitcoinCore: View {
         
         Label {
             Text(logOutput)
-                //.foregroundStyle(.green)
         } icon: {
             Image(systemName: "info.circle")
-                //.foregroundStyle(.green)
         }
         .padding(.all)
         .foregroundStyle(.tertiary)
@@ -404,7 +402,6 @@ struct BitcoinCore: View {
     }
     
     private func refreshRPCAuth() {
-        // First remove all "FullyNoded-Server" users from the bitcoin.conf
         guard let newCreds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else {
             showMessage(message: "Unable to create rpc creds.")
             return
@@ -539,15 +536,15 @@ struct BitcoinCore: View {
                 return
             }
             
-            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
-                showMessage(message: "Unable to decrypt rpc password data.")
-                return
-            }
+//            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
+//                showMessage(message: "Unable to decrypt rpc password data.")
+//                return
+//            }
             
-            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
-                showMessage(message: "Unable to encode decrypted rpc data to utf8 string.")
-                return
-            }
+//            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
+//                showMessage(message: "Unable to encode decrypted rpc data to utf8 string.")
+//                return
+//            }
             
             let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
