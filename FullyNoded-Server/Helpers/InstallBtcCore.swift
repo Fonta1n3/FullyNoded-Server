@@ -120,10 +120,11 @@ class CreateFNDirConfigureCore {
         }
     }
     
+    static let fnServerDir = "/Users/\(NSUserName())/.fullynoded"
+    
     class func setFullyNodedDirectory(completion: @escaping (Bool) -> Void) {
-        createDirectory("/Users/\(NSUserName())/.fullynoded", completion: completion)
-        
-        if writeFile("/Users/\(NSUserName())/.fullynoded/fullynoded.log", "") {
+        createDirectory(fnServerDir, completion: completion)
+        if writeFile("\(fnServerDir)/fullynoded.log", "") {
             createBitcoinCoreDirectory(completion: completion)
         } else {
             completion((false))
@@ -131,7 +132,7 @@ class CreateFNDirConfigureCore {
     }
     
     class func createBitcoinCoreDirectory(completion: @escaping (Bool) -> Void) {
-        let path = "/Users/\(NSUserName())/.fullynoded/BitcoinCore"
+        let path = "\(fnServerDir)/BitcoinCore"
         do {
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: path) {

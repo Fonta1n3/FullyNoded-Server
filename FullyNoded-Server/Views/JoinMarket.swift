@@ -213,7 +213,7 @@ struct JoinMarket: View {
                         hideQrData()
                     }
                 if let url = url {
-                    Link("Connect Fully Noded - Join Market", destination: URL(string: url)!)
+                    Link("Connect Fully Noded - Join Market (locally)", destination: URL(string: url)!)
                         .padding([.leading, .bottom])
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -426,6 +426,49 @@ struct JoinMarket: View {
     }
         
     private func startJoinMarket() {
+        isAnimating = true
+        // Ensure Bitcoin Core is running before starting JM.
+        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+            guard error == nil, let result = result as? [String: Any] else {
+                if let error = error {
+                    if error.contains("Could not connect to the server") {
+                        isAnimating = false
+                        showMessage(message: "Looks like Bitcoin Core is not running. Please start Bitcoin Core and try again.")
+                    } else {
+                        startNow()
+                    }
+                }
+                return
+            }
+            startNow()
+        }
+    }
+    
+    private func startNow() {
+        removeLockFile()
+        setEnv()
+        launchJmStarter()
+    }
+    
+    private func setEnv() {
+        self.env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
+    }
+    
+    private func launchJmStarter() {
+        ScriptUtil.runScript(script: .launchJmStarter, env: self.env, args: nil) { (output, rawData, errorMessage) in
+            isAnimating = false
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
+    }
+    
+    // If attempting to start JM daemon when a .lock file is present in /Users/you/Library/Application Support/joinmarket will result
+    // in an error.
+    private func removeLockFile() {
         let fm = FileManager.default
         let path = "/Users/\(NSUserName())/Library/Application Support/joinmarket/wallets"
 
@@ -435,16 +478,6 @@ struct JoinMarket: View {
                     // Delete the .lock file
                     try? fm.removeItem(atPath: path + "/" + wallet)
                 }
-            }
-        }
-        isAnimating = true
-        env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
-        ScriptUtil.runScript(script: .launchJmStarter, env: self.env, args: nil) { (output, rawData, errorMessage) in
-            guard errorMessage == nil else {
-                if errorMessage != "" {
-                    showMessage(message: errorMessage!)
-                }
-                return
             }
         }
     }

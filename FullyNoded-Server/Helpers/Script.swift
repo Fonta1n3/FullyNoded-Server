@@ -8,6 +8,8 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case launchUpdateLightning
+    case updateLightning
     case obWatcher
     case launchObWatcher
     case launchIncreaseGapLimit
@@ -40,14 +42,18 @@ public enum SCRIPT: String {
     case checkForBitcoin
     case installBitcoin
     case checkXcodeSelect
-    case getStrapped
-    case launchStrap
-    case isBitcoinOn
-    case deleteWallet
+    //case getStrapped
+    //case launchStrap
+    //case isBitcoinOn
+    //case deleteWallet
     case startBitcoin
     
     var stringValue:String {
         switch self {
+        case .launchUpdateLightning:
+            return "LaunchUpdateLightning"
+        case .updateLightning:
+            return "UpdateLightning"
         case .obWatcher:
             return "ObWatcher"
         case .launchObWatcher:
@@ -108,14 +114,14 @@ public enum SCRIPT: String {
             return "InstallBitcoin"
         case .checkXcodeSelect:
             return "CheckXCodeSelect"
-        case .getStrapped:
-            return "Strap"
-        case .launchStrap:
-            return "LaunchStrap"
-        case .isBitcoinOn:
-            return "IsBitcoinOn"
-        case .deleteWallet:
-            return "DeleteWallet"
+//        case .getStrapped:
+//            return "Strap"
+//        case .launchStrap:
+//            return "LaunchStrap"
+//        case .isBitcoinOn:
+//            return "IsBitcoinOn"
+//        case .deleteWallet:
+//            return "DeleteWallet"
         case .startBitcoin:
             return "StartBitcoin"
         }
@@ -162,7 +168,12 @@ public enum ScriptUtil {
             let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8)
             let errorOutput = String(data: errData, encoding: .utf8)
-            completion((output, data, errorOutput))
+            if errorOutput == "" {
+                completion((output, data, nil))
+            } else {
+                completion((output, data, errorOutput))
+            }
+            
         }
     }
 }

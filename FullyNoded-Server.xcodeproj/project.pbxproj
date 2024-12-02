@@ -46,7 +46,6 @@
 		0AA6924B2C7F89E800366192 /* Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6924A2C7F89E800366192 /* Script.swift */; };
 		0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */; };
 		0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */; };
-		0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924E2C7F8EC700366192 /* DeleteWallet.command */; };
 		0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924F2C7F8EC700366192 /* InstallBrew.command */; };
 		0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692502C7F8EC700366192 /* InstallXcode.command */; };
 		0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692512C7F8EC700366192 /* IsProcessRunning.command */; };
@@ -63,6 +62,8 @@
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
+		0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */; };
+		0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */; };
 		0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */; };
 		0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */; };
 		0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */; };
@@ -127,7 +128,6 @@
 		0AA6924A2C7F89E800366192 /* Script.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Script.swift; sourceTree = "<group>"; };
 		0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CheckForBitcoinCore.command; sourceTree = "<group>"; };
 		0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CheckXCodeSelect.command; sourceTree = "<group>"; };
-		0AA6924E2C7F8EC700366192 /* DeleteWallet.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
 		0AA6924F2C7F8EC700366192 /* InstallBrew.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallBrew.command; sourceTree = "<group>"; };
 		0AA692502C7F8EC700366192 /* InstallXcode.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallXcode.command; sourceTree = "<group>"; };
 		0AA692512C7F8EC700366192 /* IsProcessRunning.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = IsProcessRunning.command; sourceTree = "<group>"; };
@@ -144,6 +144,8 @@
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
+		0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = UpdateLightning.command; sourceTree = "<group>"; };
+		0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchUpdateLightning.command; sourceTree = "<group>"; };
 		0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestJoinMarketRelease.swift; sourceTree = "<group>"; };
 		0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarketTaggedReleases.swift; sourceTree = "<group>"; };
 		0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallJoinMarket.command; sourceTree = "<group>"; };
@@ -289,7 +291,6 @@
 			children = (
 				0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */,
 				0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */,
-				0AA6924E2C7F8EC700366192 /* DeleteWallet.command */,
 				0AA6924F2C7F8EC700366192 /* InstallBrew.command */,
 				0AA692502C7F8EC700366192 /* InstallXcode.command */,
 				0AA692512C7F8EC700366192 /* IsProcessRunning.command */,
@@ -324,6 +325,8 @@
 				593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */,
 				593A89242CE519B3001504F0 /* LaunchObWatcher.command */,
 				593A89262CE51A35001504F0 /* ObWatcher.command */,
+				0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */,
+				0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -413,12 +416,12 @@
 				0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */,
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
+				0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */,
 				593A89272CE51A35001504F0 /* ObWatcher.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
 				0AD7BE152CBD7AC100428D02 /* LaunchJMInstaller.command in Resources */,
 				0AA692642C7F8EC700366192 /* LaunchBrewInstall.command in Resources */,
-				0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */,
 				0AA6926D2C7F8EC700366192 /* Strap.command in Resources */,
 				0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
@@ -446,6 +449,7 @@
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
 				0A573E312CB577D100899F84 /* GetRune.command in Resources */,
 				0AA692682C7F8EC700366192 /* LaunchXcodeInstall.command in Resources */,
+				0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */,
 				0AA692652C7F8EC700366192 /* LaunchInstaller.command in Resources */,
 				0A5CE8E02C8A2ADE00534A8D /* CheckForLightning.command in Resources */,
 			);
@@ -661,6 +665,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -702,6 +707,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

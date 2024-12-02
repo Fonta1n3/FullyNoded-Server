@@ -141,6 +141,11 @@ struct CoreLightning: View {
                 } label: {
                     Text("Log")
                 }
+//                Button {
+//                    ScriptUtil.runScript(script: .launchUpdateLightning, env: nil, args: nil) { (_, _, _) in }
+//                } label: {
+//                    Text("Update")
+//                }
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -258,14 +263,15 @@ struct CoreLightning: View {
             isLightningOn()
             checkIfPlasmaExists()
         })
+        .alert(message, isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        }
         EmptyView()
             .onReceive(timerForStatus) { _ in
                 isLightningOn()
             }
         
-        .alert(message, isPresented: $showError) {
-            Button("OK", role: .cancel) {}
-        }
+        
     }
     
     private func openFile(env: [String: String]?) {
@@ -303,26 +309,24 @@ struct CoreLightning: View {
     
     private func startLightning() {
         isAnimating = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
-                guard errorMessage == nil else {
-                    if errorMessage != "" {
-                        showMessage(message: errorMessage!)
-                    } else if let output = output {
-                        parseLightningRunning(output: output)
-                    }
-                    return
-                }
-                guard let output = output else { return }
-                parseLightningRunning(output: output)
-            }
-        }
+        
         ScriptUtil.runScript(script: .startLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
-                if errorMessage != "" {
-                    showMessage(message: errorMessage!)
-                }
+                print("wtf")
+                isAnimating = false
+                showMessage(message: errorMessage!)
                 return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
+                    guard errorMessage == nil else {
+                        isAnimating = false
+                        showMessage(message: errorMessage!)
+                        return
+                    }
+                    guard let output = output else { return }
+                    parseLightningRunning(output: output)
+                }
             }
         }
     }

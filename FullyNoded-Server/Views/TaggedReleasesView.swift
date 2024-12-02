@@ -10,6 +10,7 @@ import SwiftUI
 struct TaggedReleasesView: View {
     
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    @State private var fnServerPath = "/Users/\(NSUserName())/.fullynoded"
     @State private var prune = false
     @State private var prunedAmount = ""
     @State private var bitcoinCoreInstallComplete = false
@@ -82,8 +83,9 @@ struct TaggedReleasesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Text("Do not update the data directory unless you want to save your Bitcoin Core data in a custom location like an external hard drive.")
-                    .padding([.leading])
+                    .padding([.bottom, .leading])
                     .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack() {
                     Toggle("Prune", isOn: $prune)
@@ -101,12 +103,17 @@ struct TaggedReleasesView: View {
                         }
                     if prune {
                         TextField("", text: $prunedAmount)
-                        Text("The amount in giga bytes the blockchain will consume.")
-                            .foregroundStyle(.secondary)
+                        
                     }
                 }
                 .padding([.leading, .trailing])
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if prune {
+                    Text("The amount in giga bytes the blockchain will consume.")
+                        .foregroundStyle(.secondary)
+                        .padding([.leading, .trailing])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 
                 HStack() {
                     if isAnimating {
@@ -129,7 +136,7 @@ struct TaggedReleasesView: View {
                 if startCheckingForBitcoinInstall {
                     EmptyView()
                         .onReceive(timerForBitcoinInstall) { _ in
-                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)/bin/bitcoind"
+                            let tempPath = "\(fnServerPath)/BitcoinCore/bitcoin-\(processedVersion)/bin/bitcoind"
                             if FileManager.default.fileExists(atPath: tempPath) {
                                 bitcoinCoreInstallComplete = true
                                 // save new envValues! and update lightning config if it exists
@@ -239,7 +246,7 @@ struct TaggedReleasesView: View {
         let urlSHA256SUMS = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
         description = "Downloading SHA256SUMS file from \(urlSHA256SUMS)"
         downloadTask(url: URL(string: urlSHA256SUMS)!) { data in
-            guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS") else { return }
+            guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/SHA256SUMS") else { return }
             downloadSigs(processedVersion: processedVersion, arch: arch)
         }
     }
@@ -248,7 +255,7 @@ struct TaggedReleasesView: View {
         let urlSigs = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
         description = "Downloading the signed SHA256SUMS file from \(urlSigs)"
         downloadTask(url: URL(string: urlSigs)!) { data in
-            guard writeData(data: data, filePath: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS.asc") else { return }
+            guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/SHA256SUMS.asc") else { return }
             let binaryName  = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
             let binaryPrefix = "bitcoin-\(processedVersion)"
             installNow(binaryName: binaryName, version: processedVersion, prefix: binaryPrefix)
@@ -287,7 +294,7 @@ struct TaggedReleasesView: View {
             if startDownload {
                 isAnimating = true
                 downloadTask(url: URL(string: macOSUrl)!) { data in
-                    guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
+                    guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
                     downloadSHA256SUMS(processedVersion: processedVersion, arch: arch)
                 }
             }

@@ -1,8 +1,7 @@
 #!/bin/sh
 
-
 if [ -d ~/.fullynoded/BitcoinCore ]; then
-      sudo -u $(whoami) ~/.fullynoded/BitcoinCore/$PREFIX/bin/bitcoind -version
+      sudo -u $(whoami) "/Users/$(whoami)/.fullynoded/BitcoinCore/$PREFIX/bin/bitcoind" -version
 else
   echo "Bitcoin not installed"
 fi

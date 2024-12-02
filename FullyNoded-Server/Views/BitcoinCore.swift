@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @State private var promptToRefreshRpcAuth = false
     @State private var rpcAuth = ""
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
@@ -204,7 +205,7 @@ struct BitcoinCore: View {
                     }
                 }
                 Button {
-                    refreshRPCAuth()
+                   promptToRefreshRpcAuth = true
                 } label: {
                     Text("Refresh RPC Authentication")
                 }
@@ -244,6 +245,9 @@ struct BitcoinCore: View {
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Exports your onion (Tor) rpc hostname and rpc port (your nodes address) which is required for FN to connect. This QR does *NOT* include the FN-Server RPC credentials (it includes a dummy rpc user and password). You must export and authorize your rpc user from FN to FN-Server to complete your connection. To do this: In FN navigate to Node Manager > + > Scan QR > update the rpc password in Node Credentials > Save the node > Export the rpcauth text from FN and use the below button to authorize your FN rpc user.")
+                .foregroundStyle(.secondary)
+                .padding([.leading, .bottom, .trailing])
             
             HStack() {
                 Text("Authorize an additional RPC user:")
@@ -273,13 +277,13 @@ struct BitcoinCore: View {
             }
             
             if let fullyNodedUrl = fullyNodedUrl {
-                Link("Connect Fully Noded", destination: URL(string: fullyNodedUrl)!)
+                Link("Connect Fully Noded (locally)", destination: URL(string: fullyNodedUrl)!)
                     .padding([.leading])
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             
             if let unifyUrl = unifyUrl {
-                Link("Connect Unify", destination: URL(string: unifyUrl)!)
+                Link("Connect Unify (locally)", destination: URL(string: unifyUrl)!)
                     .padding([.leading, .bottom])
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -309,11 +313,19 @@ struct BitcoinCore: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed? (it can take awhile..)", isPresented: $promptToReindex) {
+        .alert("This starts Bitcoin Core with the -reindex flag. This action will delete the entire existing blockchain and download it again, are you sure you want to proceed? (it can take a long time!)", isPresented: $promptToReindex) {
             Button("Reindex now", role: .destructive) {
                 reindex()
             }
+            Button("Cancel", role: .cancel) {}
         }
+        .alert("This action updates your exisiting FullyNoded-Server rpcuser with a new rpc password as well as the Core Lightning config (if present) and Join Market config (if present). FN-Server will attempt to shut down Bitcoin Core so that the changes take effect. Do you wish to proceed?", isPresented: $promptToRefreshRpcAuth) {
+            Button("Refresh", role: .destructive) {
+                refreshRPCAuth()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        
     }
     
     private func reindex() {
@@ -408,6 +420,7 @@ struct BitcoinCore: View {
         }
         
         guard let conf = bitcoinConf() else {
+            showMessage(message: "Unable to get the existing bitcoin.conf file.")
             return
         }
         
@@ -449,14 +462,13 @@ struct BitcoinCore: View {
             }
             ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
                 guard errorMessage == nil else {
-                    if errorMessage != "" {
-                        showMessage(message: errorMessage!)
-                    } else {
-                        
-                    }
+                    showMessage(message: errorMessage!)
                     return
                 }
-                guard let output = output else { return }
+                guard let output = output else {
+                    showMessage(message: "No output when killing Bitcoin Core, you can probably ignore this error. RPC credentials should be updated, ensure Bitcoin Core restarts for the changes to take place.")
+                    return
+                }
                 parseScriptResult(script: .killBitcoind, result: output)
             }
         }
@@ -531,8 +543,8 @@ struct BitcoinCore: View {
          }
         
         DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
-            guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
-                showMessage(message: "No rpc password saved.")
+            guard let _ = rpcCred else {
+                showMessage(message: "No rpc credentials saved.")
                 return
             }
             
@@ -759,25 +771,7 @@ struct BitcoinCore: View {
             isAnimating = false
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {
-                    if !error.contains("Could not connect to the server") {
-                        isRunning = true
-                        switch error {
-                        case _ where error.contains("Loading block index"),
-                            _ where error.contains("Verifying blocks"),
-                            _ where error.contains("Loading P2P addresses…"),
-                            _ where error.contains("Pruning"),
-                            _ where error.contains("Rewinding"),
-                            _ where error.contains("Rescanning"),
-                            _ where error.contains("Loading wallet"),
-                            _ where error.contains("Looks like your rpc credentials"):
-                            logOutput = error
-                        default:
-                            showMessage(message: error)
-                        }
-                    } else {
-                        isRunning = false
-                        logOutput = error
-                    }
+                    handleRPCError(error: error)
                 }
                 return
             }
@@ -786,6 +780,28 @@ struct BitcoinCore: View {
             self.blockchainInfo = blockchainInfo
             isRunning = true
             showBitcoinLog()
+        }
+    }
+    
+    private func handleRPCError(error: String) {
+        if !error.contains("Could not connect to the server") {
+            isRunning = true
+            switch error {
+            case _ where error.contains("Loading block index"),
+                _ where error.contains("Verifying blocks"),
+                _ where error.contains("Loading P2P addresses…"),
+                _ where error.contains("Pruning"),
+                _ where error.contains("Rewinding"),
+                _ where error.contains("Rescanning"),
+                _ where error.contains("Loading wallet"),
+                _ where error.contains("Looks like your rpc credentials"):
+                logOutput = error
+            default:
+                showMessage(message: error)
+            }
+        } else {
+            isRunning = false
+            logOutput = error
         }
     }
     
@@ -804,7 +820,7 @@ struct BitcoinCore: View {
             parseDidBitcoinStart(result: result)
             
         case .killBitcoind:
-            if result.contains("Its dead") {
+            if result.contains("Its dead") || result.contains("Does not exist") {
                 isRunning = false
                 showMessage(message: "RPC Authentication refreshed, you need to start your node for the changes to take effect.")
             }
