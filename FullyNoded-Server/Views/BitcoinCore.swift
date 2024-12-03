@@ -236,18 +236,26 @@ struct BitcoinCore: View {
         )
         
         VStack() {
-            Label("Quick Connect", systemImage: "qrcode")
-                .padding([.leading])
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack() {
+                Label("Quick Connect", systemImage: "qrcode")
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer()
+                Button {
+                    showMessage(message: "The Quick Connect QR exports your rpc hostname (an onion or localhost) and the rpc port (combined these make up your nodes rpc address) which is required for FN to connect.\n\nThis QR does *NOT* include the FN-Server RPC credentials (it includes a dummy rpc user and password for security).\n\nYou must export and authorize your rpc user from FN mobile apps to FN-Server to complete your connection.\n\nTo do this: In FN navigate to Node Manager > + > Scan QR > update the rpc password in Node Credentials > Save the node > Export the rpcauth text from FN and use the below text field to add it to your bitcoin.conf.")
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .padding([.trailing])
+            }
+            
             
             Button("Connect Fully Noded", systemImage: "qrcode") {
                 connectFN()
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Exports your onion (Tor) rpc hostname and rpc port (your nodes address) which is required for FN to connect. This QR does *NOT* include the FN-Server RPC credentials (it includes a dummy rpc user and password). You must export and authorize your rpc user from FN to FN-Server to complete your connection. To do this: In FN navigate to Node Manager > + > Scan QR > update the rpc password in Node Credentials > Save the node > Export the rpcauth text from FN and use the below button to authorize your FN rpc user.")
-                .foregroundStyle(.secondary)
-                .padding([.leading, .bottom, .trailing])
+            
             
             HStack() {
                 Text("Authorize an additional RPC user:")
