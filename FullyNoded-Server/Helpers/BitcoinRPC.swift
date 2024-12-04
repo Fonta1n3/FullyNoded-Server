@@ -19,7 +19,7 @@ class BitcoinRPC {
         let nodeIp = "127.0.0.1:\(port)"
         let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
         
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { [weak self] creds in
+        DataManager.retrieve(entityName: .rpcCreds) { [weak self] creds in
             guard let self = self else { return }
             
             guard let creds = creds else {
@@ -42,7 +42,10 @@ class BitcoinRPC {
                 return
             }
             
-            let stringUrl = "http://\(user):\(rpcPassword)@\(nodeIp)"
+            var stringUrl = "http://\(user):\(rpcPassword)@\(nodeIp)"
+            if method == "rescanblockchain" {
+                stringUrl += "/wallet/jm_wallet"
+            }
             guard let url = URL(string: stringUrl) else {
                 completion((nil, "Error converting the url."))
                 return

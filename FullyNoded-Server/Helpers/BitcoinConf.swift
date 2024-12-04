@@ -32,14 +32,14 @@ class BitcoinConf {
     }
     
     static func saveCreds(rpcuser: String, encryptedPass: Data) {
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { existingCreds in
             if let _ = existingCreds {
-                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
                     guard updated else { return }
                     UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
                 }
             } else {
-                DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                DataManager.saveEntity(entityName: .rpcCreds, dict: ["password": encryptedPass]) { saved in
                     guard saved else { return }
                     UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
                 }

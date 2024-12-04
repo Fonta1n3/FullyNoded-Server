@@ -9,51 +9,77 @@ import Foundation
 
 class CreateFNDirConfigureCore {
     
-    class func checkForExistingConf(completion: @escaping (Bool) -> Void) {
+    class func checkForExistingConf(updatedPruneValue: Int?, completion: @escaping (Bool) -> Void) {
+        var existingPruneValue: Int?
         BitcoinConf.getBitcoinConf { (conf, error) in
             if let existingBitcoinConf = conf {
-                for item in existingBitcoinConf {
-                    let arr = item.split(separator: "=")
-                    if arr.count > 1 {
-                        if let value = Int(arr[1])  {
-                            if item.hasPrefix("prune=") {
-                                UserDefaults.standard.setValue(value, forKey: "prune")
-                            }
-                            if item.hasPrefix("txindex=") {
-                                UserDefaults.standard.setValue(value, forKey: "txindex")
-                            }
-                        }
-                    }
-                }
-                let rpcuser = "FullyNoded-Server"
-                guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else {
-                    completion(false)
-                    print("unable to generate rpc auth creds.")
-                    return
-                }
-                let rpcauth = rpcAuthCreds.rpcAuth
-                let data = Data(rpcAuthCreds.rpcPassword.utf8)
+                var createBdbExists = false
                 
-                guard let encryptedPass = Crypto.encrypt(data) else {
-                    #if DEBUG
-                    print("Unable to encrypt rpc pass.")
-                    #endif
-                    completion(false)
-                    return
-                }
-                updateRpcCreds(encryptedPass: encryptedPass, rpcUser: rpcuser) { updated in
-                    guard updated else {
+                func setNow() {
+                    let rpcuser = "FullyNoded-Server"
+                    guard let rpcAuthCreds = RPCAuth().generateCreds(username: rpcuser, password: nil) else {
+                        completion(false)
+                        print("unable to generate rpc auth creds.")
+                        return
+                    }
+                    let rpcauth = rpcAuthCreds.rpcAuth
+                    let data = Data(rpcAuthCreds.rpcPassword.utf8)
+                    
+                    guard let encryptedPass = Crypto.encrypt(data) else {
                         #if DEBUG
-                        print("Unable to save new password.")
+                        print("Unable to encrypt rpc pass.")
                         #endif
                         completion(false)
                         return
                     }
-                    
-                    var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
-                    updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
-                    setBitcoinConf(updatedBitcoinConf, completion: completion)
+                    updateRpcCreds(encryptedPass: encryptedPass, rpcUser: rpcuser) { updated in
+                        guard updated else {
+                            #if DEBUG
+                            print("Unable to save new password.")
+                            #endif
+                            completion(false)
+                            return
+                        }
+                        
+                        var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
+                        if !createBdbExists {
+                            // For Join Market to work...
+                            updatedBitcoinConf = "deprecatedrpc=create_bdb" + "\n" + updatedBitcoinConf
+                            if let updatedPruneValue = updatedPruneValue, let existingPruneValue = existingPruneValue {
+                                updatedBitcoinConf = updatedBitcoinConf.replacingOccurrences(of: "prune=\(existingPruneValue)", with: "prune=\(updatedPruneValue)")
+                            }
+                        }
+                        updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
+                        setBitcoinConf(updatedBitcoinConf, completion: completion)
+                    }
                 }
+                // check if deprecatedrpc=create_bdb exists, if not add it.
+                for (i, item) in existingBitcoinConf.enumerated() {
+                    let arr = item.split(separator: "=")
+                    if arr.count > 1 {
+                        if let value = Int(arr[1])  {
+                            if item.hasPrefix("prune=") {
+                                if let updatedPruneValue = updatedPruneValue {
+                                    UserDefaults.standard.setValue(updatedPruneValue, forKey: "prune")
+                                    existingPruneValue = value
+                                }
+                            }
+                            if item.hasPrefix("txindex=") {
+                                UserDefaults.standard.setValue(value, forKey: "txindex")
+                            }
+                            
+                        } else {
+                            // deprecatedrpc=create_bdb
+                            if item.contains("deprecatedrpc=create_bdb") {
+                                createBdbExists = true
+                            }
+                        }
+                    }
+                    if i + 1 == existingBitcoinConf.count {
+                        setNow()
+                    }
+                }
+                
                 
             } else {
                 if let defaultConf = BitcoinConf.newBitcoinConf() {
@@ -94,10 +120,11 @@ class CreateFNDirConfigureCore {
         }
     }
     
+    static let fnServerDir = "/Users/\(NSUserName())/.fullynoded"
+    
     class func setFullyNodedDirectory(completion: @escaping (Bool) -> Void) {
-        createDirectory("/Users/\(NSUserName())/.fullynoded", completion: completion)
-        
-        if writeFile("/Users/\(NSUserName())/.fullynoded/fullynoded.log", "") {
+        createDirectory(fnServerDir, completion: completion)
+        if writeFile("\(fnServerDir)/fullynoded.log", "") {
             createBitcoinCoreDirectory(completion: completion)
         } else {
             completion((false))
@@ -105,7 +132,7 @@ class CreateFNDirConfigureCore {
     }
     
     class func createBitcoinCoreDirectory(completion: @escaping (Bool) -> Void) {
-        let path = "/Users/\(NSUserName())/.fullynoded/BitcoinCore"
+        let path = "\(fnServerDir)/BitcoinCore"
         do {
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: path) {
@@ -120,14 +147,14 @@ class CreateFNDirConfigureCore {
     }
     
     class func updateRpcCreds(encryptedPass: Data, rpcUser: String, completion: @escaping (Bool) -> Void) {
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { existingCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { existingCreds in
             if let _ = existingCreds {
-                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(updated)
                 }
             } else {
-                DataManager.saveEntity(entityName: "BitcoinRPCCreds", dict: ["password": encryptedPass]) { saved in
+                DataManager.saveEntity(entityName: .rpcCreds, dict: ["password": encryptedPass]) { saved in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(saved)
                 }

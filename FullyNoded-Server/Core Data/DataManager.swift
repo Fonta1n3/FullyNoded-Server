@@ -25,10 +25,9 @@ class DataManager: NSObject {
         container.loadPersistentStores { _, _ in }
     }
     
-    class func retrieve(entityName: String, completion: @escaping (([String:Any]?)) -> Void) {
-        print("retrieve: \(entityName)")
+    class func retrieve(entityName: Entity, completion: @escaping (([String:Any]?)) -> Void) {
         let context = DataManager.shared.container.viewContext
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName.rawValue)
         fetchRequest.returnsObjectsAsFaults = false
         fetchRequest.resultType = .dictionaryResultType
         
@@ -45,9 +44,9 @@ class DataManager: NSObject {
     }
     
     
-    class func deleteAllData(entityName: String, completion: @escaping ((Bool)) -> Void) {
+    class func deleteAllData(entityName: Entity, completion: @escaping ((Bool)) -> Void) {
         let context = DataManager.shared.container.viewContext
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName.rawValue)
         fetchRequest.returnsObjectsAsFaults = false
         
         do {
@@ -66,11 +65,10 @@ class DataManager: NSObject {
         }
     }
     
-    class func saveEntity(entityName: String, dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
-        print("saveEntity")
+    class func saveEntity(entityName: Entity, dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
         let context = DataManager.shared.container.viewContext
         
-        guard let entity = NSEntityDescription.entity(forEntityName: entityName, in: context) else {
+        guard let entity = NSEntityDescription.entity(forEntityName: entityName.rawValue, in: context) else {
             completion(false)
             return
         }
@@ -91,21 +89,23 @@ class DataManager: NSObject {
         completion(success)
     }
     
-    class func update(keyToUpdate: String, newValue: Any, entity: String, completion: @escaping ((Bool)) -> Void) {
+    class func update(keyToUpdate: String, newValue: Any, entity: Entity, completion: @escaping ((Bool)) -> Void) {
         let context = DataManager.shared.container.viewContext
-        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entity)
+        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entity.rawValue)
         fetchRequest.returnsObjectsAsFaults = false
         
-        guard let results = try? context.fetch(fetchRequest), results.count > 0 else { completion(false); return }
+        guard let results = try? context.fetch(fetchRequest), results.count > 0 else {
+            completion(false)
+            return
+        }
         
-        //for data in results[0] {
-            results[0].setValue(newValue, forKey: keyToUpdate)
-            do {
-                try context.save()
-                completion(true)
-            } catch {
-                completion(false)
-            }
-        //}
+        results[0].setValue(newValue, forKey: keyToUpdate)
+        
+        do {
+            try context.save()
+            completion(true)
+        } catch {
+            completion(false)
+        }
     }
 }

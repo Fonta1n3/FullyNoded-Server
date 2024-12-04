@@ -46,7 +46,6 @@
 		0AA6924B2C7F89E800366192 /* Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6924A2C7F89E800366192 /* Script.swift */; };
 		0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */; };
 		0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */; };
-		0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924E2C7F8EC700366192 /* DeleteWallet.command */; };
 		0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6924F2C7F8EC700366192 /* InstallBrew.command */; };
 		0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692502C7F8EC700366192 /* InstallXcode.command */; };
 		0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692512C7F8EC700366192 /* IsProcessRunning.command */; };
@@ -63,6 +62,8 @@
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
+		0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */; };
+		0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */; };
 		0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */; };
 		0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */; };
 		0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */; };
@@ -75,6 +76,13 @@
 		0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE202CC2B1F100428D02 /* StartJm.command */; };
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
+		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
+		593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A891E2CE28334001504F0 /* IncreaseGapLimit.command */; };
+		593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */; };
+		593A89232CE511F8001504F0 /* FNIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89222CE511F8001504F0 /* FNIcon.swift */; };
+		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
+		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
+		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -121,7 +129,6 @@
 		0AA6924A2C7F89E800366192 /* Script.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Script.swift; sourceTree = "<group>"; };
 		0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CheckForBitcoinCore.command; sourceTree = "<group>"; };
 		0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CheckXCodeSelect.command; sourceTree = "<group>"; };
-		0AA6924E2C7F8EC700366192 /* DeleteWallet.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
 		0AA6924F2C7F8EC700366192 /* InstallBrew.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallBrew.command; sourceTree = "<group>"; };
 		0AA692502C7F8EC700366192 /* InstallXcode.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallXcode.command; sourceTree = "<group>"; };
 		0AA692512C7F8EC700366192 /* IsProcessRunning.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = IsProcessRunning.command; sourceTree = "<group>"; };
@@ -138,6 +145,8 @@
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
+		0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = UpdateLightning.command; sourceTree = "<group>"; };
+		0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchUpdateLightning.command; sourceTree = "<group>"; };
 		0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestJoinMarketRelease.swift; sourceTree = "<group>"; };
 		0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarketTaggedReleases.swift; sourceTree = "<group>"; };
 		0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallJoinMarket.command; sourceTree = "<group>"; };
@@ -150,7 +159,14 @@
 		0AD7BE202CC2B1F100428D02 /* StartJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartJm.command; sourceTree = "<group>"; };
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
+		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		593A891E2CE28334001504F0 /* IncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IncreaseGapLimit.command; sourceTree = "<group>"; };
+		593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchIncreaseGapLimit.command; sourceTree = "<group>"; };
+		593A89222CE511F8001504F0 /* FNIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FNIcon.swift; sourceTree = "<group>"; };
+		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
+		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
+		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -177,6 +193,8 @@
 				0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */,
 				0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */,
 				0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */,
+				593A89222CE511F8001504F0 /* FNIcon.swift */,
+				0AF736202D00D0900026FE0A /* Help.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -200,6 +218,7 @@
 				0AD7BE122CBD6F1000428D02 /* Assets.swift */,
 				0AD7BE1C2CBD923300428D02 /* JMWallet.swift */,
 				0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */,
+				593A89282CE6797C001504F0 /* Entity.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -275,7 +294,6 @@
 			children = (
 				0AA6924C2C7F8EC700366192 /* CheckForBitcoinCore.command */,
 				0AA6924D2C7F8EC700366192 /* CheckXCodeSelect.command */,
-				0AA6924E2C7F8EC700366192 /* DeleteWallet.command */,
 				0AA6924F2C7F8EC700366192 /* InstallBrew.command */,
 				0AA692502C7F8EC700366192 /* InstallXcode.command */,
 				0AA692512C7F8EC700366192 /* IsProcessRunning.command */,
@@ -306,6 +324,12 @@
 				0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */,
 				0AD7BE242CC2BCEF00428D02 /* StopJm.command */,
 				0A0632AF2CD06B470059FAD4 /* Reindex.command */,
+				593A891E2CE28334001504F0 /* IncreaseGapLimit.command */,
+				593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */,
+				593A89242CE519B3001504F0 /* LaunchObWatcher.command */,
+				593A89262CE51A35001504F0 /* ObWatcher.command */,
+				0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */,
+				0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -395,11 +419,12 @@
 				0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */,
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
+				0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */,
+				593A89272CE51A35001504F0 /* ObWatcher.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
 				0AD7BE152CBD7AC100428D02 /* LaunchJMInstaller.command in Resources */,
 				0AA692642C7F8EC700366192 /* LaunchBrewInstall.command in Resources */,
-				0AA692602C7F8EC700366192 /* DeleteWallet.command in Resources */,
 				0AA6926D2C7F8EC700366192 /* Strap.command in Resources */,
 				0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
@@ -410,10 +435,12 @@
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
 				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
+				593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */,
 				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
+				593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */,
 				0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */,
 				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
@@ -421,9 +448,11 @@
 				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,
 				0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */,
 				0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */,
+				593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
 				0A573E312CB577D100899F84 /* GetRune.command in Resources */,
 				0AA692682C7F8EC700366192 /* LaunchXcodeInstall.command in Resources */,
+				0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */,
 				0AA692652C7F8EC700366192 /* LaunchInstaller.command in Resources */,
 				0A5CE8E02C8A2ADE00534A8D /* CheckForLightning.command in Resources */,
 			);
@@ -480,6 +509,7 @@
 			files = (
 				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
+				0AF736212D00D0900026FE0A /* Help.swift in Sources */,
 				0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */,
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
 				0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */,
@@ -490,9 +520,11 @@
 				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
+				593A89232CE511F8001504F0 /* FNIcon.swift in Sources */,
 				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
 				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
+				593A89292CE6797C001504F0 /* Entity.swift in Sources */,
 				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
@@ -637,6 +669,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -647,6 +680,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -661,7 +695,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -678,6 +712,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -688,6 +723,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -702,7 +738,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

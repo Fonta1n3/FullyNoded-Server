@@ -70,7 +70,7 @@ daemon"
 }
 
 function installLightning () {
-    sudo -u $(whoami) $BREW_PATH reinstall core-lightning
+    sudo -u $(whoami) $BREW_PATH install core-lightning
     cd /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins
     git clone https://github.com/daywalker90/clnrest-rs.git
     cd clnrest-rs
@@ -78,6 +78,7 @@ function installLightning () {
     cargo build --release
     mv target/release/clnrest-rs /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs
     chmod +x /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs
+    echo "Core Lightning installation complete, you can close this terminal window."
     exit 1
 }
 

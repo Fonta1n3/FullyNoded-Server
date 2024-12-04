@@ -10,7 +10,9 @@ import SwiftUI
 struct TaggedReleasesView: View {
     
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    @State private var fnServerPath = "/Users/\(NSUserName())/.fullynoded"
     @State private var prune = false
+    @State private var prunedAmount = ""
     @State private var bitcoinCoreInstallComplete = false
     @State private var startCheckingForBitcoinInstall = false
     @State private var description = ""
@@ -81,8 +83,9 @@ struct TaggedReleasesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Text("Do not update the data directory unless you want to save your Bitcoin Core data in a custom location like an external hard drive.")
-                    .padding([.leading])
+                    .padding([.bottom, .leading])
                     .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack() {
                     Toggle("Prune", isOn: $prune)
@@ -91,19 +94,26 @@ struct TaggedReleasesView: View {
                                 UserDefaults.standard.setValue(0, forKey: "txindex")
                                 UserDefaults.standard.setValue(1000, forKey: "prune")
                                 txIndex = 0
+                                prunedAmount = "\(Double(Defaults.shared.prune) / 0.00104858)"
                             } else {
                                 UserDefaults.standard.setValue(1, forKey: "txindex")
                                 UserDefaults.standard.setValue(0, forKey: "prune")
                             }
+                            
                         }
+                    if prune {
+                        TextField("", text: $prunedAmount)
+                        
+                    }
                 }
                 .padding([.leading, .trailing])
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text("Pruning your node reduces the amount of disc space Bitcoin Core will use.")
-                    .padding([.leading])
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if prune {
+                    Text("The amount in giga bytes the blockchain will consume.")
+                        .foregroundStyle(.secondary)
+                        .padding([.leading, .trailing])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 
                 HStack() {
                     if isAnimating {
@@ -126,7 +136,7 @@ struct TaggedReleasesView: View {
                 if startCheckingForBitcoinInstall {
                     EmptyView()
                         .onReceive(timerForBitcoinInstall) { _ in
-                            let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)/bin/bitcoind"
+                            let tempPath = "\(fnServerPath)/BitcoinCore/bitcoin-\(processedVersion)/bin/bitcoind"
                             if FileManager.default.fileExists(atPath: tempPath) {
                                 bitcoinCoreInstallComplete = true
                                 // save new envValues! and update lightning config if it exists
@@ -166,6 +176,9 @@ struct TaggedReleasesView: View {
         Spacer()
             .onAppear {
                 prune = !((Defaults.shared.prune) == 0)
+                if prune {
+                    prunedAmount = "\((Double(Defaults.shared.prune) * 0.00104858).rounded(toPlaces: 1))"
+                }
                 taggedRelease = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: nil, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
             }
             .alert(message, isPresented: $showError) {
@@ -197,7 +210,7 @@ struct TaggedReleasesView: View {
     }
     
     private func saveEnvVaules(version: String) {
-        DataManager.deleteAllData(entityName: "BitcoinEnv") { deleted in
+        DataManager.deleteAllData(entityName: .bitcoinEnv) { deleted in
             guard deleted else { return }
             
             let dict = [
@@ -208,7 +221,7 @@ struct TaggedReleasesView: View {
                 "chain": Defaults.shared.chain
             ]
             
-            DataManager.saveEntity(entityName: "BitcoinEnv", dict: dict) { saved in
+            DataManager.saveEntity(entityName: .bitcoinEnv, dict: dict) { saved in
                 guard saved else {
                     showMessage(message: "Unable to save default bitcoin env values.")
                     return
@@ -233,7 +246,7 @@ struct TaggedReleasesView: View {
         let urlSHA256SUMS = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS"
         description = "Downloading SHA256SUMS file from \(urlSHA256SUMS)"
         downloadTask(url: URL(string: urlSHA256SUMS)!) { data in
-            guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS") else { return }
+            guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/SHA256SUMS") else { return }
             downloadSigs(processedVersion: processedVersion, arch: arch)
         }
     }
@@ -242,7 +255,7 @@ struct TaggedReleasesView: View {
         let urlSigs = "https://bitcoincore.org/bin/bitcoin-core-\(processedVersion)/SHA256SUMS.asc"
         description = "Downloading the signed SHA256SUMS file from \(urlSigs)"
         downloadTask(url: URL(string: urlSigs)!) { data in
-            guard writeData(data: data, filePath: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/SHA256SUMS.asc") else { return }
+            guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/SHA256SUMS.asc") else { return }
             let binaryName  = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
             let binaryPrefix = "bitcoin-\(processedVersion)"
             installNow(binaryName: binaryName, version: processedVersion, prefix: binaryPrefix)
@@ -251,6 +264,12 @@ struct TaggedReleasesView: View {
     }
     
     private func install(_ taggedRelease: TaggedReleaseElement, useTor: Bool) {
+        var newPruneAmount: Int?
+        if prune, let dblAmount = Double(prunedAmount) {
+            let mebibytes = Int(dblAmount * 953.674)
+            UserDefaults.standard.setValue("\(mebibytes)", forKey: "prune")
+            newPruneAmount = mebibytes
+        }
         guard let tagName = taggedRelease.tagName else {
             showMessage(message: "No tagged name.")
             return
@@ -269,12 +288,13 @@ struct TaggedReleasesView: View {
             macOSUrl = "\(clearnet)/bin/bitcoin-core-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
         }
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
-        CreateFNDirConfigureCore.checkForExistingConf { startDownload in
+        
+        CreateFNDirConfigureCore.checkForExistingConf(updatedPruneValue: newPruneAmount) { startDownload in
             print("startDownload")
             if startDownload {
                 isAnimating = true
                 downloadTask(url: URL(string: macOSUrl)!) { data in
-                    guard writeData(data: data, filePath: "Users/\(NSUserName())/.fullynoded/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
+                    guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinCore/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
                     downloadSHA256SUMS(processedVersion: processedVersion, arch: arch)
                 }
             }
@@ -331,7 +351,6 @@ struct TaggedReleasesView: View {
     }
     
     private func updateCLNConfig(key: String) {
-        // key = "bitcoin-datadir="
         let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
         guard let conf = conf(stringPath: lightningConfPath) else { return }
         let arr = conf.split(separator: "\n")
@@ -340,7 +359,7 @@ struct TaggedReleasesView: View {
                 if key.hasPrefix("bitcoin-datadir") {
                     writeConf(conf: conf, key: key, value: Defaults.shared.dataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
                 } else if key.hasPrefix("bitcoin-rpcpassword") {
-                    DataManager.retrieve(entityName: "BitcoinRPCCreds") { creds in
+                    DataManager.retrieve(entityName: .rpcCreds) { creds in
                         guard let creds = creds else { return }
                         guard let encryptedPass = creds["password"] as? Data else { return }
                         guard let decryptedPass = Crypto.decrypt(encryptedPass) else { return }

@@ -10,6 +10,8 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @State private var promptToRefreshRpcAuth = false
+    @State private var rpcAuth = ""
     @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
@@ -28,225 +30,342 @@ struct BitcoinCore: View {
     
     
     var body: some View {
-        HStack() {
-            Image(systemName: "server.rack")
-                .padding(.leading)
-            if let version = env["VERSION"] {
-                Text("Bitcoin Core Server v\(version)")
-            } else {
-                Text("Bitcoin Core Server")
-            }
+       FNIcon()
+        VStack() {
             
-            Spacer()
-            Button {
-                isBitcoinCoreRunning()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding([.trailing])
-        }
-        .padding([.top])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-                    .padding([.leading])
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
+            HStack() {
+                Image(systemName: "server.rack")
+                    .padding(.leading)
+                if let version = env["VERSION"] {
+                    Text("Bitcoin Core Server v\(version)")
                 } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .padding([.leading])
+                    Text("Bitcoin Core Server")
                 }
-                Text("Running")
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding([.leading])
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                        .padding([.leading])
+                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload {
+                    Label {
+                        Text("Downloading the blockchain...")
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                    }
                 }
-                Text("Stopped")
-            }
-            if !isRunning {
+                Spacer()
                 Button {
-                    startBitcoinCore()
-                } label: {
-                    Text("Start")
-                }
-            } else {
-                Button {
-                    stopBitcoinCore()
-                } label: {
-                    Text("Stop")
-                }
-            }
-            
-            EmptyView()
-                .onReceive(timerForBitcoinStatus) { _ in
                     isBitcoinCoreRunning()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
                 }
-        }
-        .padding([.leading, .bottom])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let blockchainInfo = blockchainInfo {
-            if blockchainInfo.progressString == "Fully verified" {
-                Label {
-                    Text(blockchainInfo.progressString)
-                } icon: {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(.green)
-                }
-                .padding([.leading, .bottom])
-                .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Label {
-                    Text(blockchainInfo.progressString)
-                } icon: {
-                    Image(systemName: "xmark.seal")
-                        .foregroundStyle(.orange)
-                }
-                .padding([.leading, .bottom])
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.trailing])
             }
-            Label {
-                Text("Blockheight: " + "\(blockchainInfo.blockheight)")
-            } icon: {
-                Image(systemName: "square.stack.3d.up")
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                if isAnimating {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                        .padding([.leading])
+                }
+                if isRunning {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                        Text("Stopping...")
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.green)
+                            .padding([.leading])
+                        Text("Running")
+                    }
+                   
+                } else {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding([.leading])
+                        Text("Starting...")
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.red)
+                            .padding([.leading])
+                        Text("Stopped")
+                    }
+                   
+                }
+                if !isRunning {
+                    Button {
+                        startBitcoinCore()
+                    } label: {
+                        Text("Start")
+                    }
+                } else {
+                    Button {
+                        stopBitcoinCore()
+                    } label: {
+                        Text("Stop")
+                    }
+                }
+                
+                if let blockchainInfo = blockchainInfo {
+                    if blockchainInfo.progressString == "Fully verified" {
+                        Label {
+                            Text(blockchainInfo.progressString)
+                        } icon: {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                        }
+                    } else {
+                        Label {
+                            Text(blockchainInfo.progressString)
+                        } icon: {
+                            Image(systemName: "xmark.seal")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    Label {
+                        Text("Blockheight " + "\(blockchainInfo.blockheight)")
+                    } icon: {
+                        Image(systemName: "square.stack.3d.up")
+                    }
+                }
+                
+                EmptyView()
+                    .onReceive(timerForBitcoinStatus) { _ in
+                        isBitcoinCoreRunning()
+                    }
             }
             .padding([.leading, .bottom])
             .frame(maxWidth: .infinity, alignment: .leading)
-        }
-            
-        
-        Label("Network", systemImage: "network")
-            .padding(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Picker("", selection: $selectedChain) {
-                ForEach(chains, id: \.self) {
-                    Text($0)
-                }
-            }
-            .onChange(of: selectedChain) {
-                updateChain(chain: selectedChain)
-                isBitcoinCoreRunning()
-            }
-            .frame(width: 150)
-        }
-        .padding([.leading, .trailing, .bottom])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Button {
-                runScript(script: .launchVerifier)
-            } label: {
-                Text("Verify")
-            }
-            .padding(.leading)
-            Button {
-                openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
-            } label: {
-                Text("bitcoin.conf")
-            }
-            if let debugPath = debugLogPath() {
-                Button {
-                    openFile(file: debugPath)
-                } label: {
-                    Text("debug.log")
-                }
-            }
-            Button {
-                refreshRPCAuth()
-            } label: {
-                Text("Refresh RPC Authentication")
-            }
-            Button {
-                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
-            } label: {
-                Text("Data")
-            }
-            if Defaults.shared.prune != 0 {
-                Button {
-                    promptToReindex = true
-                } label: {
-                    Text("Reindex")
-                }
-            }
             
         }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Quick Connect", systemImage: "qrcode")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Button("Connect Fully Noded", systemImage: "qrcode") {
-            connectFN()
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let qrImage = qrImage {
-            Image(nsImage: qrImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
+        .padding([.top])
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        
+        VStack() {
+            Label("Network", systemImage: "network")
                 .padding(.leading)
-                .onAppear {
-                    setSensitiveDataToNil()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Picker("", selection: $selectedChain) {
+                    ForEach(chains, id: \.self) {
+                        Text($0)
+                    }
                 }
+                .onChange(of: selectedChain) {
+                    updateChain(chain: selectedChain)
+                    isBitcoinCoreRunning()
+                }
+                .frame(width: 150)
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
         }
-        
-        if let fullyNodedUrl = fullyNodedUrl {
-            Link("Connect Fully Noded", destination: URL(string: fullyNodedUrl)!)
-                .padding([.leading])
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        }
+                .padding([.leading, .trailing])
+        )
         
-        if let unifyUrl = unifyUrl {
-            Link("Connect Unify", destination: URL(string: unifyUrl)!)
-                .padding([.leading, .bottom])
+        VStack() {
+            Label("Utilities", systemImage: "wrench.and.screwdriver")
+                .padding(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Button {
+                    verify()
+                } label: {
+                    Text("Verify")
+                }
+                .padding(.leading)
+                Button {
+                    openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
+                } label: {
+                    Text("bitcoin.conf")
+                }
+                if let debugPath = debugLogPath() {
+                    Button {
+                        openFile(file: debugPath)
+                    } label: {
+                        Text("debug.log")
+                    }
+                }
+                Button {
+                   promptToRefreshRpcAuth = true
+                } label: {
+                    Text("Refresh RPC Authentication")
+                }
+                Button {
+                    openDataDir()
+                } label: {
+                    Text("Data Dir")
+                }
+                if Defaults.shared.prune != 0 {
+                    Button {
+                        promptToReindex = true
+                    } label: {
+                        Text("Reindex")
+                    }
+                }
+                
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            HStack() {
+                Label("Quick Connect", systemImage: "qrcode")
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer()
+                Button {
+                    showMessage(message: "The Quick Connect QR exports your rpc hostname (an onion or localhost) and the rpc port (combined these make up your nodes rpc address) which is required for FN to connect.\n\nThis QR does *NOT* include the FN-Server RPC credentials (it includes a dummy rpc user and password for security).\n\nYou must export and authorize your rpc user from FN mobile apps to FN-Server to complete your connection.\n\nTo do this: In FN navigate to Node Manager > + > Scan QR > update the rpc password in Node Credentials > Save the node > Export the rpcauth text from FN and use the below text field to add it to your bitcoin.conf.")
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .padding([.trailing])
+            }
+            
+            
+            Button("Connect Fully Noded", systemImage: "qrcode") {
+                connectFN()
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            
+            HStack() {
+                Text("Authorize an additional RPC user:")
+                    .padding([.leading])
+                TextField("rpcauth=FullyNoded:xxxx$xxxx", text: $rpcAuth)
+                    .padding([])
+                if rpcAuth != "" {
+                    Button {
+                        if addRpcAuthToConf() {
+                            rpcAuth = ""
+                            showMessage(message: "RPC user authorized. You will need to restart your node for the change to take effect.")
+                        }
+                    } label: {
+                        Text("Add RPC auth")
+                    }
+                }
+                Spacer()
+            }
+            
+            if let qrImage = qrImage {
+                Image(nsImage: qrImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+            }
+            
+            if let fullyNodedUrl = fullyNodedUrl {
+                Link("Connect Fully Noded (locally)", destination: URL(string: fullyNodedUrl)!)
+                    .padding([.leading])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            if let unifyUrl = unifyUrl {
+                Link("Connect Unify (locally)", destination: URL(string: unifyUrl)!)
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
         
         Spacer()
         
-        HStack() {
-            Label(logOutput, systemImage: "info.circle")
-                .padding(.all)
+        Label {
+            Text(logOutput)
+        } icon: {
+            Image(systemName: "info.circle")
         }
+        .padding(.all)
+        .foregroundStyle(.tertiary)
+        
         .onAppear(perform: {
             initialLoad()
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("This action will delete the entire blockchain and download it again, are you sure you want to proceed?", isPresented: $promptToReindex) {
+        .alert("This starts Bitcoin Core with the -reindex flag. This action will delete the entire existing blockchain and download it again, are you sure you want to proceed? (it can take a long time!)", isPresented: $promptToReindex) {
             Button("Reindex now", role: .destructive) {
-                if !isRunning {
-                    isAnimating = true
-                    runScript(script: .reindex)
-                } else {
-                    showMessage(message: "Bitcoin Core must stopped before redindexing.")
+                reindex()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("This action updates your exisiting FullyNoded-Server rpcuser with a new rpc password as well as the Core Lightning config (if present) and Join Market config (if present). FN-Server will attempt to shut down Bitcoin Core so that the changes take effect. Do you wish to proceed?", isPresented: $promptToRefreshRpcAuth) {
+            Button("Refresh", role: .destructive) {
+                refreshRPCAuth()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        
+    }
+    
+    private func reindex() {
+        if !isRunning {
+            isAnimating = true
+            ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    }
+                    return
                 }
+                showMessage(message: "Reindex initiated, this can take awhile..")
+            }
+        } else {
+            showMessage(message: "Bitcoin Core must stopped before redindexing.")
+        }
+    }
+    
+    private func openDataDir() {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+    }
+    
+    private func verify() {
+        ScriptUtil.runScript(script: .launchVerifier, env: env, args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else {
+                    
+                }
+                return
             }
         }
     }
@@ -303,17 +422,13 @@ struct BitcoinCore: View {
     }
     
     private func refreshRPCAuth() {
-        // First remove all "FullyNoded-Server" users from the bitcoin.conf
         guard let newCreds = RPCAuth().generateCreds(username: "FullyNoded-Server", password: nil) else {
             showMessage(message: "Unable to create rpc creds.")
             return
         }
         
-        let dataDir = Defaults.shared.dataDir
-        
-        let bitcoinConfPath = dataDir + "/bitcoin.conf"
-        
-        guard let conf = conf(stringPath: bitcoinConfPath) else {
+        guard let conf = bitcoinConf() else {
+            showMessage(message: "Unable to get the existing bitcoin.conf file.")
             return
         }
         
@@ -333,7 +448,7 @@ struct BitcoinCore: View {
             \(removeFullyNodedUser)
             """
         
-        guard ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath), atomically: false, encoding: .utf8)) != nil) else {
+        guard writeBitcoinConf(newConf: newConf) else {
             showMessage(message: "Can not write the new conf.")
             return
         }
@@ -348,26 +463,59 @@ struct BitcoinCore: View {
             return
         }
         
-        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: "BitcoinRPCCreds") { updated in
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
             guard updated else {
                 showMessage(message: "BitcoinRPCCreds update failed")
                 return
             }
-            runScript(script: .killBitcoind)
+            ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    showMessage(message: errorMessage!)
+                    return
+                }
+                guard let output = output else {
+                    showMessage(message: "No output when killing Bitcoin Core, you can probably ignore this error. RPC credentials should be updated, ensure Bitcoin Core restarts for the changes to take place.")
+                    return
+                }
+                parseScriptResult(script: .killBitcoind, result: output)
+            }
         }
     }
     
-    private func setSensitiveDataToNil() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-            self.qrImage = nil
-            self.fullyNodedUrl = nil
-            self.unifyUrl = nil
+    private func bitcoinConfPath() -> String {
+        let dataDir = Defaults.shared.dataDir
+        return dataDir + "/bitcoin.conf"
+    }
+    
+    private func bitcoinConf() -> String? {
+        return conf(stringPath: bitcoinConfPath())
+    }
+    
+    private func writeBitcoinConf(newConf: String) -> Bool {
+        return ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath()), atomically: false, encoding: .utf8)) != nil)
+    }
+    
+    private func addRpcAuthToConf() -> Bool {
+        guard let conf = bitcoinConf() else {
+            return false
         }
+        
+        let newConf = """
+            \(rpcAuth)
+            \(conf)
+            """
+        
+        guard writeBitcoinConf(newConf: newConf) else {
+            showMessage(message: "Can not write the new conf.")
+            return false
+        }
+        
+        return true
     }
     
     private func initialLoad() {
-        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
-        DataManager.retrieve(entityName: "BitcoinEnv") { env in
+        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        DataManager.retrieve(entityName: .bitcoinEnv) { env in
             guard let env = env else { return }
             let envValues = BitcoinEnvValues(dictionary: env)
             self.env = [
@@ -387,7 +535,7 @@ struct BitcoinCore: View {
             return
         }
         var onionHost = ""
-        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
+        let chain = UserDefaults.standard.string(forKey: "chain") ?? "main"
         
          switch chain {
          case "main":
@@ -402,34 +550,40 @@ struct BitcoinCore: View {
              break
          }
         
-        DataManager.retrieve(entityName: "BitcoinRPCCreds") { rpcCred in
-            guard let rpcCred = rpcCred, let encryptedPass = rpcCred["password"] as? Data else {
-                print("no passwrod")
+        DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
+            guard let _ = rpcCred else {
+                showMessage(message: "No rpc credentials saved.")
                 return
             }
             
-            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
-                print("cant decrypt")
-                return
-            }
+//            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
+//                showMessage(message: "Unable to decrypt rpc password data.")
+//                return
+//            }
             
-            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
-                print("cant convert")
-                return
-            }
+//            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
+//                showMessage(message: "Unable to encode decrypted rpc data to utf8 string.")
+//                return
+//            }
             
-            let url = "http://FullyNoded-Server:\(rpcPass)@\(onionHost)"
+            let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
             
-            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
-            self.fullyNodedUrl = "btcrpc://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
-            self.unifyUrl = "unify://FullyNoded-Server:\(rpcPass)@localhost:\(port)"
+            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
+            self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
+            self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
         }
     }
     
     private func openFile(file: String) {
-        let env = ["FILE": "\(file)"]
-        openConf(script: .openFile, env: env, args: []) { _ in }
+        ScriptUtil.runScript(script: .openFile, env: ["FILE": "\(file)"], args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
+        }
     }
     
     private func updateChain(chain: String) {
@@ -444,7 +598,7 @@ struct BitcoinCore: View {
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
         self.env["CHAIN"] = chain
         self.blockchainInfo = nil
-        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: "BitcoinEnv") { updated in
+        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: .bitcoinEnv) { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
                 return
@@ -501,7 +655,6 @@ struct BitcoinCore: View {
                 if item.hasPrefix("network=") {
                     let existingNetworkArr = item.split(separator: "=")
                     if existingNetworkArr.count == 2 {
-                        let existingNetwork = existingNetworkArr[1]
                         var network = chain
                         if network == "main" {
                             network = "bitcoin"
@@ -516,12 +669,34 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
-        runScript(script: .startBitcoin)
+        ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else {
+                    
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseDidBitcoinStart(result: output)
+        }
     }
     
     private func startBitcoinParse(result: String) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-            self.runScript(script: .didBitcoindStart)
+            ScriptUtil.runScript(script: .didBitcoindStart, env: env, args: nil) { (output, rawData, errorMessage) in
+                guard errorMessage == nil else {
+                    if errorMessage != "" {
+                        showMessage(message: errorMessage!)
+                    } else {
+                        
+                    }
+                    return
+                }
+                guard let output = output else { return }
+                parseScriptResult(script: .didBitcoindStart, result: output)
+            }
         }
     }
     
@@ -604,25 +779,7 @@ struct BitcoinCore: View {
             isAnimating = false
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {
-                    if !error.contains("Could not connect to the server") {
-                        isRunning = true
-                        switch error {
-                        case _ where error.contains("Loading block index"),
-                            _ where error.contains("Verifying blocks"),
-                            _ where error.contains("Loading P2P addresses…"),
-                            _ where error.contains("Pruning"),
-                            _ where error.contains("Rewinding"),
-                            _ where error.contains("Rescanning"),
-                            _ where error.contains("Loading wallet"),
-                            _ where error.contains("Looks like your rpc credentials"):
-                            logOutput = error
-                        default:
-                            showMessage(message: error)
-                        }
-                    } else {
-                        isRunning = false
-                        logOutput = error
-                    }
+                    handleRPCError(error: error)
                 }
                 return
             }
@@ -634,54 +791,33 @@ struct BitcoinCore: View {
         }
     }
     
+    private func handleRPCError(error: String) {
+        if !error.contains("Could not connect to the server") {
+            isRunning = true
+            switch error {
+            case _ where error.contains("Loading block index"),
+                _ where error.contains("Verifying blocks"),
+                _ where error.contains("Loading P2P addresses…"),
+                _ where error.contains("Pruning"),
+                _ where error.contains("Rewinding"),
+                _ where error.contains("Rescanning"),
+                _ where error.contains("Loading wallet"),
+                _ where error.contains("Looks like your rpc credentials"):
+                logOutput = error
+            default:
+                showMessage(message: error)
+            }
+        } else {
+            isRunning = false
+            logOutput = error
+        }
+    }
+    
     private func showMessage(message: String) {
         showError = true
         self.message = message
     }
-    
-    private func runScript(script: SCRIPT) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
         
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.environment = env
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            task.waitUntilExit()
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                result += errorOutput
-                if errorOutput != "" {
-                    showMessage(message: errorOutput)
-                }
-            }
-            
-            parseScriptResult(script: script, result: result)
-        }
-    }
-    
     func parseScriptResult(script: SCRIPT, result: String) {
         switch script {
         case .startBitcoin:
@@ -692,36 +828,13 @@ struct BitcoinCore: View {
             parseDidBitcoinStart(result: result)
             
         case .killBitcoind:
-            if result.contains("Its dead") {
+            if result.contains("Its dead") || result.contains("Does not exist") {
                 isRunning = false
                 showMessage(message: "RPC Authentication refreshed, you need to start your node for the changes to take effect.")
             }
             
         default:
             break
-        }
-    }
-    
-    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        let resource = script.stringValue
-        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else {
-            return
-        }
-        let stdOut = Pipe()
-        let task = Process()
-        task.launchPath = path
-        task.environment = env
-        task.arguments = args
-        task.standardOutput = stdOut
-        task.launch()
-        task.waitUntilExit()
-        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-        var result = ""
-        if let output = String(data: data, encoding: .utf8) {
-            result += output
-            completion(true)
-        } else {
-            completion(false)
         }
     }
 }

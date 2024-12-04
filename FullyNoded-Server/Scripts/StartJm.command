@@ -24,5 +24,5 @@ source jmvenv/bin/activate
 echo "cd scripts"
 cd scripts
 echo "python jmwalletd.py"
-python jmwalletd.py
+python3 jmwalletd.py
 

@@ -10,6 +10,10 @@ TAG_NAME=$1
 AUTHOR=$2
 
 function unpackTarball() {
+    if ! [ -d /Library/Frameworks/Python.framework/Versions/3.10 ]; then
+        echo "Installing python 3.10 with brew install python@3.10"
+        /opt/homebrew/bin/brew install python@3.10
+    fi
     echo "Unpacking $TAG_NAME"
     cd /Users/$(whoami)/.fullynoded/JoinMarket
     /opt/homebrew/bin/gpg --import $AUTHOR.asc
@@ -21,7 +25,7 @@ function unpackTarball() {
     if [ ! -f "/Users/$(whoami)/Library/Application Support/joinmarket/joinmarket.cfg" ]; then
         source jmvenv/bin/activate
         cd scripts
-        python wallet-tool.py generate
+        python3 wallet-tool.py generate
         deactivate
     fi
     echo "Join Market Install complete."

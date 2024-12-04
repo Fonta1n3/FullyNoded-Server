@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 INSTALL_SCRIPT_PATH="/Users/$(whoami)/.fullynoded/installBitcoin.sh"
 LOG="/Users/$(whoami)/.fullynoded/fullynoded.log"
 touch $INSTALL_SCRIPT_PATH

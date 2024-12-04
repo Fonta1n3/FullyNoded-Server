@@ -17,177 +17,271 @@ struct CoreLightning: View {
     @State private var nodeId = ""
     @State private var publicUrl = ""
     @State private var lnlink: String?
+    @State private var localLnlink: String?
     @State private var plasmaExists = false
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var onionHost: String? = nil
     @State private var quickConnectClnRest: String? = nil
+    private let timerForStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        HStack() {
-            Image(systemName: "server.rack")
-                .padding(.leading)
-            
-            Text("Core Lightning Server")
-            Spacer()
-            Button {
-                isLightningOn()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .padding(.trailing)
-        }
-        .padding([.top])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {            
-            if isAnimating {
-                ProgressView()
-                    .scaleEffect(0.5)
-            }
-            if isRunning {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding(.leading)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .padding(.leading)
-                }
-                Text("Running")
-            } else {
-                if isAnimating {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.orange)
-                        .padding(.leading)
-                } else {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.red)
-                        .padding(.leading)
-                }
-                Text("Stopped")
-            }
-            
-            if !isRunning {
+        FNIcon()
+        VStack() {
+            HStack() {
+                Image(systemName: "server.rack")
+                    .padding(.leading)
+                
+                Text("Core Lightning Server v24.08.1")
+                Spacer()
                 Button {
-                    startLightning()
+                    isLightningOn()
                 } label: {
-                    Text("Start")
+                    Image(systemName: "arrow.clockwise")
                 }
-            } else {
-                Button {
-                    stopLightning()
-                } label: {
-                    Text("Stop")
+                .padding(.trailing)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                if isAnimating {
+                    ProgressView()
+                        .scaleEffect(0.5)
                 }
-            }
-            
-        }
-        .padding([.leading])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label(selectedChain.capitalized, systemImage: "network")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Utilities", systemImage: "wrench.and.screwdriver")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        HStack() {
-            Button {
-                let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
-                openConf(script: .openFile, env: env, args: []) { _ in }
-            } label: {
-                Text("Config")
-            }
-            .padding(.leading)
-            
-            Button {
-                let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
-                openConf(script: .openFile, env: env, args: []) { _ in }
-            } label: {
-                Text("Log")
-            }
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Label("Quick Connect", systemImage: "qrcode")
-            .padding([.leading, .top])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        
-        Button("Connect Plasma via LNLink", systemImage: "qrcode") {
-            showQr()
-        }
-        .padding([.leading, .trailing])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let qrImage = qrImage {
-            Image(nsImage: qrImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.qrImage = nil
-                        self.lnlink = nil
+                if isRunning {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding(.leading)
+                        Text("Stopping...")
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.green)
+                            .padding(.leading)
+                        Text("Running")
+                    }
+                    
+                } else {
+                    if isAnimating {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.orange)
+                            .padding(.leading)
+                        Text("Starting...")
+                    } else {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.red)
+                            .padding(.leading)
+                        Text("Stopped")
+                    }
+                    
+                }
+                
+                if !isRunning {
+                    Button {
+                        startLightning()
+                    } label: {
+                        Text("Start")
+                    }
+                } else {
+                    Button {
+                        stopLightning()
+                    } label: {
+                        Text("Stop")
                     }
                 }
+                
+            }
+            .padding([.leading])
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
         
+        VStack() {
+            Label("Network", systemImage: "network")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text(selectedChain)
+                .padding([.leading])
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Utilities", systemImage: "wrench.and.screwdriver")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
+                Button {
+                    let env = ["FILE":"/Users/\(NSUserName())/.lightning/config"]
+                    openFile(env: env)
+                } label: {
+                    Text("Config")
+                }
+                .padding(.leading)
+                
+                Button {
+                    let env = ["FILE":"/Users/\(NSUserName())/.lightning/lightning.log"]
+                    openFile(env: env)
+                } label: {
+                    Text("Log")
+                }
+//                Button {
+//                    ScriptUtil.runScript(script: .launchUpdateLightning, env: nil, args: nil) { (_, _, _) in }
+//                } label: {
+//                    Text("Update")
+//                }
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.leading, .trailing])
+        )
+        
+        VStack() {
+            Label("Quick Connect", systemImage: "qrcode")
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Button("Connect Plasma remotely via LNLink", systemImage: "qrcode") {
+                getLnLink(isLocal: false)
+            }
+            .padding([.leading, .trailing])
+            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+            if let qrImage = qrImage {
+                Image(nsImage: qrImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                            self.qrImage = nil
+                            self.lnlink = nil
+                        }
+                    }
+            }
+            
+            Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
+                self.onionHost = TorClient.sharedInstance.hostnames()?[5]
+                ScriptUtil.runScript(script: .getRune, env: nil, args: nil) { (output, rawData, errorMessage) in
+                    guard errorMessage == nil else {
+                        if errorMessage != "" {
+                            showMessage(message: errorMessage!)
+                        } else if let data = rawData {
+                            parseRuneResponse(data: data)
+                        }
+                        return
+                    }
+                    guard let _ = output, let data = rawData else { return }
+                    parseRuneResponse(data: data)
+                }
+            }
+            .padding([.leading])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let quickConnectClnRest = self.quickConnectClnRest {
+                let qr = quickConnectClnRest.qrQode
+                Image(nsImage: qr)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+                            self.quickConnectClnRest = nil
+                            self.onionHost = nil
+                            self.lnlink = nil
+                        }
+                    }
+                if let onionHost = onionHost {
+                    Text(onionHost)
+                        .textSelection(.enabled)
+                }
+            }
+            
             if plasmaExists {
-                if let lnlink = self.lnlink {
+                Button("Connect Plasma Locally") {
+                    getLnLink(isLocal: true)
+                }
+                .padding([.leading])
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                if let lnlink = self.localLnlink {
                     Link("Connect Plasma Locally via LNLink", destination: URL(string: lnlink)!)
                         .padding([.leading])
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                
             } else {
                 Link("Download Plasma", destination: URL(string: "https://apps.apple.com/us/app/plasma-core-lightning-wallet/id6468914352")!)
                     .padding([.leading])
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-        
-        Button("Connect via Onion (clnrest-rs)", systemImage: "qrcode") {
-            self.onionHost = TorClient.sharedInstance.hostnames()?[5]
-            runScript(script: .getRune)
         }
-        .padding([.leading])
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        if let quickConnectClnRest = self.quickConnectClnRest {
-            let qr = quickConnectClnRest.qrQode
-            Image(nsImage: qr)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
+        .padding()
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-                        self.quickConnectClnRest = nil
-                        self.onionHost = nil
-                        self.lnlink = nil
-                    }
-                }
-            if let onionHost = onionHost {
-                Text(onionHost)
-                    .textSelection(.enabled)
-            }
-        }
+                .padding([.leading, .trailing])
+        )
         Spacer()
-        HStack() {
-            Label(logOutput, systemImage: "info.circle")
-                .padding(.all)
-        }
+//        Label {
+//            Text(logOutput)
+//        } icon: {
+//            Image(systemName: "info.circle")
+//        }
+//        .padding(.all)
+//        .foregroundStyle(.tertiary)
         .onAppear(perform: {
             isLightningOn()
             checkIfPlasmaExists()
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
+        }
+        EmptyView()
+            .onReceive(timerForStatus) { _ in
+                isLightningOn()
+            }
+        
+        
+    }
+    
+    private func openFile(env: [String: String]?) {
+        ScriptUtil.runScript(script: .openFile, env: env, args: nil) { (_, _, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                }
+                return
+            }
         }
     }
     
@@ -201,44 +295,78 @@ struct CoreLightning: View {
     }
     
     private func showQr() {
-        getPublicUrl()
+        getPublicUrl(isLocal: false)
+    }
+    
+    private func parseLightningRunning(output: String) {
+        isAnimating = false
+        if output.contains("Running") {
+            isRunning = true
+        } else if output.contains("Stopped") {
+            isRunning = false
+        }
     }
     
     private func startLightning() {
         isAnimating = true
-        runScript(script: .startLightning)
+        
+        ScriptUtil.runScript(script: .startLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                print("wtf")
+                isAnimating = false
+                showMessage(message: errorMessage!)
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
+                    guard errorMessage == nil else {
+                        isAnimating = false
+                        showMessage(message: errorMessage!)
+                        return
+                    }
+                    guard let output = output else { return }
+                    parseLightningRunning(output: output)
+                }
+            }
+        }
     }
     
     private func isLightningOn() {
         isAnimating = true
-        runScript(script: .lightingRunning)
+        ScriptUtil.runScript(script: .lightingRunning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    parseLightningRunning(output: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            parseLightningRunning(output: output)
+        }
     }
     
     private func stopLightning() {
         isAnimating = true
-        runScript(script: .stopLightning)
+        ScriptUtil.runScript(script: .stopLightning, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let output = output {
+                    stopLightningParse(result: output)
+                }
+                return
+            }
+            guard let output = output else { return }
+            stopLightningParse(result: output)
+        }
     }
     
     private func stopLightningParse(result: String) {
         isAnimating = false
         if result.contains("Shutdown complete") {
             isRunning = false
-            showLog()
-        }
-    }
-    
-    private func showLog() {
-        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/lightning.log")
-        guard let log = try? String(contentsOf: path, encoding: .utf8) else {
-            print("can not get lightning.log")
-            return
-        }
-        let logItems = log.components(separatedBy: "\n")
-        DispatchQueue.main.async {
-            if logItems.count > 2 {
-                let lastLogItem = "\(logItems[logItems.count - 2])"
-                logOutput = lastLogItem
-            }
         }
     }
     
@@ -247,138 +375,100 @@ struct CoreLightning: View {
         self.message = message
     }
     
-    private func runScript(script: SCRIPT) {
-        #if DEBUG
-        print("run script: \(script.stringValue)")
-        #endif
-        
-        let taskQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
-        taskQueue.async {
-            let resource = script.stringValue
-            guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-            let stdOut = Pipe()
-            let stdErr = Pipe()
-            let task = Process()
-            task.launchPath = path
-            task.standardOutput = stdOut
-            task.standardError = stdErr
-            task.launch()
-            
-            switch script {
-            case .startLightning:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.runScript(script: .lightingRunning)
-                }
-               
-            default:
-                break
-            }
-                        
-            task.waitUntilExit()
-            
-            let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-            let errData = stdErr.fileHandleForReading.readDataToEndOfFile()
-            var result = ""
-            
-            if let output = String(data: data, encoding: .utf8) {
-                #if DEBUG
-                print("output: \(output)")
-                #endif
-                result += output
+    func getLnLink(isLocal: Bool) {
+        ScriptUtil.runScript(script: .lightningNodeId, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard let data = rawData else {
+                return
             }
             
-            switch script {
-            case .getRune, .lightningNodeId:
-                parseDataResponse(script: script, data: data)
-                
-            default:
-                break
-            }
-            
-            if let errorOutput = String(data: errData, encoding: .utf8) {
-                #if DEBUG
-                print("error: \(errorOutput)")
-                #endif
-                
-                if errorOutput != "", !errorOutput.contains("Your account is limited to 1 simultaneous ngrok agent sessions") {
-                    showMessage(message: errorOutput)
-                    isAnimating = false
-                } else {
-                    parseScriptResult(script: script, result: result)
-                }
-            }
+            guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
+            self.nodeId = info.id
+            getRune(isLocal: isLocal)
         }
     }
     
-    func getPublicUrl() {
-        let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
-        guard let config = try? Data(contentsOf: path) else {
-            print("Unable to get ngrok.log.")
-            return
-        }
-        guard let stringValue = String(data: config, encoding: .utf8) else {
-            print("Unable to convert log data to utf8 string.")
-            return
-        }
-        let array = stringValue.split(separator: "\n")
-        var anyAddr = false
-        for item in array {
-            if item.hasPrefix("addr=") {
-                anyAddr = true
-                let itemArr = item.split(separator: "=")
-                self.publicUrl = "\(itemArr[1])"
-                runScript(script: .lightningNodeId)
-            }
-        }
-        if !anyAddr {
-            runScript(script: .lightningNodeId)
-            showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
-        }
-    }
-    
-    func parseDataResponse(script: SCRIPT, data: Data) {
-        switch script {
-        case .getRune:
+    func getRune(isLocal: Bool) {
+        ScriptUtil.runScript(script: .getRune, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard let data = rawData else { return }
             guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
-            let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
-            if publicUrl != "" {
-                self.qrImage = publicLnLink.qrQode
+            if !isLocal {
+                let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+                if publicUrl != "" {
+                    self.qrImage = publicLnLink.qrQode
+                }
+            } else {
+                self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
             }
-            self.lnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
             if let onionHost = self.onionHost {
                 self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
             }
-            
-        case .lightningNodeId:
-            guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
-            self.nodeId = info.id
-            runScript(script: .getRune)
-            
-        default:
-            break
         }
     }
     
-    func parseScriptResult(script: SCRIPT, result: String) {
-        switch script {
-        case .stopLightning:
-            stopLightningParse(result: result)
-            
-        case .lightingRunning:
-            isAnimating = false
-            if result.contains("Running") {
-                isRunning = true
-                
-            } else if result.contains("Stopped") {
-                isRunning = false
+    func getPublicUrl(isLocal: Bool) {
+        if isLocal {
+            self.publicUrl = "127.0.0.1:9735"
+            getNodeID()
+        } else {
+            let path = URL(fileURLWithPath: "/Users/\(NSUserName())/.lightning/config")
+            guard let config = try? Data(contentsOf: path) else {
+                print("Unable to get config.")
+                return
             }
-            
-        default:
-            break
+            guard let stringValue = String(data: config, encoding: .utf8) else {
+                print("Unable to convert log data to utf8 string.")
+                return
+            }
+            let array = stringValue.split(separator: "\n")
+            var anyAddr = false
+            for item in array {
+                if item.hasPrefix("addr=") {
+                    anyAddr = true
+                    let itemArr = item.split(separator: "=")
+                    self.publicUrl = "\(itemArr[1])"
+                    getNodeID()
+                }
+            }
+            if !anyAddr {
+                getNodeID()
+                showMessage(message: "In order to connect via QR code remotely with Plasma you need to open the lightning config and add addr=<your public IP address>, example: addr=100.89.65.23:9735. If you do not have a public IP you can use Plasma locally by clicking \"Connect Plasma Locally\".")
+            }
         }
         
-        showLog()
     }
+    
+    private func getNodeID() {
+        ScriptUtil.runScript(script: .lightningNodeId, env: nil, args: nil) { (output, rawData, errorMessage) in
+            guard errorMessage == nil else {
+                if errorMessage != "" {
+                    showMessage(message: errorMessage!)
+                } else if let data = rawData {
+                    parseLigtningNodeId(data: data)
+                }
+                return
+            }
+            guard let data = rawData else { return }
+            parseLigtningNodeId(data: data)
+        }
+    }
+    
+    private func parseLigtningNodeId(data: Data) {
+        guard let info = dec(GetInfo.self, data).response as? GetInfo else { return }
+        self.nodeId = info.id
+    }
+    
+    private func parseRuneResponse(data: Data) {
+        guard let runeResponse = dec(Rune.self, data).response as? Rune, let rune = runeResponse.rune else { return }
+        let publicLnLink = "lnlink:\(self.nodeId)@\(self.publicUrl)?token=\(rune)"
+        if publicUrl != "" {
+            self.qrImage = publicLnLink.qrQode
+        }
+        self.localLnlink = "lnlink:\(self.nodeId)@127.0.0.1:9735?token=\(rune)"
+        if let onionHost = self.onionHost {
+            self.quickConnectClnRest = "clnrest://\(onionHost):18765?token=\(rune)"
+        }
+    }
+
     
     private func dec(_ codable: Codable.Type, _ jsonData: Data) -> (response: Any?, errorDesc: String?) {
         let decoder = JSONDecoder()
@@ -387,33 +477,6 @@ struct CoreLightning: View {
             return((item, nil))
         } catch {
             return((nil, "\(error)"))
-        }
-    }
-    
-    private func openConf(script: SCRIPT, env: [String:String], args: [String], completion: @escaping ((Bool)) -> Void) {
-        #if DEBUG
-        print("script: \(script.stringValue)")
-        #endif
-        let resource = script.stringValue
-        guard let path = Bundle.main.path(forResource: resource, ofType: "command") else { return }
-        let stdOut = Pipe()
-        let task = Process()
-        task.launchPath = path
-        task.environment = env
-        task.arguments = args
-        task.standardOutput = stdOut
-        task.launch()
-        task.waitUntilExit()
-        let data = stdOut.fileHandleForReading.readDataToEndOfFile()
-        var result = ""
-        if let output = String(data: data, encoding: .utf8) {
-            #if DEBUG
-            print("result: \(output)")
-            #endif
-            result += output
-            completion(true)
-        } else {
-            completion(false)
         }
     }
 }
