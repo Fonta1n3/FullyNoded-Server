@@ -115,9 +115,8 @@ struct JoinMarketTaggedReleasesView: View {
     
     
     private func configureJm() {
-        print("configureJm")
-        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "signet"
-        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
+        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
         switch chain {
         case "main": chain = "mainnet"
         case "regtest": chain = "testnet"

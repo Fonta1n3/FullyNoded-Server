@@ -514,7 +514,7 @@ struct BitcoinCore: View {
     }
     
     private func initialLoad() {
-        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
+        selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
         DataManager.retrieve(entityName: .bitcoinEnv) { env in
             guard let env = env else { return }
             let envValues = BitcoinEnvValues(dictionary: env)
@@ -535,7 +535,7 @@ struct BitcoinCore: View {
             return
         }
         var onionHost = ""
-        let chain = UserDefaults.standard.string(forKey: "chain") ?? "signet"
+        let chain = UserDefaults.standard.string(forKey: "chain") ?? "main"
         
          switch chain {
          case "main":
@@ -569,7 +569,7 @@ struct BitcoinCore: View {
             let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
             
-            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "38332"
+            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
             self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
         }

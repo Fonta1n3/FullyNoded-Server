@@ -76,6 +76,7 @@
 		0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE202CC2B1F100428D02 /* StartJm.command */; };
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
+		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
 		593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A891E2CE28334001504F0 /* IncreaseGapLimit.command */; };
 		593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */; };
 		593A89232CE511F8001504F0 /* FNIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89222CE511F8001504F0 /* FNIcon.swift */; };
@@ -158,6 +159,7 @@
 		0AD7BE202CC2B1F100428D02 /* StartJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartJm.command; sourceTree = "<group>"; };
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
+		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
 		593A891E2CE28334001504F0 /* IncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IncreaseGapLimit.command; sourceTree = "<group>"; };
 		593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchIncreaseGapLimit.command; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */,
 				0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */,
 				593A89222CE511F8001504F0 /* FNIcon.swift */,
+				0AF736202D00D0900026FE0A /* Help.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -506,6 +509,7 @@
 			files = (
 				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
+				0AF736212D00D0900026FE0A /* Help.swift in Sources */,
 				0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */,
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
 				0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */,
@@ -676,7 +680,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded - Server";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -691,7 +695,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -719,7 +723,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded - Server";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -734,7 +738,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

@@ -57,6 +57,7 @@ struct ContentView: View {
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
+    private let help = Service(name: "Help", id: UUID())
     
 
     var body: some View {
@@ -144,6 +145,8 @@ struct ContentView: View {
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer()
+                            } else if service.name == "Help" {
+                                Help()
                             }
                         } label: {
                             HStack() {
@@ -230,7 +233,18 @@ struct ContentView: View {
                                             self.torRunning = TorClient.sharedInstance.state == .connected
                                         }
                                 }
-                                Text(service.name)
+                                
+                                if service.name == "Help" {
+                                    Image(systemName: "questionmark.circle")
+                                        .foregroundStyle(.secondary)
+                                    Text(service.name)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text(service.name)
+                                }
+                                
+                                
+                                
                             }
                             
                         }
@@ -389,7 +403,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, coreLightning, joinMarket, tor]
+                    services = [bitcoinCore, coreLightning, joinMarket, tor, help]
                     checkForBitcoin()
                 }
                 
@@ -407,7 +421,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            services = [bitcoinCore, coreLightning, joinMarket, tor]
+            services = [bitcoinCore, coreLightning, joinMarket, tor, help]
             checkForBitcoin()
         }
     }
