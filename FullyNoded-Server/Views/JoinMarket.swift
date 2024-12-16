@@ -164,7 +164,7 @@ struct JoinMarket: View {
                     Text("Data Dir")
                 }
                 Button {
-                    increaseGapLimit()
+                    promptToIncreaseGapLimit = true
                 } label: {
                     Text("Increase gap limit")
                 }
