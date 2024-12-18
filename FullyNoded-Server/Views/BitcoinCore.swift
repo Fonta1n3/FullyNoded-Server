@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @State private var statusText = ""
     @State private var promptToRefreshRpcAuth = false
     @State private var rpcAuth = ""
     @State private var qrImage: NSImage? = nil
@@ -72,7 +73,7 @@ struct BitcoinCore: View {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
-                        Text("Stopping...")
+                        Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
@@ -85,7 +86,7 @@ struct BitcoinCore: View {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
                             .padding([.leading])
-                        Text("Starting...")
+                        Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
@@ -339,7 +340,9 @@ struct BitcoinCore: View {
     private func reindex() {
         if !isRunning {
             isAnimating = true
+            statusText = "Reindexing..."
             ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
+                statusText = ""
                 guard errorMessage == nil else {
                     if errorMessage != "" {
                         showMessage(message: errorMessage!)
@@ -669,6 +672,7 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
+        statusText = "Starting.."
         ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
                 if errorMessage != "" {
@@ -709,6 +713,7 @@ struct BitcoinCore: View {
     
     private func stopBitcoinCore() {
         isAnimating = true
+        statusText = "Stopping..."
         BitcoinRPC.shared.command(method: "stop", params: [:]) { (result, error) in
             guard let result = result as? String else {
                 isAnimating = false
@@ -775,6 +780,7 @@ struct BitcoinCore: View {
     
     private func isBitcoinCoreRunning() {
         isAnimating = true
+        statusText = "Refreshing..."
         BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
             isAnimating = false
             guard error == nil, let result = result as? [String: Any] else {

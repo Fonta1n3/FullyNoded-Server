@@ -9,6 +9,7 @@ import SwiftUI
 
 struct JoinMarket: View {
     @Environment(\.openURL) var openURL
+    @State private var statusText = "Refreshing..."
     @State private var walletName = ""
     @State private var gapLimit = ""
     @State private var promptToIncreaseGapLimit = false
@@ -61,7 +62,7 @@ struct JoinMarket: View {
                             .foregroundStyle(.orange)
                             .padding([.leading])
                         
-                        Text("Starting...")
+                        Text(statusText)
                             .onAppear {
                                 isAutoRefreshing = true
                             }
@@ -83,7 +84,7 @@ struct JoinMarket: View {
                             .foregroundStyle(.orange)
                             .padding([.leading])
                         
-                        Text("Starting...")
+                        Text(statusText)
                             
                     } else {
                         Image(systemName: "circle.fill")
@@ -427,9 +428,10 @@ struct JoinMarket: View {
         
     private func startJoinMarket() {
         isAnimating = true
+        statusText = "Starting..."
         // Ensure Bitcoin Core is running before starting JM.
         BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
-            guard error == nil, let result = result as? [String: Any] else {
+            guard error == nil, let _ = result as? [String: Any] else {
                 if let error = error {
                     if error.contains("Could not connect to the server") {
                         isAnimating = false
@@ -497,6 +499,7 @@ struct JoinMarket: View {
         if !isAutoRefreshing {
             isAnimating = true
             isAutoRefreshing = true
+            statusText = "Refreshing..."
         }
         JMRPC.sharedInstance.command(method: .session, param: nil) { (response, errorDesc) in
             isAnimating = false

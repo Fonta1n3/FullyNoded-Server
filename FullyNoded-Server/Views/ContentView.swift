@@ -20,6 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     
+    @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
     @State private var torProgress = 0.0
     @State private var showError = false
@@ -54,7 +55,7 @@ struct ContentView: View {
     private let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForTor = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
-    private let coreLightning = Service(name: "Core Lightning", id: UUID())
+    //private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
     private let help = Service(name: "Help", id: UUID())
@@ -140,6 +141,8 @@ struct ContentView: View {
                                         .onChange(of: torRunning) {
                                             if !torRunning {
                                                 TorClient.sharedInstance.resign()
+                                            } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
+                                                TorClient.sharedInstance.start(delegate: nil)
                                             }
                                         }
                                 }
@@ -183,7 +186,7 @@ struct ContentView: View {
                                             .foregroundStyle(.gray)
                                         EmptyView()
                                             .onReceive(timerForLightningInstall) { _ in
-                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightningd") {
+                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
                                                     lightningInstalled = true
                                                     isInstallingLightning = false
                                                     self.timerForLightningInstall.upstream.connect().cancel()
@@ -253,16 +256,11 @@ struct ContentView: View {
                 Text("Select a service.")
                     .foregroundStyle(.secondary)
             }
-            //.padding(.all)
         
         .onAppear(perform: {
-            /// For testing fresh install.
-//            DataManager.deleteAllData(entityName: "BitcoinRPCCreds") { deleted in
-//                print("deleted: \(deleted)")
-//                let domain = Bundle.main.bundleIdentifier!
-//                UserDefaults.standard.removePersistentDomain(forName: domain)
-//                UserDefaults.standard.synchronize()
-//            }
+            if isInitialLoad {
+                bootTor()
+            }
             checkForXcode()
         })
         .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
@@ -309,20 +307,23 @@ struct ContentView: View {
         }
     }
     
+    private func bootTor() {
+        if TorClient.sharedInstance.state == .connected {
+            torProgress = 100.0
+        } else {
+            TorClient.sharedInstance.start(delegate: nil)
+        }
+        TorClient.sharedInstance.showProgress = { progress in
+            torProgress = Double(progress)
+        }
+        isInitialLoad = false
+    }
+    
     private func checkForBrew() {
         ScriptUtil.runScript(script: .checkForBrew, env: nil, args: nil) { (output, data, errorMess) in
             guard let output = output, output != "" else {
                 promptToInstallBrew = true
                 return
-            }
-            
-            if TorClient.sharedInstance.state == .connected {
-                torProgress = 100.0
-            } else {
-                TorClient.sharedInstance.start(delegate: nil)
-            }
-            TorClient.sharedInstance.showProgress = { progress in
-                torProgress = Double(progress)
             }
             getSavedValues()
         }
@@ -403,7 +404,8 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, coreLightning, joinMarket, tor, help]
+                    //services = [bitcoinCore, coreLightning, joinMarket, tor, help]
+                    services = [bitcoinCore, joinMarket, tor, help]
                     checkForBitcoin()
                 }
                 
@@ -421,7 +423,8 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            services = [bitcoinCore, coreLightning, joinMarket, tor, help]
+            //services = [bitcoinCore, coreLightning, joinMarket, tor, help]
+            services = [bitcoinCore, joinMarket, tor, help]
             checkForBitcoin()
         }
     }

@@ -6,5 +6,5 @@
 #  Created by Peter Denton on 10/7/24.
 #  
 
-sudo -u $(whoami) /opt/homebrew/Cellar/core-lightning/24.08.1/bin/lightning-cli getinfo
+sudo -u $(whoami) /opt/homebrew/Cellar/core-lightning/24.11/bin/lightning-cli getinfo
 exit 1
