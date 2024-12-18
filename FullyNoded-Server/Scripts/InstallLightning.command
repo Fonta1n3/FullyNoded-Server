@@ -19,14 +19,14 @@ export CELLAR_PATH=/opt/homebrew/Cellar
 
 function configureLightning () {
 CONFIG="alias=FullyNoded-Server\n\
-plugin-dir=/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins\n\
-subdaemon=channeld:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_channeld\n\
-subdaemon=closingd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_closingd\n\
-subdaemon=connectd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_connectd\n\
-subdaemon=gossipd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_gossipd\n\
-subdaemon=hsmd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_hsmd\n\
-subdaemon=onchaind:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_onchaind\n\
-subdaemon=openingd:/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/lightning_openingd\n\
+plugin-dir=/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins\n\
+subdaemon=channeld:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_channeld\n\
+subdaemon=closingd:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_closingd\n\
+subdaemon=connectd:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_connectd\n\
+subdaemon=gossipd:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_gossipd\n\
+subdaemon=hsmd:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_hsmd\n\
+subdaemon=onchaind:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_onchaind\n\
+subdaemon=openingd:/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/lightning_openingd\n\
 bitcoin-rpcpassword="$RPC_PASSWORD"\n\
 bitcoin-rpcuser="$RPC_USER"\n\
 bitcoin-cli=/Users/$(whoami)/.fullynoded/BitcoinCore/"$PREFIX"/bin/bitcoin-cli\n\
@@ -37,7 +37,7 @@ log-level=debug:plugin\n\
 experimental-offers\n\
 fetchinvoice-noconnect\n\
 disable-plugin=clnrest\n\
-plugin=/opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs\n\
+plugin=/opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs\n\
 clnrest-port=18765\n\
 clnrest-protocol=HTTP\n\
 daemon"
@@ -70,14 +70,15 @@ daemon"
 }
 
 function installLightning () {
-    sudo -u $(whoami) $BREW_PATH install core-lightning
-    cd /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins
+    sudo -u $(whoami) $BREW_PATH reinstall core-lightning
+    chmod -R +x /opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins
+    cd /opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins
     git clone https://github.com/daywalker90/clnrest-rs.git
     cd clnrest-rs
     $BREW_PATH install rust
     cargo build --release
-    mv target/release/clnrest-rs /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs
-    chmod +x /opt/homebrew/Cellar/core-lightning/24.08.1/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs
+    mv target/release/clnrest-rs /opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins/clnrest-rs
+    chmod +x /opt/homebrew/Cellar/core-lightning/24.11/libexec/c-lightning/plugins/clnrest-rs/clnrest-rs
     echo "Core Lightning installation complete, you can close this terminal window."
     exit 1
 }

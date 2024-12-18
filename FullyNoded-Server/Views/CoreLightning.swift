@@ -31,7 +31,7 @@ struct CoreLightning: View {
                 Image(systemName: "server.rack")
                     .padding(.leading)
                 
-                Text("Core Lightning Server v24.08.1")
+                Text("Core Lightning Server v24.11")
                 Spacer()
                 Button {
                     isLightningOn()
