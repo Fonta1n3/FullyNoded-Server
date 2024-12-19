@@ -401,6 +401,9 @@ struct BitcoinCore: View {
     }
     
     private func updateJMConf(key: String, value: String) {
+        print("updateJMConf")
+        print("key: \(key)")
+        print("value: \(value)")
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard let conf = conf(stringPath: jmConfPath) else { return }
         let arr = conf.split(separator: "\n")
@@ -610,17 +613,14 @@ struct BitcoinCore: View {
         }
         updateLightningConfNetwork(chain: chain)
         updateJMConfNetwork(chain: chain)
-        
     }
     
     private func updateJMConfNetwork(chain: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        if FileManager.default.fileExists(atPath: jmConfPath) {
-            // get the config
-            
+        if fileExists(path: jmConfPath) {
             guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)),
                     let string = String(data: conf, encoding: .utf8) else {
-                print("no jm conf")
+                showMessage(message: "No Join Market config found.")
                 return
             }
             let arr = string.split(separator: "\n")
@@ -634,7 +634,10 @@ struct BitcoinCore: View {
                         if network == "regtest" {
                             network = "testnet"
                         }
-                        let newConf = string.replacingOccurrences(of: existingNetwork, with: network)
+                        if network == "main" {
+                            network = "mainnet"
+                        }
+                        let newConf = string.replacingOccurrences(of: item, with: "network = \(network)")
                         try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
                     }
                 }
@@ -644,9 +647,7 @@ struct BitcoinCore: View {
     
     private func updateLightningConfNetwork(chain: String) {
         let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        if FileManager.default.fileExists(atPath: lightningConfPath) {
-            // get the config
-            
+        if fileExists(path: lightningConfPath) {
             guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
                     let string = String(data: conf, encoding: .utf8) else {
                 print("no conf")
