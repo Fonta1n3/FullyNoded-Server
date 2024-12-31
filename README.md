@@ -1,28 +1,32 @@
 # Fully Noded - Server
-⚠️ Currently in Alpha, 🛠 WIP! Use at your own risk.
+⚠️ Currently in Beta, you may experience bugs or small UI issues, however it is suitable for general usage.
 
 ## Requirements
-- macOS 14.0 - M1/M2/M3/M? Silicon - arm64
+- macOS 14.0 Silicon
 - Python 3.10 for Join Market, should be located at `/Library/Frameworks/Python.framework/Versions`, if not a good guide can be found [here](https://www.codingforentrepreneurs.com/guides/install-python-on-macos).
 
 ## Installation
-On first use you will get a prompt about Fully Noded using an item on your keychain, this is an encryption key we create and use within the app to encrypt and decrypt sensitive data like your rpc password.
+On first use you will get a prompt about Fully Noded using an item on your keychain, this is an encryption key we create and use within the app to encrypt and decrypt your rpc password.
 
-Currently only a testing version has been released, if you would like to help test it can be downloaded via github [releases](https://github.com/Fonta1n3/FullyNoded-Server/releases).
+Releases can downloaded via github [releases](https://github.com/Fonta1n3/FullyNoded-Server/releases).
 
-Download the latest release, verify the signatures (you can find instructions in the very first testing release) and open the dmg.
+Download the latest release files, verify the signatures and hash match, then open the dmg.
+`gpg --import D3AC0FCA.asc` (my public key)
+`gpg --verify FullyNoded-Server.dmg.asc FullyNoded-Server.dmg`
+`gpg --verify SHA256SUMS.asc SHA256SUMS`
+`shasum -a 256 FullyNoded-Server.dmg` (this should output the same hash found in the SHA256SUMS file, if not ALL STOP.)
 
 ## What does it do?
 Turns your macmini or macbook into a Bitcoin server powerhouse all powered locally via bash scripts and swift.
-Use it to power apps like Fully Noded and Sparrow, sovereignly.
+Use it to power wallets like Fully Noded, Unify Wallet, FN-Join Market, FN-Bitcoin Core, Plasma and Sparrow, sovereignly. Any wallet which works with Bitcoin Core RPC API, Join Market RPC API, LND RPC API and Core Lightning RPC API should be compatible with FN-Server (lightning coming imminently).
 
 Installs and configures the following services on your mac:
 - Bitcoin Core
-- Core Lightning (configured with clnrest-rs)
 - Join Market
+- Core Lightning (configured with clnrest-rs) *release imminent*
+- LND *release imminent*
 - Integrates Tor and configures it to allow the HTTP REST API's for the above services to be reachable remotely without any need for port forwarding or complicated setups.
 
-Core Lightning is reachable via LNSocket with Plasma (requires a public IP or VPN for port 9735 over TCP to be added to the `addr` config item). Plasma is clearnet only for now for use with LNSocket, Tor is coming soon for use with clnrest-rs.
 
 ## How?
 ⚠️ Tor is only used for hosting hidden services, not for installing software, a future release will include downloading Bitcoin Core and Join Market over Tor.
