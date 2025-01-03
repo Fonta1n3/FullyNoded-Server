@@ -273,7 +273,7 @@ struct ContentView: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("You do not have Python 3.10 installed. In order to use Join market you need it. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
+        .alert("You do not have Python 3.10 installed. In order to use Join Market you need it. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
             Link("Open install Python guide in Safari.", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
         }
         .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
