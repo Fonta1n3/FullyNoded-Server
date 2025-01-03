@@ -402,9 +402,6 @@ struct BitcoinCore: View {
     }
     
     private func updateJMConf(key: String, value: String) {
-        print("updateJMConf")
-        print("key: \(key)")
-        print("value: \(value)")
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard let conf = conf(stringPath: jmConfPath) else { return }
         let arr = conf.split(separator: "\n")
@@ -538,7 +535,7 @@ struct BitcoinCore: View {
     
     private func connectFN() {
         guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-            print("no hostnames")
+            showMessage(message: "No hostnames. Please report this.")
             return
         }
         var onionHost = ""
@@ -651,7 +648,6 @@ struct BitcoinCore: View {
         if fileExists(path: lightningConfPath) {
             guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
                     let string = String(data: conf, encoding: .utf8) else {
-                print("no conf")
                 return
             }
             let arr = string.split(separator: "\n")
@@ -750,7 +746,6 @@ struct BitcoinCore: View {
         let path = URL(fileURLWithPath: debugPath)
         
         guard let log = try? String(contentsOf: path, encoding: .utf8) else {
-            print("can't get log, path: \(path)")
             return
         }
         

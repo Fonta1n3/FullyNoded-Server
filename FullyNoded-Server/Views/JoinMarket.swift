@@ -370,11 +370,9 @@ struct JoinMarket: View {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard fileExists(path: jmConfPath) else { return }
         guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
-            print("no jm conf")
             return
         }
         guard let string = String(data: conf, encoding: .utf8) else {
-            print("cant get string")
             return
         }
         let arr = string.split(separator: "\n")
@@ -382,11 +380,7 @@ struct JoinMarket: View {
             let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
             if item.hasPrefix("\(key) =") {
                 let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
-                if (try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)) == nil {
-                    print("failed writing to jm config")
-                } else {
-                    print("wrote to joinmarket.cfg")
-                }
+                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)                
             }
         }
     }
