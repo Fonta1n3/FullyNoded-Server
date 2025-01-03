@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @State private var isBooting = true
     @State private var statusText = ""
     @State private var promptToRefreshRpcAuth = false
     @State private var rpcAuth = ""
@@ -95,13 +96,13 @@ struct BitcoinCore: View {
                     }
                    
                 }
-                if !isRunning {
+                if !isRunning, !isAnimating {
                     Button {
                         startBitcoinCore()
                     } label: {
                         Text("Start")
                     }
-                } else {
+                } else if !isAnimating {
                     Button {
                         stopBitcoinCore()
                     } label: {
@@ -401,9 +402,6 @@ struct BitcoinCore: View {
     }
     
     private func updateJMConf(key: String, value: String) {
-        print("updateJMConf")
-        print("key: \(key)")
-        print("value: \(value)")
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
         guard let conf = conf(stringPath: jmConfPath) else { return }
         let arr = conf.split(separator: "\n")
@@ -537,7 +535,7 @@ struct BitcoinCore: View {
     
     private func connectFN() {
         guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-            print("no hostnames")
+            showMessage(message: "No hostnames. Please report this.")
             return
         }
         var onionHost = ""
@@ -650,7 +648,6 @@ struct BitcoinCore: View {
         if fileExists(path: lightningConfPath) {
             guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
                     let string = String(data: conf, encoding: .utf8) else {
-                print("no conf")
                 return
             }
             let arr = string.split(separator: "\n")
@@ -673,6 +670,7 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
+        isBooting = true
         statusText = "Starting.."
         ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
@@ -689,7 +687,11 @@ struct BitcoinCore: View {
     }
     
     private func startBitcoinParse(result: String) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+        var interval = 10.0
+        if isBooting {
+            interval = 3.0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
             ScriptUtil.runScript(script: .didBitcoindStart, env: env, args: nil) { (output, rawData, errorMessage) in
                 guard errorMessage == nil else {
                     if errorMessage != "" {
@@ -744,7 +746,6 @@ struct BitcoinCore: View {
         let path = URL(fileURLWithPath: debugPath)
         
         guard let log = try? String(contentsOf: path, encoding: .utf8) else {
-            print("can't get log, path: \(path)")
             return
         }
         
@@ -783,6 +784,7 @@ struct BitcoinCore: View {
         isAnimating = true
         statusText = "Refreshing..."
         BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+            isBooting = false
             isAnimating = false
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {

@@ -20,6 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     
+    @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
     @State private var torProgress = 0.0
@@ -43,9 +44,9 @@ struct ContentView: View {
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
-        "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
-        "version": "26.2",
-        "prefix": "bitcoin-26.2",
+        "binaryName": "bitcoin-28.1-arm64-apple-darwin.tar.gz",
+        "version": "28.1",
+        "prefix": "bitcoin-28.1",
         "dataDir": Defaults.shared.dataDir,
         "chain": Defaults.shared.chain
     ])
@@ -272,6 +273,9 @@ struct ContentView: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
+        .alert("You do not have Python 3.10 installed. In order to use Join Market you need it. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
+            Link("Open install Python guide in Safari.", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
+        }
         .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {
                 ScriptUtil.runScript(script: .installHomebrew, env: nil, args: nil) { (_, _, _) in }
@@ -383,9 +387,9 @@ struct ContentView: View {
         DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
             guard let bitcoinEnv = bitcoinEnv else {
                 let dict = [
-                    "binaryName": "bitcoin-26.2-arm64-apple-darwin.tar.gz",
-                    "version": "26.2",
-                    "prefix": "bitcoin-26.2",
+                    "binaryName": "bitcoin-28.1-arm64-apple-darwin.tar.gz",
+                    "version": "28.1",
+                    "prefix": "bitcoin-28.1",
                     "dataDir": Defaults.shared.dataDir,
                     "chain": Defaults.shared.chain
                 ]
@@ -455,15 +459,21 @@ struct ContentView: View {
             if let tagName = UserDefaults.standard.object(forKey: "tagName") as? String {
                 let jmWalletDPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py"
                 guard !FileManager.default.fileExists(atPath: jmWalletDPath)  else {
-                    print("join market already installed")
                     joinMarketInstalled = true
                     return
                 }
                 
                 getJmRelease()
             } else {
+                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10") else {
+                    promptToShowPythonGuide = true
+                    return
+                }
                 getJmRelease()
             }
+            
+            
+            
         } else {
             bitcoinCoreInstalled = false
             promptToInstallBitcoin = true
