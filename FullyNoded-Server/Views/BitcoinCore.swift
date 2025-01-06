@@ -10,12 +10,11 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
-    @State private var isBooting = true
+    @State private var syncedAmount = 0.0
     @State private var statusText = ""
     @State private var promptToRefreshRpcAuth = false
     @State private var rpcAuth = ""
     @State private var qrImage: NSImage? = nil
-    @State private var startCheckingIfRunning = false
     @State private var showError = false
     @State private var message = ""
     @State private var isRunning = false
@@ -27,7 +26,7 @@ struct BitcoinCore: View {
     @State private var unifyUrl: String?
     @State private var blockchainInfo: BlockchainInfo? = nil
     @State private var promptToReindex = false
-    private let timerForBitcoinStatus = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
+    @State private var timerForBitcoinStatus = Timer.publish(every: 15.0, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
     
@@ -43,7 +42,7 @@ struct BitcoinCore: View {
                 } else {
                     Text("Bitcoin Core Server")
                 }
-                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload {
+                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload, isRunning {
                     Label {
                         Text("Downloading the blockchain...")
                             .foregroundStyle(.secondary)
@@ -64,6 +63,22 @@ struct BitcoinCore: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
+                Picker("Network", selection: $selectedChain) {
+                    ForEach(chains, id: \.self) {
+                        Text($0)
+                    }
+                }
+                .padding([.leading])
+                .onChange(of: selectedChain) {
+                    updateChain(chain: selectedChain)
+                    isBitcoinCoreRunning()
+                }
+            }
+            .frame(width: 150)
+            .padding([.leading, .bottom])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack() {
                 if isAnimating {
                     ProgressView()
                         .scaleEffect(0.5)
@@ -81,7 +96,7 @@ struct BitcoinCore: View {
                             .padding([.leading])
                         Text("Running")
                     }
-                   
+                    
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
@@ -94,7 +109,7 @@ struct BitcoinCore: View {
                             .padding([.leading])
                         Text("Stopped")
                     }
-                   
+                    
                 }
                 if !isRunning, !isAnimating {
                     Button {
@@ -110,7 +125,21 @@ struct BitcoinCore: View {
                     }
                 }
                 
+                
+            }
+            .padding([.leading, .bottom])
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            VStack() {
                 if let blockchainInfo = blockchainInfo {
+                    Label {
+                        Text("Blockheight " + "\(blockchainInfo.blockheight)")
+                    } icon: {
+                        Image(systemName: "square.stack.3d.up")
+                    }
+                    .padding([.leading, .bottom])
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
                     if blockchainInfo.progressString == "Fully verified" {
                         Label {
                             Text(blockchainInfo.progressString)
@@ -118,6 +147,8 @@ struct BitcoinCore: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .foregroundStyle(.green)
                         }
+                        .padding([.leading, .bottom])
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         Label {
                             Text(blockchainInfo.progressString)
@@ -125,22 +156,34 @@ struct BitcoinCore: View {
                             Image(systemName: "xmark.seal")
                                 .foregroundStyle(.orange)
                         }
-                    }
-                    Label {
-                        Text("Blockheight " + "\(blockchainInfo.blockheight)")
-                    } icon: {
-                        Image(systemName: "square.stack.3d.up")
+                        .padding([.leading, .bottom])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        HStack() {
+                            ProgressView("Verification progress \(Int(syncedAmount * 100))% complete", value: syncedAmount, total: 1)
+                                .padding([.leading, .trailing])
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Spacer()
+                        }
+                        
+                        Label {
+                            Text(logOutput)
+                        } icon: {
+                            Image(systemName: "info.circle")
+                        }
+                        .padding([.leading, .trailing, .bottom])
+                        .foregroundStyle(.tertiary)
+                        
                     }
                 }
-                
-                EmptyView()
+            EmptyView()
                     .onReceive(timerForBitcoinStatus) { _ in
                         isBitcoinCoreRunning()
                     }
             }
-            .padding([.leading, .bottom])
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
+            .padding(.leading)
         }
         .padding([.top])
         .cornerRadius(8)
@@ -151,36 +194,35 @@ struct BitcoinCore: View {
                 .padding([.leading, .trailing])
         )
         
-        
-        VStack() {
-            Label("Network", systemImage: "network")
-                .padding(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            HStack() {
-                Picker("", selection: $selectedChain) {
-                    ForEach(chains, id: \.self) {
-                        Text($0)
-                    }
-                }
-                .onChange(of: selectedChain) {
-                    updateChain(chain: selectedChain)
-                    isBitcoinCoreRunning()
-                }
-                .frame(width: 150)
-            }
-            .padding([.leading, .trailing])
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-        }
-        .padding()
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.leading, .trailing])
-        )
+//        VStack() {
+//            Label("Network", systemImage: "network")
+//                .padding(.leading)
+//                .frame(maxWidth: .infinity, alignment: .leading)
+//            
+//            HStack() {
+//                Picker("", selection: $selectedChain) {
+//                    ForEach(chains, id: \.self) {
+//                        Text($0)
+//                    }
+//                }
+//                .onChange(of: selectedChain) {
+//                    updateChain(chain: selectedChain)
+//                    isBitcoinCoreRunning()
+//                }
+//                .frame(width: 150)
+//            }
+//            .padding([.leading, .trailing])
+//            .frame(maxWidth: .infinity, alignment: .leading)
+//            
+//        }
+//        .padding()
+//        .cornerRadius(8)
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 8)
+//                .stroke(.secondary, lineWidth: 1)
+//                .frame(maxWidth: .infinity, alignment: .leading)
+//                .padding([.leading, .trailing])
+//        )
         
         VStack() {
             Label("Utilities", systemImage: "wrench.and.screwdriver")
@@ -309,13 +351,7 @@ struct BitcoinCore: View {
         
         Spacer()
         
-        Label {
-            Text(logOutput)
-        } icon: {
-            Image(systemName: "info.circle")
-        }
-        .padding(.all)
-        .foregroundStyle(.tertiary)
+        
         
         .onAppear(perform: {
             initialLoad()
@@ -560,16 +596,6 @@ struct BitcoinCore: View {
                 return
             }
             
-//            guard let decryptedPass = Crypto.decrypt(encryptedPass) else {
-//                showMessage(message: "Unable to decrypt rpc password data.")
-//                return
-//            }
-            
-//            guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else {
-//                showMessage(message: "Unable to encode decrypted rpc data to utf8 string.")
-//                return
-//            }
-            
             let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
             
@@ -627,7 +653,6 @@ struct BitcoinCore: View {
                 if item.hasPrefix("network = ") {
                     let existingNetworkArr = item.split(separator: " = ")
                     if existingNetworkArr.count == 2 {
-                        let existingNetwork = existingNetworkArr[1]
                         var network = chain
                         if network == "regtest" {
                             network = "testnet"
@@ -668,42 +693,16 @@ struct BitcoinCore: View {
         }
     }
     
-    private func startBitcoinCore() {
-        isAnimating = true
-        isBooting = true
-        statusText = "Starting.."
-        ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
-            guard errorMessage == nil else {
-                if errorMessage != "" {
-                    showMessage(message: errorMessage!)
-                } else {
-                    
-                }
-                return
-            }
-            guard let output = output else { return }
-            parseDidBitcoinStart(result: output)
-        }
+    private func updateTimer(interval: Double) {
+        timerForBitcoinStatus.upstream.connect().cancel()
+        timerForBitcoinStatus = Timer.publish(every: interval, on: .main, in: .common).autoconnect()
     }
     
-    private func startBitcoinParse(result: String) {
-        var interval = 10.0
-        if isBooting {
-            interval = 3.0
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
-            ScriptUtil.runScript(script: .didBitcoindStart, env: env, args: nil) { (output, rawData, errorMessage) in
-                guard errorMessage == nil else {
-                    if errorMessage != "" {
-                        showMessage(message: errorMessage!)
-                    } else {
-                        
-                    }
-                    return
-                }
-                guard let output = output else { return }
-                parseScriptResult(script: .didBitcoindStart, result: output)
-            }
+    private func startBitcoinCore() {
+        isAnimating = true
+        statusText = "Starting.."
+        ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+            updateTimer(interval: 3.0)
         }
     }
     
@@ -711,13 +710,14 @@ struct BitcoinCore: View {
         if !result.contains("Stopped") {
             isBitcoinCoreRunning()
         }
-        startCheckingIfRunning = true
     }
     
     private func stopBitcoinCore() {
         isAnimating = true
         statusText = "Stopping..."
         BitcoinRPC.shared.command(method: "stop", params: [:]) { (result, error) in
+            updateTimer(interval: 3.0)
+            
             guard let result = result as? String else {
                 isAnimating = false
                 showMessage(message: error ?? "Unknown issue turning off Bitcoin Core.")
@@ -730,15 +730,15 @@ struct BitcoinCore: View {
     }
     
     private func stopBitcoinParse(result: String) {
-        isAnimating = false
-        if result.contains("Bitcoin Core stopping") {
+        if result.contains("Shutdown: done") {
             isRunning = false
+            isAnimating = false
+            blockchainInfo = nil
+            timerForBitcoinStatus.upstream.connect().cancel()
         } else {
             isRunning = true
-            showMessage(message: "Error turning off mainnet")
         }
     }
-    
     
     private func showBitcoinLog() {
         guard let debugPath = debugLogPath() else { return }
@@ -784,19 +784,19 @@ struct BitcoinCore: View {
         isAnimating = true
         statusText = "Refreshing..."
         BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
-            isBooting = false
-            isAnimating = false
+            showBitcoinLog()
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {
                     handleRPCError(error: error)
                 }
                 return
             }
-            
+            isAnimating = false
+            updateTimer(interval: 15.0)
             let blockchainInfo = BlockchainInfo(result)
             self.blockchainInfo = blockchainInfo
+            syncedAmount = blockchainInfo.verificationprogress
             isRunning = true
-            showBitcoinLog()
         }
     }
     
@@ -809,14 +809,20 @@ struct BitcoinCore: View {
                 _ where error.contains("Loading P2P addresses…"),
                 _ where error.contains("Pruning"),
                 _ where error.contains("Rewinding"),
-                _ where error.contains("Rescanning"),
                 _ where error.contains("Loading wallet"),
+                _ where error.contains("Shutdown in progress"),
+                _ where error.contains("init message: Starting network threads…"),
+                _ where error.contains("Starting network threads…"):
+                isAnimating = true
+            case _ where error.contains("Rescanning"),
                 _ where error.contains("Looks like your rpc credentials"):
+                isAnimating = false
                 logOutput = error
             default:
                 showMessage(message: error)
             }
         } else {
+            isAnimating = false
             isRunning = false
             logOutput = error
         }
@@ -831,7 +837,8 @@ struct BitcoinCore: View {
         switch script {
         case .startBitcoin:
             showBitcoinLog()
-            startBitcoinParse(result: result)
+            //startBitcoinParse(result: result)
+            //isBitcoinCoreRunning()
             
         case .didBitcoindStart:
             parseDidBitcoinStart(result: result)
