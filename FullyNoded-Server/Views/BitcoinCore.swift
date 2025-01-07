@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BitcoinCore: View {
     
+    @Environment(\.scenePhase) var scenePhase
     @State private var syncedAmount = 0.0
     @State private var statusText = ""
     @State private var promptToRefreshRpcAuth = false
@@ -42,15 +43,7 @@ struct BitcoinCore: View {
                 } else {
                     Text("Bitcoin Core Server")
                 }
-                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload, isRunning {
-                    Label {
-                        Text("Downloading the blockchain...")
-                            .foregroundStyle(.secondary)
-                    } icon: {
-                        ProgressView()
-                            .scaleEffect(0.5)
-                    }
-                }
+               
                 Spacer()
                 Button {
                     isBitcoinCoreRunning()
@@ -63,7 +56,7 @@ struct BitcoinCore: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
-                Picker("Network", selection: $selectedChain) {
+                Picker("Blockchain", selection: $selectedChain) {
                     ForEach(chains, id: \.self) {
                         Text($0)
                     }
@@ -73,9 +66,19 @@ struct BitcoinCore: View {
                     updateChain(chain: selectedChain)
                     isBitcoinCoreRunning()
                 }
+                .frame(width: 150)
+                
+                if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload, isRunning {
+                    Label {
+                        Text("Downloading the blockchain...")
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                    }
+                }
             }
-            .frame(width: 150)
-            .padding([.leading, .bottom])
+            .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
@@ -106,8 +109,9 @@ struct BitcoinCore: View {
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
-                            .padding([.leading])
+                            .padding([.leading, .bottom])
                         Text("Stopped")
+                            .padding(.bottom)
                     }
                     
                 }
@@ -117,6 +121,7 @@ struct BitcoinCore: View {
                     } label: {
                         Text("Start")
                     }
+                    .padding(.bottom)
                 } else if !isAnimating {
                     Button {
                         stopBitcoinCore()
@@ -132,14 +137,6 @@ struct BitcoinCore: View {
             
             VStack() {
                 if let blockchainInfo = blockchainInfo {
-                    Label {
-                        Text("Blockheight " + "\(blockchainInfo.blockheight)")
-                    } icon: {
-                        Image(systemName: "square.stack.3d.up")
-                    }
-                    .padding([.leading, .bottom])
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    
                     if blockchainInfo.progressString == "Fully verified" {
                         Label {
                             Text(blockchainInfo.progressString)
@@ -149,20 +146,10 @@ struct BitcoinCore: View {
                         }
                         .padding([.leading, .bottom])
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Label {
-                            Text(blockchainInfo.progressString)
-                        } icon: {
-                            Image(systemName: "xmark.seal")
-                                .foregroundStyle(.orange)
-                        }
-                        .padding([.leading, .bottom])
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        
+                    } else if isRunning {
                         HStack() {
                             ProgressView("Verification progress \(Int(syncedAmount * 100))% complete", value: syncedAmount, total: 1)
                                 .padding([.leading, .trailing])
-                                .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             Spacer()
@@ -173,9 +160,9 @@ struct BitcoinCore: View {
                         } icon: {
                             Image(systemName: "info.circle")
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding([.leading, .trailing, .bottom])
-                        .foregroundStyle(.tertiary)
-                        
+                        .foregroundStyle(.secondary)
                     }
                 }
             EmptyView()
@@ -183,7 +170,16 @@ struct BitcoinCore: View {
                         isBitcoinCoreRunning()
                     }
             }
-            .padding(.leading)
+            .padding([.leading, .bottom])
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                updateTimer(interval: 15.0)
+            } else if newPhase == .inactive {
+                timerForBitcoinStatus.upstream.connect().cancel()
+            } else if newPhase == .background {
+                timerForBitcoinStatus.upstream.connect().cancel()
+            }
         }
         .padding([.top])
         .cornerRadius(8)
@@ -191,38 +187,8 @@ struct BitcoinCore: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(.secondary, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.leading, .trailing])
+                .padding([.leading, .trailing, .bottom])
         )
-        
-//        VStack() {
-//            Label("Network", systemImage: "network")
-//                .padding(.leading)
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//            
-//            HStack() {
-//                Picker("", selection: $selectedChain) {
-//                    ForEach(chains, id: \.self) {
-//                        Text($0)
-//                    }
-//                }
-//                .onChange(of: selectedChain) {
-//                    updateChain(chain: selectedChain)
-//                    isBitcoinCoreRunning()
-//                }
-//                .frame(width: 150)
-//            }
-//            .padding([.leading, .trailing])
-//            .frame(maxWidth: .infinity, alignment: .leading)
-//            
-//        }
-//        .padding()
-//        .cornerRadius(8)
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(.secondary, lineWidth: 1)
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//                .padding([.leading, .trailing])
-//        )
         
         VStack() {
             Label("Utilities", systemImage: "wrench.and.screwdriver")
@@ -825,6 +791,7 @@ struct BitcoinCore: View {
             isAnimating = false
             isRunning = false
             logOutput = error
+            timerForBitcoinStatus.upstream.connect().cancel()
         }
     }
     
