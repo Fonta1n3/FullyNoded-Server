@@ -127,7 +127,7 @@ struct JoinMarket: View {
         )
         
         VStack() {
-            Label("Network", systemImage: "network")
+            Label("Blockchain", systemImage: "network")
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .leading)
             
