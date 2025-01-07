@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct JoinMarket: View {
+    
+    @Environment(\.scenePhase) var scenePhase
     @Environment(\.openURL) var openURL
     @State private var statusText = "Refreshing..."
     @State private var walletName = ""
@@ -26,7 +28,7 @@ struct JoinMarket: View {
     @State private var url: String?
     @State private var isAutoRefreshing = false
     @State private var orderBookOpened = false
-    private let timerForStatus = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    @State private var timerForStatus = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
     
@@ -94,13 +96,13 @@ struct JoinMarket: View {
                     }
                     
                 }
-                if !isRunning {
+                if !isRunning, !isAnimating {
                     Button {
                         startJoinMarket()
                     } label: {
                         Text("Start")
                     }
-                } else {
+                } else if !isAnimating {
                     Button {
                         stopJoinMarket()
                     } label: {
@@ -125,7 +127,7 @@ struct JoinMarket: View {
         )
         
         VStack() {
-            Label("Network", systemImage: "network")
+            Label("Blockchain", systemImage: "network")
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -182,6 +184,15 @@ struct JoinMarket: View {
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                updateTimer(interval: 15.0)
+            } else if newPhase == .inactive {
+                timerForStatus.upstream.connect().cancel()
+            } else if newPhase == .background {
+                timerForStatus.upstream.connect().cancel()
+            }
         }
         .padding()
         .cornerRadius(8)
@@ -244,6 +255,11 @@ struct JoinMarket: View {
         .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.", isPresented: $orderBookOpened) {
             Button("Open", action: openOrderBookNow)
         }
+    }
+    
+    private func updateTimer(interval: Double) {
+        timerForStatus.upstream.connect().cancel()
+        timerForStatus = Timer.publish(every: interval, on: .main, in: .common).autoconnect()
     }
     
     private func hideQrData() {
@@ -441,6 +457,7 @@ struct JoinMarket: View {
     }
     
     private func startNow() {
+        updateTimer(interval: 3.0)
         removeLockFile()
         setEnv()
         launchJmStarter()
@@ -452,7 +469,6 @@ struct JoinMarket: View {
     
     private func launchJmStarter() {
         ScriptUtil.runScript(script: .launchJmStarter, env: self.env, args: nil) { (output, rawData, errorMessage) in
-            isAnimating = false
             guard errorMessage == nil else {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
@@ -479,6 +495,8 @@ struct JoinMarket: View {
     }
     
     private func stopJoinMarket() {
+        isAnimating = true
+        updateTimer(interval: 3.0)
         ScriptUtil.runScript(script: .stopJm, env: nil, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
                 if errorMessage != "" {
@@ -510,7 +528,7 @@ struct JoinMarket: View {
                 return
             }
             isRunning = true
-            
+            updateTimer(interval: 15.0)
         }
     }
     

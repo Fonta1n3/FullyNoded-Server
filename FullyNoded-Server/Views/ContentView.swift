@@ -246,9 +246,6 @@ struct ContentView: View {
                                 } else {
                                     Text(service.name)
                                 }
-                                
-                                
-                                
                             }
                             
                         }
@@ -273,8 +270,8 @@ struct ContentView: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("You do not have Python 3.10 installed. In order to use Join Market you need it. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
-            Link("Open install Python guide in Safari.", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
+        .alert("Python 3.10-3.12 is a Join Market dependency. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
+            Link("Open Python install guide", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
         }
         .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {
@@ -465,7 +462,8 @@ struct ContentView: View {
                 
                 getJmRelease()
             } else {
-                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10") else {
+                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10"), FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11"),
+                      FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12")else {
                     promptToShowPythonGuide = true
                     return
                 }
