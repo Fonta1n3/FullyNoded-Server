@@ -77,6 +77,7 @@
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
+		590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */; };
 		593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A891E2CE28334001504F0 /* IncreaseGapLimit.command */; };
 		593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */; };
 		593A89232CE511F8001504F0 /* FNIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89222CE511F8001504F0 /* FNIcon.swift */; };
@@ -161,6 +162,7 @@
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BtcUtilsView.swift; sourceTree = "<group>"; };
 		593A891E2CE28334001504F0 /* IncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IncreaseGapLimit.command; sourceTree = "<group>"; };
 		593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchIncreaseGapLimit.command; sourceTree = "<group>"; };
 		593A89222CE511F8001504F0 /* FNIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FNIcon.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				0AD7BE162CBD8DA000428D02 /* JoinMarket.swift */,
 				593A89222CE511F8001504F0 /* FNIcon.swift */,
 				0AF736202D00D0900026FE0A /* Help.swift */,
+				590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -518,6 +521,7 @@
 				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
 				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
+				590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
 				593A89232CE511F8001504F0 /* FNIcon.swift in Sources */,
