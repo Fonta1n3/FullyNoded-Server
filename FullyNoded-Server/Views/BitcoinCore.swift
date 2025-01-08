@@ -290,12 +290,14 @@ struct BitcoinCore: View {
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
         self.env["CHAIN"] = chain
         self.blockchainInfo = nil
+        self.logOutput = ""
         DataManager.update(keyToUpdate: "chain", newValue: chain, entity: .bitcoinEnv) { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
                 return
             }
             isBitcoinCoreRunning()
+            showBitcoinLog()
         }
         updateLightningConfNetwork(chain: chain)
         updateJMConfNetwork(chain: chain)
@@ -489,7 +491,7 @@ struct BitcoinCore: View {
         } else {
             isAnimating = false
             isRunning = false
-            showMessage(message: "Could not connect to the server.")
+            showBitcoinLog()
             timerForBitcoinStatus.upstream.connect().cancel()
         }
     }
