@@ -44,9 +44,9 @@ struct ContentView: View {
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
-        "binaryName": "bitcoin-28.1-arm64-apple-darwin.tar.gz",
-        "version": "28.1",
-        "prefix": "bitcoin-28.1",
+        "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
+        "version": "27.2",
+        "prefix": "bitcoin-27.2",
         "dataDir": Defaults.shared.dataDir,
         "chain": Defaults.shared.chain
     ])
@@ -384,9 +384,9 @@ struct ContentView: View {
         DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
             guard let bitcoinEnv = bitcoinEnv else {
                 let dict = [
-                    "binaryName": "bitcoin-28.1-arm64-apple-darwin.tar.gz",
-                    "version": "28.1",
-                    "prefix": "bitcoin-28.1",
+                    "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
+                    "version": "27.2",
+                    "prefix": "bitcoin-27.2",
                     "dataDir": Defaults.shared.dataDir,
                     "chain": Defaults.shared.chain
                 ]
