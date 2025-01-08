@@ -271,7 +271,7 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         }
         .alert("Python 3.10-3.12 is a Join Market dependency. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
-            Link("Open Python install guide", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
+                    Link("Open Python install guide", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
         }
         .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
             Button("OK", role: .cancel) {
@@ -460,17 +460,13 @@ struct ContentView: View {
                     return
                 }
                 
-                getJmRelease()
-            } else {
                 guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10"), FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11"),
                       FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12")else {
                     promptToShowPythonGuide = true
                     return
                 }
                 getJmRelease()
-            }
-            
-            
+            }            
             
         } else {
             bitcoinCoreInstalled = false
