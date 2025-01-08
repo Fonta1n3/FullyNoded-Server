@@ -23,7 +23,7 @@ struct FullyNoded_ServerApp: App {
             BtcUtilsView()
         }
         Window("QuickConnect", id: "QuickConnect") {
-            
+            QuickConnectView()
         }
         
     }

@@ -15,6 +15,7 @@ struct BtcUtilsView: View {
     @State private var promptToReindex = false
     
     var body: some View {
+        Spacer()
         VStack() {
             Label("Utilities", systemImage: "wrench.and.screwdriver")
                 .padding(.leading)
@@ -94,6 +95,8 @@ struct BtcUtilsView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        Spacer()
+        Spacer()
     }
     
     private func bitcoinConfPath() -> String {

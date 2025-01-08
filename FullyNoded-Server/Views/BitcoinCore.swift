@@ -14,8 +14,6 @@ struct BitcoinCore: View {
     @Environment(\.scenePhase) var scenePhase
     @State private var syncedAmount = 0.0
     @State private var statusText = ""
-    @State private var rpcAuth = ""
-    @State private var qrImage: NSImage? = nil
     @State private var showError = false
     @State private var message = ""
     @State private var isRunning = false
@@ -23,8 +21,6 @@ struct BitcoinCore: View {
     @State private var logOutput = ""
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var env: [String: String] = [:]
-    @State private var fullyNodedUrl: String?
-    @State private var unifyUrl: String?
     @State private var blockchainInfo: BlockchainInfo? = nil
     @State private var timerForBitcoinStatus = Timer.publish(every: 15.0, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
@@ -43,14 +39,12 @@ struct BitcoinCore: View {
                 }
                 Spacer()
                 Button {
-                    //showQuickconnect = !showQuickconnect
                     openWindow(id: "QuickConnect")
                 } label: {
                     Image(systemName: "qrcode")
                 }
                 .padding([.trailing])
                 Button {
-                    //showUtilities = !showUtilities
                     openWindow(id: "Utilities")
                 } label: {
                     Image(systemName: "wrench.and.screwdriver")
@@ -77,7 +71,7 @@ struct BitcoinCore: View {
                     updateChain(chain: selectedChain)
                     isBitcoinCoreRunning()
                 }
-                .frame(width: 150)
+                .frame(width: 180)
                 
                 if let blockchainInfo = blockchainInfo, blockchainInfo.initialblockdownload, isRunning {
                     Label {
@@ -88,26 +82,21 @@ struct BitcoinCore: View {
                             .scaleEffect(0.5)
                     }
                 }
-            }
-            .padding([.leading])
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            HStack() {
                 if isAnimating {
                     ProgressView()
                         .scaleEffect(0.5)
-                        .padding([.leading])
+                        //.padding([.leading])
                 }
                 if isRunning {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            .padding([.leading])
+                            //.padding([.leading])
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
-                            .padding([.leading])
+                            //.padding([.leading])
                         Text("Running")
                     }
                     
@@ -115,14 +104,14 @@ struct BitcoinCore: View {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            .padding([.leading])
+                            //.padding([.leading])
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
-                            .padding([.leading, .bottom])
+                            //.padding([.leading, .bottom])
                         Text("Stopped")
-                            .padding(.bottom)
+                            //.padding(.bottom)
                     }
                     
                 }
@@ -132,7 +121,7 @@ struct BitcoinCore: View {
                     } label: {
                         Text("Start")
                     }
-                    .padding(.bottom)
+                    //.padding(.bottom)
                 } else if !isAnimating {
                     Button {
                         stopBitcoinCore()
@@ -140,10 +129,8 @@ struct BitcoinCore: View {
                         Text("Stop")
                     }
                 }
-                
-                
             }
-            .padding([.leading, .bottom])
+            .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack() {
@@ -155,27 +142,30 @@ struct BitcoinCore: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .foregroundStyle(.green)
                         }
-                        .padding([.leading, .bottom])
+                        .padding([.leading])
                         .frame(maxWidth: .infinity, alignment: .leading)
                     } else if isRunning {
                         HStack() {
                             ProgressView("Verification progress \(Int(syncedAmount * 100))% complete", value: syncedAmount, total: 1)
                                 .padding([.leading, .trailing])
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            
                             Spacer()
                         }
-                        
-                        Label {
-                            Text(logOutput)
-                        } icon: {
-                            Image(systemName: "info.circle")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding([.leading, .trailing, .bottom])
-                        .foregroundStyle(.secondary)
                     }
                 }
+                if logOutput != "" {
+                    Label {
+                        Text(logOutput)
+                    } icon: {
+                        Image(systemName: "info.circle")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding([.leading, .trailing, .bottom, .top])
+                    .foregroundStyle(.secondary)
+                } else {
+                    Text("")
+                }
+                
                 EmptyView()
                     .onReceive(timerForBitcoinStatus) { _ in
                         isBitcoinCoreRunning()
@@ -210,103 +200,14 @@ struct BitcoinCore: View {
         
            Spacer()
         
-//        if showQuickconnect {
-//            VStack() {
-//                HStack() {
-//                    Label("Quick Connect", systemImage: "qrcode")
-//                        .padding([.leading])
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                    Spacer()
-//                    Button {
-//                        showMessage(message: "The Quick Connect QR exports your rpc hostname (an onion or localhost) and the rpc port (combined these make up your nodes rpc address) which is required for FN to connect.\n\nThis QR does *NOT* include the FN-Server RPC credentials (it includes a dummy rpc user and password for security).\n\nYou must export and authorize your rpc user from FN mobile apps to FN-Server to complete your connection.\n\nTo do this: In FN navigate to Node Manager > + > Scan QR > update the rpc password in Node Credentials > Save the node > Export the rpcauth text from FN and use the below text field to add it to your bitcoin.conf.")
-//                    } label: {
-//                        Image(systemName: "questionmark.circle")
-//                    }
-//                    .padding([.trailing])
-//                }
-//                
-//                
-//                Button("Connect Fully Noded", systemImage: "qrcode") {
-//                    connectFN()
-//                }
-//                .padding([.leading, .trailing])
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//                
-//                HStack() {
-//                    Text("Authorize an additional RPC user:")
-//                        .padding([.leading])
-//                    TextField("rpcauth=FullyNoded:xxxx$xxxx", text: $rpcAuth)
-//                        .padding([])
-//                    if rpcAuth != "" {
-//                        Button {
-//                            if addRpcAuthToConf() {
-//                                rpcAuth = ""
-//                                showMessage(message: "RPC user authorized. You will need to restart your node for the change to take effect.")
-//                            }
-//                        } label: {
-//                            Text("Add RPC auth")
-//                        }
-//                    }
-//                    Spacer()
-//                }
-//                
-//                if let qrImage = qrImage {
-//                    Image(nsImage: qrImage)
-//                        .resizable()
-//                        .scaledToFit()
-//                        .frame(width: 100, height: 100)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                        .padding(.leading)
-//                }
-//                
-//                if let fullyNodedUrl = fullyNodedUrl {
-//                    Link("Connect Fully Noded (locally)", destination: URL(string: fullyNodedUrl)!)
-//                        .padding([.leading])
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                }
-//                
-//                if let unifyUrl = unifyUrl {
-//                    Link("Connect Unify (locally)", destination: URL(string: unifyUrl)!)
-//                        .padding([.leading, .bottom])
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                }
-//            }
-//            .padding()
-//            .cornerRadius(8)
-//            .overlay(
-//                RoundedRectangle(cornerRadius: 8)
-//                    .stroke(.secondary, lineWidth: 1)
-//                    .frame(maxWidth: .infinity, alignment: .leading)
-//                    .padding([.leading, .trailing])
-//            )
-//        }
-            //Spacer()
+
         
         
         
         
     }
     
-    private func reindex() {
-        if !isRunning {
-            isAnimating = true
-            statusText = "Reindexing..."
-            ScriptUtil.runScript(script: .reindex, env: env, args: nil) { (_, _, errorMessage) in
-                statusText = ""
-                guard errorMessage == nil else {
-                    if errorMessage != "" {
-                        showMessage(message: errorMessage!)
-                    }
-                    return
-                }
-                updateTimer(interval: 3.0)
-                //isBitcoinCoreRunning()
-                showMessage(message: "Reindex initiated, this can take awhile..")
-            }
-        } else {
-            showMessage(message: "Bitcoin Core must stopped before redindexing.")
-        }
-    }   
+    
     
     private func fileExists(path: String) -> Bool {
         return FileManager.default.fileExists(atPath: path)
@@ -375,41 +276,7 @@ struct BitcoinCore: View {
         }
     }
     
-    private func connectFN() {
-        guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-            showMessage(message: "No hostnames. Please report this.")
-            return
-        }
-        var onionHost = ""
-        let chain = UserDefaults.standard.string(forKey: "chain") ?? "main"
-        
-         switch chain {
-         case "main":
-             onionHost = hiddenServices[1] + ":" + "8332"
-         case "test":
-             onionHost = hiddenServices[2] + ":" + "18332"
-         case "signet":
-             onionHost = hiddenServices[3] + ":" + "38332"
-         case "regtest":
-             onionHost = hiddenServices[3] + ":" + "18443"
-         default:
-             break
-         }
-        
-        DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
-            guard let _ = rpcCred else {
-                showMessage(message: "No rpc credentials saved.")
-                return
-            }
-            
-            let url = "http://xxx:xxx@\(onionHost)"
-            qrImage = url.qrQode
-            
-            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
-            self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
-            self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
-        }
-    }
+    
     
     private func updateChain(chain: String) {
         var port = "8332"
