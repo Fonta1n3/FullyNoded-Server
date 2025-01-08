@@ -15,6 +15,7 @@ struct QuickConnectView: View {
     @State private var message = ""
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
+    @State private var fnBcoreUrl: String?
     
     var body: some View {
         Spacer()
@@ -68,6 +69,12 @@ struct QuickConnectView: View {
                 
                 if let fullyNodedUrl = fullyNodedUrl {
                     Link("Connect Fully Noded (locally)", destination: URL(string: fullyNodedUrl)!)
+                        .padding([.leading])
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                if let fnBcoreUrl = fnBcoreUrl {
+                    Link("Connect Fully Noded - Bitcoin Core (locally)", destination: URL(string: fnBcoreUrl)!)
                         .padding([.leading])
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -188,6 +195,7 @@ struct QuickConnectView: View {
             let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
             self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
+            self.fnBcoreUrl = "fnbtccore://xxx:xxx@localhost:\(port)"
         }
     }
 }

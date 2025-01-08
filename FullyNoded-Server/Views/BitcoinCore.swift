@@ -85,18 +85,15 @@ struct BitcoinCore: View {
                 if isAnimating {
                     ProgressView()
                         .scaleEffect(0.5)
-                        //.padding([.leading])
                 }
                 if isRunning {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            //.padding([.leading])
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
-                            //.padding([.leading])
                         Text("Running")
                     }
                     
@@ -104,16 +101,12 @@ struct BitcoinCore: View {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            //.padding([.leading])
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
-                            //.padding([.leading, .bottom])
                         Text("Stopped")
-                            //.padding(.bottom)
                     }
-                    
                 }
                 if !isRunning, !isAnimating {
                     Button {
@@ -121,7 +114,6 @@ struct BitcoinCore: View {
                     } label: {
                         Text("Start")
                     }
-                    //.padding(.bottom)
                 } else if !isAnimating {
                     Button {
                         stopBitcoinCore()
@@ -196,18 +188,8 @@ struct BitcoinCore: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        
-        
-           Spacer()
-        
-
-        
-        
-        
-        
+        Spacer()
     }
-    
-    
     
     private func fileExists(path: String) -> Bool {
         return FileManager.default.fileExists(atPath: path)
@@ -275,8 +257,6 @@ struct BitcoinCore: View {
             isBitcoinCoreRunning()
         }
     }
-    
-    
     
     private func updateChain(chain: String) {
         var port = "8332"
@@ -478,11 +458,8 @@ struct BitcoinCore: View {
                 _ where error.contains("Shutdown in progress"),
                 _ where error.contains("init message: Starting network threads…"),
                 _ where error.contains("Starting network threads…"):
-                isAnimating = true
-            case _ where error.contains("Rescanning"),
-                _ where error.contains("Looks like your rpc credentials"):
-                isAnimating = false
                 logOutput = error
+                isAnimating = true
             default:
                 isAnimating = false
                 logOutput = error
