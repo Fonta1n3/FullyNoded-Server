@@ -1,16 +1,15 @@
 //
-//  LatestBtcCoreRelease.swift
+//  LatestBtcKnotsRelease.swift
 //  FullyNoded-Server
 //
-//  Created by Peter Denton on 9/5/24.
+//  Created by Peter Denton on 1/15/25.
 //
 
 import Foundation
 
-enum LatestBtcCoreRelease {
+enum LatestBtcKnotsRelease {
     static func get(completion: @escaping ((releases: TaggedReleases?, error: String?)) -> Void) {
-        let url = "https://api.github.com/repos/bitcoin/bitcoin/releases"
-        // https://api.github.com/repos/ElementsProject/lightning/releases
+        let url = "https://api.github.com/repos/bitcoinknots/bitcoin/releases"
         print("fetch latest release from \(url)")
         
         guard let destination = URL(string: url) else {
@@ -28,7 +27,7 @@ enum LatestBtcCoreRelease {
             }
             
             guard let data = data else {
-                completion((nil, "No data returned from GitHub API when fetching latest Bitcoin Core release."))
+                completion((nil, "No data returned from GitHub API when fetching latest Bitcoin Knots release."))
                 return
             }
             

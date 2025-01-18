@@ -251,7 +251,7 @@ struct BitcoinCore: View {
                 "BINARY_NAME": envValues.binaryName,
                 "VERSION": envValues.version,
                 "PREFIX": envValues.prefix,
-                "DATADIR": Defaults.shared.dataDir,
+                "DATADIR": Defaults.shared.bitcoinCoreDataDir,
                 "CHAIN": envValues.chain
             ]
             isBitcoinCoreRunning()
@@ -411,13 +411,13 @@ struct BitcoinCore: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.dataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.dataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.dataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.dataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
         default:
             break
         }

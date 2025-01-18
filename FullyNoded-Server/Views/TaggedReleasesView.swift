@@ -19,7 +19,8 @@ struct TaggedReleasesView: View {
     @State private var isAnimating = false
     @State private var showError = false
     @State private var message = ""
-    @State private var dataDir = Defaults.shared.dataDir
+    @State private var bitcoinCoreDataDir = Defaults.shared.bitcoinCoreDataDir
+    @State private var fnDataDirectory = Defaults.shared.fnDataDir
     @State private var txIndex = Defaults.shared.txindex
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
     
@@ -71,12 +72,28 @@ struct TaggedReleasesView: View {
                 Label("Configuration options", systemImage: "gear")
                     .padding(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundStyle(.secondary)
                 
                 HStack() {
-                    Text("Data Directory:")
-                    Label(dataDir, systemImage: "")
+                    Text("Fully Noded Server data directory:")
+                    Label(fnDataDirectory, systemImage: "")
                     Button("Update") {
-                        chooseDataDir()
+                        chooseDataDir(isBitcoinCore: false)
+                    }
+                }
+                .padding([.leading, .trailing])
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text("This is where Fully Noded Server saves it's Bitcoin Core binaries, log and some scripts. It can be deleted without affecting the Bitcoin Core data directory.")
+                    .padding([.bottom, .leading])
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                HStack() {
+                    Text("Bitcoin Core data directory:")
+                    Label(bitcoinCoreDataDir, systemImage: "")
+                    Button("Update") {
+                        chooseDataDir(isBitcoinCore: true)
                     }
                 }
                 .padding([.leading, .trailing])
@@ -86,6 +103,8 @@ struct TaggedReleasesView: View {
                     .padding([.bottom, .leading])
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                
+                
                 
                 HStack() {
                     Toggle("Prune", isOn: $prune)
@@ -186,27 +205,31 @@ struct TaggedReleasesView: View {
             }
     }
     
-    private func chooseDataDir() {
+    private func chooseDataDir(isBitcoinCore: Bool) {
         let folderChooserPoint = CGPoint(x: 0, y: 0)
-                let folderChooserSize = CGSize(width: 500, height: 600)
-                let folderChooserRectangle = CGRect(origin: folderChooserPoint, size: folderChooserSize)
-                let folderPicker = NSOpenPanel(contentRect: folderChooserRectangle, styleMask: .utilityWindow, backing: .buffered, defer: true)
-                
-                folderPicker.canChooseDirectories = true
-                folderPicker.canChooseFiles = true
-                folderPicker.allowsMultipleSelection = true
-                folderPicker.canDownloadUbiquitousContents = true
-                folderPicker.canResolveUbiquitousConflicts = true
-                
-                folderPicker.begin { response in
-                    
-                    if response == .OK {
-                        let pickedFolder = folderPicker.urls[0].path().replacingOccurrences(of: "%20", with: " ")
-                        UserDefaults.standard.setValue("\(pickedFolder.dropLast())", forKey: "dataDir")
-                        self.dataDir = "\(pickedFolder.dropLast())"
-                        updateCLNConfig(key: "bitcoin-datadir=")
-                    }
-                }
+        let folderChooserSize = CGSize(width: 500, height: 600)
+        let folderChooserRectangle = CGRect(origin: folderChooserPoint, size: folderChooserSize)
+        let folderPicker = NSOpenPanel(contentRect: folderChooserRectangle, styleMask: .utilityWindow, backing: .buffered, defer: true)
+        
+        folderPicker.canChooseDirectories = true
+        folderPicker.canChooseFiles = true
+        folderPicker.allowsMultipleSelection = true
+        folderPicker.canDownloadUbiquitousContents = true
+        folderPicker.canResolveUbiquitousConflicts = true
+        
+        folderPicker.begin { response in
+            guard response == .OK else { return }
+            let pickedFolder = folderPicker.urls[0].path().replacingOccurrences(of: "%20", with: " ").dropLast()
+            
+            if isBitcoinCore {
+                UserDefaults.standard.setValue("\(pickedFolder)", forKey: "dataDir")
+                self.bitcoinCoreDataDir = "\(pickedFolder)"
+                updateCLNConfig(key: "bitcoin-datadir=")
+            } else {
+                UserDefaults.standard.setValue("\(pickedFolder)", forKey: "fnDataDir")
+                self.fnDataDirectory = "\(pickedFolder)/.fullynoded"
+            }
+        }
     }
     
     private func saveEnvVaules(version: String) {
@@ -217,7 +240,7 @@ struct TaggedReleasesView: View {
                 "binaryName": "bitcoin-\(version)-arm64-apple-darwin.tar.gz",
                 "version": version,
                 "prefix": "bitcoin-\(version)",
-                "dataDir": Defaults.shared.dataDir,
+                "dataDir": Defaults.shared.bitcoinCoreDataDir,
                 "chain": Defaults.shared.chain
             ]
             
@@ -357,7 +380,7 @@ struct TaggedReleasesView: View {
         for item in arr {
             if item.hasPrefix(key) {
                 if key.hasPrefix("bitcoin-datadir") {
-                    writeConf(conf: conf, key: key, value: Defaults.shared.dataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
+                    writeConf(conf: conf, key: key, value: Defaults.shared.bitcoinCoreDataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
                 } else if key.hasPrefix("bitcoin-rpcpassword") {
                     DataManager.retrieve(entityName: .rpcCreds) { creds in
                         guard let creds = creds else { return }

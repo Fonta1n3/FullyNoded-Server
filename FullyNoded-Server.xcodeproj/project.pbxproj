@@ -34,6 +34,9 @@
 		0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */; };
 		0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F12C91FE2A00534A8D /* StartLightning.command */; };
 		0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F52C92013900534A8D /* StopLightning.command */; };
+		0A6787592D36E119000AB105 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6787582D36E119000AB105 /* Settings.swift */; };
+		0A67875B2D380D7B000AB105 /* LatestBtcKnotsRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */; };
+		0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */; };
 		0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E02CA4263E008DB52E /* GithubReleases.swift */; };
 		0A9822E32CA42BEC008DB52E /* TaggedReleasesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */; };
 		0AA43FD02CCE1B3D0049D4AD /* BlockchainInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */; };
@@ -117,6 +120,9 @@
 		0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
 		0A5CE8F12C91FE2A00534A8D /* StartLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartLightning.command; sourceTree = "<group>"; };
 		0A5CE8F52C92013900534A8D /* StopLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopLightning.command; sourceTree = "<group>"; };
+		0A6787582D36E119000AB105 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcKnotsRelease.swift; sourceTree = "<group>"; };
+		0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ExtractKnotsTarball.command; sourceTree = "<group>"; };
 		0A9822E02CA4263E008DB52E /* GithubReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubReleases.swift; sourceTree = "<group>"; };
 		0A9822E22CA42BEC008DB52E /* TaggedReleasesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesView.swift; sourceTree = "<group>"; };
 		0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainInfo.swift; sourceTree = "<group>"; };
@@ -201,6 +207,7 @@
 				0AF736202D00D0900026FE0A /* Help.swift */,
 				590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */,
 				590EA1B82D2EE1680000BB1A /* QuickConnectView.swift */,
+				0A6787582D36E119000AB105 /* Settings.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -235,6 +242,7 @@
 				0AA692712C80B01A00366192 /* BitcoinRPC.swift */,
 				0AA6924A2C7F89E800366192 /* Script.swift */,
 				0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */,
+				0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */,
 				0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */,
 				0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */,
 				0A5CE8CB2C89EBB300534A8D /* Defaults.swift */,
@@ -336,6 +344,7 @@
 				593A89262CE51A35001504F0 /* ObWatcher.command */,
 				0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */,
 				0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */,
+				0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -438,6 +447,7 @@
 				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
 				0AA692692C7F8EC700366192 /* OpenFile.command in Resources */,
 				0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */,
+				0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */,
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
 				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
@@ -528,6 +538,7 @@
 				590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
+				0A6787592D36E119000AB105 /* Settings.swift in Sources */,
 				593A89232CE511F8001504F0 /* FNIcon.swift in Sources */,
 				0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */,
 				0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */,
@@ -540,6 +551,7 @@
 				0AA43FD02CCE1B3D0049D4AD /* BlockchainInfo.swift in Sources */,
 				0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */,
 				0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */,
+				0A67875B2D380D7B000AB105 /* LatestBtcKnotsRelease.swift in Sources */,
 				0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,

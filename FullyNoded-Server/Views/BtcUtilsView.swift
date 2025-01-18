@@ -29,7 +29,7 @@ struct BtcUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -78,7 +78,7 @@ struct BtcUtilsView: View {
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.dataDir,
+                    "DATADIR": Defaults.shared.bitcoinCoreDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -100,7 +100,7 @@ struct BtcUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.dataDir
+        let dataDir = Defaults.shared.bitcoinCoreDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -253,13 +253,13 @@ struct BtcUtilsView: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.dataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.dataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.dataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.dataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
         default:
             break
         }
@@ -267,7 +267,7 @@ struct BtcUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinCoreDataDir)
     }
     
     private func verify() {
