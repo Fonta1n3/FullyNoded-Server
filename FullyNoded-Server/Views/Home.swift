@@ -28,10 +28,10 @@ struct Home: View {
                     Button {
                         getLatestBtcKnots()
                     } label: {
-                        Text("Install Bitcoin Core")
+                        Text("Install Bitcoin Knots")
                     }
                     
-                } else if showBitcoinCoreInstallButton && taggedReleases == nil {
+                } else if showBitcoinCoreInstallButton {
                     Button {
                         getLatestBtcCore()
                     } label: {
@@ -42,10 +42,10 @@ struct Home: View {
             
             
             if showingBitcoinReleases, let taggedReleases = taggedReleases {
-                TaggedReleasesView(taggedReleases: taggedReleases, existingVersion: env["PREFIX"]!)
+                TaggedReleasesBitcoinCoreView(taggedReleasesBitcoinCore: taggedReleases, existingVersion: env["PREFIX"]!)
                 
             } else if showingKnotsReleases, let taggedReleases = taggedReleases {
-                Text("taggedReleases.count: \(taggedReleases.count)")
+                TaggedReleasesBitcoinKnotsView(taggedReleasesBitcoinKnots: taggedReleases, existingVersion: env["PREFIX"]!)
                 
             } else if showJoinMarketInstallButton, jmTaggedReleases.count > 0 {
                 JoinMarketTaggedReleasesView(taggedReleases: jmTaggedReleases, existingVersion: "xx")
@@ -70,7 +70,6 @@ struct Home: View {
     }
     
     private func getLatestBtcKnots() {
-        print("getLatestBtcKnots")
         LatestBtcKnotsRelease.get { (taggedReleases, error) in
             guard error == nil else {
                 showMessage(message: error ?? "Unknown error.")

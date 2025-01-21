@@ -6,6 +6,29 @@
 #  Created by Peter Denton on 1/15/25.
 #  
 
+BINARY_NAME=$1
+VERSION=$2
+
+function installBitcoin() {
+  cd ~/.fullynoded/BitcoinKnots
+  echo "Checking sha256 checksums $BINARY_NAME against provided SHA256SUMS"
+  ACTUAL_SHA=$(shasum -a 256 $BINARY_NAME | awk '{print $1}')
+  EXPECTED_SHA=$(grep $BINARY_NAME SHA256SUMS | awk '{print $1}')
+
+  echo "See two hashes (they should match):"
+  echo $ACTUAL_SHA
+  echo $EXPECTED_SHA
+  
+  if [ "$ACTUAL_SHA" != "" ]; then
+    export ACTUAL_SHA
+    export EXPECTED_SHA
+    unpackTarball
+  else
+    echo "No hash exists, Bitcoin Core download failed..."
+    exit 1
+  fi
+}
+
 function unpackTarball() {
   if [ "$ACTUAL_SHA" == "$EXPECTED_SHA" ]; then
     echo "Hashes match"
@@ -23,5 +46,6 @@ function unpackTarball() {
   fi
 }
 
-cd /Users/fontaine/.fullynoded/BitcoinKnots
+installBitcoin
+
 

@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-struct TaggedReleasesView: View {
+struct TaggedReleasesBitcoinCoreView: View {
     
     let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    @State private var fnServerPath = "/Users/\(NSUserName())/.fullynoded"
+    @State private var fnServerPath = Defaults.shared.fnDataDir
     @State private var prune = false
     @State private var prunedAmount = ""
     @State private var bitcoinCoreInstallComplete = false
@@ -24,20 +24,20 @@ struct TaggedReleasesView: View {
     @State private var txIndex = Defaults.shared.txindex
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
     
-    let taggedReleases: TaggedReleases
+    let taggedReleasesBitcoinCore: TaggedReleases
     let existingVersion: String
     
-    init(taggedReleases: TaggedReleases, existingVersion: String) {
-        self.taggedReleases = taggedReleases
+    init(taggedReleasesBitcoinCore: TaggedReleases, existingVersion: String) {
+        self.taggedReleasesBitcoinCore = taggedReleasesBitcoinCore
         self.existingVersion = existingVersion
-        self.taggedRelease = taggedReleases[0]
+        self.taggedRelease = taggedReleasesBitcoinCore[0]
     }
     
     var body: some View {
         if !bitcoinCoreInstallComplete {
             Picker("Select a Bitcoin Core version to install:", selection: $taggedRelease) {
                 Text("Select a release").tag(UUID())
-                ForEach(taggedReleases, id: \.self) {
+                ForEach(taggedReleasesBitcoinCore, id: \.self) {
                     Text($0.tagName ?? "")
                         .tag(Optional($0.uuid))
                 }
