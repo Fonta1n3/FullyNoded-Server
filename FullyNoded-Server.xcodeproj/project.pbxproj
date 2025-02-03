@@ -91,6 +91,7 @@
 		59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */; };
 		59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF92D400BB500110A12 /* DownloadHelper.swift */; };
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
+		59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */; };
 		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -183,6 +184,7 @@
 		59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinKnotsView.swift; sourceTree = "<group>"; };
 		59CD1FF92D400BB500110A12 /* DownloadHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadHelper.swift; sourceTree = "<group>"; };
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
+		59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnots.swift; sourceTree = "<group>"; };
 		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -215,6 +217,7 @@
 				590EA1B82D2EE1680000BB1A /* QuickConnectView.swift */,
 				0A6787582D36E119000AB105 /* Settings.swift */,
 				59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */,
+				59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -538,6 +541,7 @@
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
 				0AF736212D00D0900026FE0A /* Help.swift in Sources */,
+				59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */,
 				0AD7BE192CBD919600428D02 /* JMRPC.swift in Sources */,
 				0AA6924B2C7F89E800366192 /* Script.swift in Sources */,
 				0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */,
