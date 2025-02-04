@@ -43,7 +43,6 @@
 		0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */; };
 		0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */; };
 		0AA6923C2C7F831D00366192 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6923B2C7F831D00366192 /* ContentView.swift */; };
-		0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6923D2C7F831F00366192 /* Assets.xcassets */; };
 		0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692412C7F831F00366192 /* Preview Assets.xcassets */; };
 		0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692482C7F874900366192 /* BitcoinCore.swift */; };
 		0AA6924B2C7F89E800366192 /* Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6924A2C7F89E800366192 /* Script.swift */; };
@@ -80,6 +79,7 @@
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
+		590A1B5F2D52B258006393E5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 590A1B5E2D52B258006393E5 /* Assets.xcassets */; };
 		590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */; };
 		590EA1B92D2EE1680000BB1A /* QuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EA1B82D2EE1680000BB1A /* QuickConnectView.swift */; };
 		593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A891E2CE28334001504F0 /* IncreaseGapLimit.command */; };
@@ -134,7 +134,6 @@
 		0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullyNoded_ServerApp.swift; sourceTree = "<group>"; };
 		0AA692392C7F831D00366192 /* FullyNoded_Server.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FullyNoded_Server.xcdatamodel; sourceTree = "<group>"; };
 		0AA6923B2C7F831D00366192 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		0AA6923D2C7F831F00366192 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0AA6923F2C7F831F00366192 /* FullyNoded_Server.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FullyNoded_Server.entitlements; sourceTree = "<group>"; };
 		0AA692412C7F831F00366192 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0AA692482C7F874900366192 /* BitcoinCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinCore.swift; sourceTree = "<group>"; };
@@ -173,6 +172,7 @@
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
 		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		590A1B5E2D52B258006393E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BtcUtilsView.swift; sourceTree = "<group>"; };
 		590EA1B82D2EE1680000BB1A /* QuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickConnectView.swift; sourceTree = "<group>"; };
 		593A891E2CE28334001504F0 /* IncreaseGapLimit.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IncreaseGapLimit.command; sourceTree = "<group>"; };
@@ -290,12 +290,12 @@
 		0AA692332C7F831D00366192 /* FullyNoded-Server */ = {
 			isa = PBXGroup;
 			children = (
+				590A1B5E2D52B258006393E5 /* Assets.xcassets */,
 				0A573E1B2CA47BC900899F84 /* Info.plist */,
 				0A5CE8EC2C91F7E900534A8D /* Helpers */,
 				0AA6925D2C7F8EC700366192 /* Scripts */,
 				0AA692342C7F831D00366192 /* FullyNoded_ServerApp.swift */,
 				0A5CE8E92C91F31600534A8D /* Views */,
-				0AA6923D2C7F831F00366192 /* Assets.xcassets */,
 				0AA6923F2C7F831F00366192 /* FullyNoded_Server.entitlements */,
 				0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */,
 				0AA692402C7F831F00366192 /* Preview Content */,
@@ -446,6 +446,7 @@
 				0AA692422C7F831F00366192 /* Preview Assets.xcassets in Resources */,
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
+				590A1B5F2D52B258006393E5 /* Assets.xcassets in Resources */,
 				0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */,
 				593A89272CE51A35001504F0 /* ObWatcher.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
@@ -462,7 +463,6 @@
 				0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */,
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
 				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
-				0AA6923E2C7F831F00366192 /* Assets.xcassets in Resources */,
 				593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */,
 				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,

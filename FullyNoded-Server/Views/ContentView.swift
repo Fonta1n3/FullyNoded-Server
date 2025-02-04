@@ -81,39 +81,39 @@ struct ContentView: View {
                                         jmTaggedReleases: []
                                     )
                                 }
-                            } else if service.name == "Bitcoin Knots" {
-                                Home(
-                                    showBitcoinCoreInstallButton: false,
-                                    showBitcoinKnotsInstallButton: true,
-                                    env: env,
-                                    showJoinMarketInstallButton: false,
-                                    jmTaggedReleases: []
-                                )
+//                            } else if service.name == "Bitcoin Knots" {
+//                                Home(
+//                                    showBitcoinCoreInstallButton: false,
+//                                    showBitcoinKnotsInstallButton: true,
+//                                    env: env,
+//                                    showJoinMarketInstallButton: false,
+//                                    jmTaggedReleases: []
+//                                )
                                 
-                            } else if service.name == "Core Lightning" {
-                                if isInstallingLightning {
-                                    HStack() {
-                                        ProgressView()
-                                            .scaleEffect(0.5)
-                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                                    .padding([.leading, .top])
-                                    
-                                } else if lightningInstalled {
-                                    CoreLightning()
-                                } else {
-                                    FNIcon()
-                                    Spacer()
-                                    if bitcoinCoreInstalled {
-                                        Button("Install Core Lightning") {
-                                            installLightning()
-                                        }
-                                        Spacer()
-                                    } else {
-                                        Text("First install Bitcoin Core.")
-                                    }
-                                }
+//                            } else if service.name == "Core Lightning" {
+//                                if isInstallingLightning {
+//                                    HStack() {
+//                                        ProgressView()
+//                                            .scaleEffect(0.5)
+//                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
+//                                    }
+//                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+//                                    .padding([.leading, .top])
+//                                    
+//                                } else if lightningInstalled {
+//                                    CoreLightning()
+//                                } else {
+//                                    FNIcon()
+//                                    Spacer()
+//                                    if bitcoinCoreInstalled {
+//                                        Button("Install Core Lightning") {
+//                                            installLightning()
+//                                        }
+//                                        Spacer()
+//                                    } else {
+//                                        Text("First install Bitcoin Core.")
+//                                    }
+//                                }
                                 
                             } else if service.name == "Join Market" {
                                 if joinMarketInstalled {
@@ -194,26 +194,26 @@ struct ContentView: View {
                                 }
                                 
 //                                if service.name == "Bitcoin Knots" {
-//                                    
+//                                   
 //                                }
                                 
-                                if service.name == "Core Lightning" {
-                                    if lightningInstalled {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.green)
-                                    } else {
-                                        Image(systemName: "xmark")
-                                            .foregroundStyle(.gray)
-                                        EmptyView()
-                                            .onReceive(timerForLightningInstall) { _ in
-                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
-                                                    lightningInstalled = true
-                                                    isInstallingLightning = false
-                                                    self.timerForLightningInstall.upstream.connect().cancel()
-                                                }
-                                            }
-                                    }
-                                }
+//                                if service.name == "Core Lightning" {
+//                                    if lightningInstalled {
+//                                        Image(systemName: "checkmark")
+//                                            .foregroundStyle(.green)
+//                                    } else {
+//                                        Image(systemName: "xmark")
+//                                            .foregroundStyle(.gray)
+//                                        EmptyView()
+//                                            .onReceive(timerForLightningInstall) { _ in
+//                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
+//                                                    lightningInstalled = true
+//                                                    isInstallingLightning = false
+//                                                    self.timerForLightningInstall.upstream.connect().cancel()
+//                                                }
+//                                            }
+//                                    }
+//                                }
                                 
                                 if service.name == "Join Market" {
                                     if joinMarketInstalled {
@@ -429,8 +429,8 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
-                    //services = [bitcoinCore, joinMarket, tor, settings, help]
+                    //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
+                    services = [bitcoinCore, joinMarket, tor, settings, help]
                     checkForBitcoin()
                 }
                 
@@ -448,8 +448,8 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
-            //services = [bitcoinCore, joinMarket, tor, help]
+            //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
+            services = [bitcoinCore, joinMarket, tor, help]
             checkForBitcoin()
         }
     }
