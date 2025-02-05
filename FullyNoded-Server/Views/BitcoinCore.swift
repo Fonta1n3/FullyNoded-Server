@@ -184,7 +184,7 @@ struct BitcoinCore: View {
         )
         .onAppear(perform: {
             initialLoad()
-        })
+        })        
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }

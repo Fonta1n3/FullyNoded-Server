@@ -44,8 +44,8 @@ struct Home: View {
             if showingBitcoinReleases, let taggedReleases = taggedReleases {
                 TaggedReleasesBitcoinCoreView(taggedReleasesBitcoinCore: taggedReleases, existingVersion: env["PREFIX"]!)
                 
-            } else if showingKnotsReleases, let taggedReleases = taggedReleases {
-                TaggedReleasesBitcoinKnotsView(taggedReleasesBitcoinKnots: taggedReleases, existingVersion: env["PREFIX"]!)
+//            } else if showingKnotsReleases, let taggedReleases = taggedReleases {
+//                TaggedReleasesBitcoinKnotsView(taggedReleasesBitcoinKnots: taggedReleases, existingVersion: env["PREFIX"]!)
                 
             } else if showJoinMarketInstallButton, jmTaggedReleases.count > 0 {
                 JoinMarketTaggedReleasesView(taggedReleases: jmTaggedReleases, existingVersion: "xx")

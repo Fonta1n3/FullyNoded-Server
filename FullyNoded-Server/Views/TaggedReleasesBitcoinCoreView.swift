@@ -122,13 +122,12 @@ struct TaggedReleasesBitcoinCoreView: View {
                         }
                     if prune {
                         TextField("", text: $prunedAmount)
-                        
                     }
                 }
                 .padding([.leading, .trailing])
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if prune {
-                    Text("The amount in giga bytes the blockchain will consume.")
+                    Text("The amount in giga bytes the blockchain will consume. There will likely be an extra ~10gb space required in addition to the blockchain.")
                         .foregroundStyle(.secondary)
                         .padding([.leading, .trailing])
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -159,27 +158,27 @@ struct TaggedReleasesBitcoinCoreView: View {
                             if FileManager.default.fileExists(atPath: tempPath) {
                                 bitcoinCoreInstallComplete = true
                                 // save new envValues! and update lightning config if it exists
-                                let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-                                if FileManager.default.fileExists(atPath: lightningConfPath) {
-                                    // get the config
-                                    guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
-                                            let string = String(data: conf, encoding: .utf8) else {
-                                        return
-                                    }
-                                    let arr = string.split(separator: "\n")
-                                    guard arr.count > 0  else { return }
-                                    for item in arr {
-                                        if item.hasSuffix("/bin/bitcoin-cli") {
-                                            let existingCliPathArr = item.split(separator: "=")
-                                            if existingCliPathArr.count == 2 {
-                                                let existingCliPath = existingCliPathArr[1]
-                                                let newPath = existingCliPath.replacingOccurrences(of: existingVersion, with: "bitcoin-\(processedVersion)")
-                                                let newConf = string.replacingOccurrences(of: existingCliPath, with: newPath)
-                                                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-                                            }
-                                        }
-                                    }
-                                }
+//                                let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//                                if FileManager.default.fileExists(atPath: lightningConfPath) {
+//                                    // get the config
+//                                    guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
+//                                            let string = String(data: conf, encoding: .utf8) else {
+//                                        return
+//                                    }
+//                                    let arr = string.split(separator: "\n")
+//                                    guard arr.count > 0  else { return }
+//                                    for item in arr {
+//                                        if item.hasSuffix("/bin/bitcoin-cli") {
+//                                            let existingCliPathArr = item.split(separator: "=")
+//                                            if existingCliPathArr.count == 2 {
+//                                                let existingCliPath = existingCliPathArr[1]
+//                                                let newPath = existingCliPath.replacingOccurrences(of: existingVersion, with: "bitcoin-\(processedVersion)")
+//                                                let newConf = string.replacingOccurrences(of: existingCliPath, with: newPath)
+//                                                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+//                                            }
+//                                        }
+//                                    }
+//                                }
                                 saveEnvVaules(version: processedVersion)
                                 startCheckingForBitcoinInstall = false
                             } else {
@@ -224,7 +223,7 @@ struct TaggedReleasesBitcoinCoreView: View {
             if isBitcoinCore {
                 UserDefaults.standard.setValue("\(pickedFolder)", forKey: "dataDir")
                 self.bitcoinCoreDataDir = "\(pickedFolder)"
-                updateCLNConfig(key: "bitcoin-datadir=")
+                //updateCLNConfig(key: "bitcoin-datadir=")
             } else {
                 UserDefaults.standard.setValue("\(pickedFolder)", forKey: "fnDataDir")
                 self.fnDataDirectory = "\(pickedFolder)/.fullynoded"
@@ -373,27 +372,27 @@ struct TaggedReleasesBitcoinCoreView: View {
         }
     }
     
-    private func updateCLNConfig(key: String) {
-        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        guard let conf = conf(stringPath: lightningConfPath) else { return }
-        let arr = conf.split(separator: "\n")
-        for item in arr {
-            if item.hasPrefix(key) {
-                if key.hasPrefix("bitcoin-datadir") {
-                    writeConf(conf: conf, key: key, value: Defaults.shared.bitcoinCoreDataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
-                } else if key.hasPrefix("bitcoin-rpcpassword") {
-                    DataManager.retrieve(entityName: .rpcCreds) { creds in
-                        guard let creds = creds else { return }
-                        guard let encryptedPass = creds["password"] as? Data else { return }
-                        guard let decryptedPass = Crypto.decrypt(encryptedPass) else { return }
-                        guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else { return }
-                        writeConf(conf: conf, key: key, value: rpcPass, lightningConfPath: lightningConfPath, itemToReplace: item)
-                    }
-                }
-                
-            }
-        }
-    }
+//    private func updateCLNConfig(key: String) {
+//        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//        guard let conf = conf(stringPath: lightningConfPath) else { return }
+//        let arr = conf.split(separator: "\n")
+//        for item in arr {
+//            if item.hasPrefix(key) {
+//                if key.hasPrefix("bitcoin-datadir") {
+//                    writeConf(conf: conf, key: key, value: Defaults.shared.bitcoinCoreDataDir, lightningConfPath: lightningConfPath, itemToReplace: item)
+//                } else if key.hasPrefix("bitcoin-rpcpassword") {
+//                    DataManager.retrieve(entityName: .rpcCreds) { creds in
+//                        guard let creds = creds else { return }
+//                        guard let encryptedPass = creds["password"] as? Data else { return }
+//                        guard let decryptedPass = Crypto.decrypt(encryptedPass) else { return }
+//                        guard let rpcPass = String(data: decryptedPass, encoding: .utf8) else { return }
+//                        writeConf(conf: conf, key: key, value: rpcPass, lightningConfPath: lightningConfPath, itemToReplace: item)
+//                    }
+//                }
+//                
+//            }
+//        }
+//    }
     
     private func writeConf(conf: String, key: String, value: String, lightningConfPath: String, itemToReplace: Substring) {
         let newConf = conf.replacingOccurrences(of: itemToReplace, with: key + value)
@@ -408,7 +407,7 @@ struct TaggedReleasesBitcoinCoreView: View {
         ud.set(version, forKey: "version")
         description = "Launching terminal to run a script to check the provided sha256sums against our own, verifying gpg sigs and unpack the tarball. "
         isAnimating = false
-        updateCLNConfig(key: "bitcoin-rpcpassword=")
+        //updateCLNConfig(key: "bitcoin-rpcpassword=")
         runScript(script: .launchInstaller, env: env)
     }
     

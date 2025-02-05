@@ -14,6 +14,8 @@ struct BtcUtilsView: View {
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
     
+    //var refresh: () -> Void
+    
     var body: some View {
         Spacer()
         VStack() {
@@ -170,7 +172,7 @@ struct BtcUtilsView: View {
         let passData = Data(newCreds.rpcPassword.utf8)
         
         updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
-        updateCLNConfig(rpcpass: newCreds.rpcPassword)
+        //updateCLNConfig(rpcpass: newCreds.rpcPassword)
         
         guard let encryptedPass = Crypto.encrypt(passData) else {
             showMessage(message: "Can't encrypt rpcpass data.")
@@ -207,17 +209,17 @@ struct BtcUtilsView: View {
         }
     }
     
-    private func updateCLNConfig(rpcpass: String) {
-        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        guard let conf = conf(stringPath: lightningConfPath) else { return }
-        let arr = conf.split(separator: "\n")
-        for item in arr {
-            if item.hasPrefix("bitcoin-rpcpassword=") {
-                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
-                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-            }
-        }
-    }
+//    private func updateCLNConfig(rpcpass: String) {
+//        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//        guard let conf = conf(stringPath: lightningConfPath) else { return }
+//        let arr = conf.split(separator: "\n")
+//        for item in arr {
+//            if item.hasPrefix("bitcoin-rpcpassword=") {
+//                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
+//                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+//            }
+//        }
+//    }
     
     private func updateJMConf(key: String, value: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
@@ -243,6 +245,7 @@ struct BtcUtilsView: View {
                     }
                     return
                 }
+                //
                 showMessage(message: "Reindex initiated, this can take awhile. Refresh the Bitcoin Core view.")
             }
         
@@ -275,8 +278,6 @@ struct BtcUtilsView: View {
             guard errorMessage == nil else {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
-                } else {
-                    
                 }
                 return
             }
