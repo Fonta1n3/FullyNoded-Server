@@ -18,8 +18,13 @@ struct FullyNoded_ServerApp: App {
                     }
                 }
         }
+        Window("Utilities", id: "Utilities-JM") {
+            JMUtilsView()
+        }
+        Window("QuickConnect", id: "QuickConnect-JM") {
+            JMQuickConnectView()
+        }
         Window("Utilities", id: "Utilities") {
-            //Text("New in this version…")
             BtcUtilsView()
         }
         Window("QuickConnect", id: "QuickConnect") {

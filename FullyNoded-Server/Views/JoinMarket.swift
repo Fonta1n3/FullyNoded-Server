@@ -9,25 +9,18 @@ import SwiftUI
 
 struct JoinMarket: View {
     
+    @Environment(\.openWindow) var openWindow
     @Environment(\.scenePhase) var scenePhase
-    @Environment(\.openURL) var openURL
     @State private var statusText = "Refreshing..."
-    @State private var walletName = ""
-    @State private var gapLimit = ""
-    @State private var promptToIncreaseGapLimit = false
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
-    @State private var qrImage: NSImage? = nil
     @State private var startCheckingIfRunning = false
     @State private var showError = false
     @State private var message = ""
     @State private var isRunning = false
     @State private var isAnimating = false
-    @State private var logOutput = ""
     @State private var selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
     @State private var env: [String: String] = [:]
-    @State private var url: String?
     @State private var isAutoRefreshing = false
-    @State private var orderBookOpened = false
     @State private var timerForStatus = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
@@ -41,7 +34,18 @@ struct JoinMarket: View {
                 
                 Text("Join Market Server v\(version)")
                 Spacer()
-                
+                Button {
+                    openWindow(id: "QuickConnect-JM")
+                } label: {
+                    Image(systemName: "qrcode")
+                }
+                .padding([.trailing])
+                Button {
+                    openWindow(id: "Utilities-JM")
+                } label: {
+                    Image(systemName: "wrench.and.screwdriver")
+                }
+                .padding([.trailing])
                 Button {
                     isAutoRefreshing = false
                     isJoinMarketRunning()
@@ -53,26 +57,31 @@ struct JoinMarket: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
+                
+                Label("Blockchain", systemImage: "network")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(width: 90)
+                
+                Text(selectedChain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(width: 50)
+                
                 if isAnimating {
                     ProgressView()
                         .scaleEffect(0.5)
-                        .padding([.leading])
                 }
                 if isRunning {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            .padding([.leading])
                         
                         Text(statusText)
                             .onAppear {
                                 isAutoRefreshing = true
                             }
-                        
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.green)
-                            .padding([.leading])
                         
                         Text("Running")
                             .onAppear {
@@ -84,17 +93,15 @@ struct JoinMarket: View {
                     if isAnimating {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.orange)
-                            .padding([.leading])
                         
                         Text(statusText)
                             
                     } else {
                         Image(systemName: "circle.fill")
                             .foregroundStyle(.red)
-                            .padding([.leading])
                         Text("Stopped")
                     }
-                    
+                
                 }
                 if !isRunning, !isAnimating {
                     Button {
@@ -102,12 +109,14 @@ struct JoinMarket: View {
                     } label: {
                         Text("Start")
                     }
+                    Spacer()
                 } else if !isAnimating {
                     Button {
                         stopJoinMarket()
                     } label: {
                         Text("Stop")
                     }
+                    Spacer()
                 }
                 EmptyView()
                     .onReceive(timerForStatus) { _ in
@@ -115,74 +124,6 @@ struct JoinMarket: View {
                     }
             }
             .padding([.leading])
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding()
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.leading, .trailing])
-        )
-        
-        VStack() {
-            Label("Blockchain", systemImage: "network")
-                .padding([.leading])
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text(selectedChain)
-                .padding([.leading])
-                .padding(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding()
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.leading, .trailing])
-        )
-        
-        VStack() {
-            Label("Utilities", systemImage: "wrench.and.screwdriver")
-                .padding(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            HStack() {
-                Button {
-                    openFile(file: "joinmarket.cfg")
-                } label: {
-                    Text("joinmarket.cfg")
-                }
-                Button {
-                    configureJm()
-                } label: {
-                    Text("Configure JM")
-                }
-                Button {
-                    openDataDir()
-                } label: {
-                    Text("Data Dir")
-                }
-                Button {
-                    promptToIncreaseGapLimit = true
-                } label: {
-                    Text("Increase gap limit")
-                }
-                Button {
-                    rescan()
-                } label: {
-                    Text("Rescan")
-                }
-                Button {
-                    orderBook()
-                } label: {
-                    Text("Order Book")
-                }
-            }
-            .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
@@ -203,43 +144,6 @@ struct JoinMarket: View {
                 .padding([.leading, .trailing])
         )
         
-        VStack() {
-            Label("Quick Connect", systemImage: "qrcode")
-                .padding([.leading])
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Button("Connect Fully Noded - Join Market", systemImage: "qrcode") {
-                showConnectUrls()
-            }
-            .padding([.leading, .trailing])
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            if let qrImage = qrImage {
-                Image(nsImage: qrImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 300, height: 300)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading)
-                    .onAppear {
-                        hideQrData()
-                    }
-                if let url = url {
-                    Link("Connect Fully Noded - Join Market (locally)", destination: URL(string: url)!)
-                        .padding([.leading, .bottom])
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-        .padding()
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.leading, .trailing])
-        )
-        
         Spacer()
         .onAppear(perform: {
             initialLoad()
@@ -247,27 +151,13 @@ struct JoinMarket: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .alert("Increase the gap limit to? (upon completion a rescan will be required).", isPresented: $promptToIncreaseGapLimit) {
-            TextField("Enter the new gap limit", text: $gapLimit)
-            TextField("Enter the wallet name", text: $walletName)
-            Button("OK", action: increaseGapLimit)
-        }
-        .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.", isPresented: $orderBookOpened) {
-            Button("Open", action: openOrderBookNow)
-        }
     }
     
     private func updateTimer(interval: Double) {
         timerForStatus.upstream.connect().cancel()
         timerForStatus = Timer.publish(every: interval, on: .main, in: .common).autoconnect()
     }
-    
-    private func hideQrData() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-            self.qrImage = nil
-            self.url = nil
-        }
-    }
+   
     
     private func initialLoad() {
         env["TAG_NAME"] = UserDefaults.standard.string(forKey: "tagName") ?? ""
@@ -275,167 +165,7 @@ struct JoinMarket: View {
         isJoinMarketRunning()
     }
     
-    private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "/Users/\(NSUserName())/Library/Application Support/joinmarket")
-    }
     
-    private func orderBook() {
-        orderBookOpened = true
-    }
-    
-    private func openOrderBookNow() {
-        ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
-            guard let errorMess = errorMessage, errorMess != "" else {
-                openURL(URL(string: "http://localhost:62601")!)
-                return
-            }
-            showMessage(message: errorMess)
-        }
-    }
-    
-    private func rescan() {
-        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
-            guard error == nil, let result = result as? [String: Any] else {
-                showMessage(message: error ?? "Unknown error getblbockchaininfo.")
-                return
-            }
-            guard let pruneheight = result["pruneheight"] as? Int else {
-                showMessage(message: "No pruneheight")
-                return
-            }
-            
-            BitcoinRPC.shared.command(method: "rescanblockchain", params: ["start_height": pruneheight]) { (result, error) in
-                guard error == nil, let _ = result as? [String: Any] else {
-                    showMessage(message: error ?? "Unknown error rescanblockchain.")
-                    return
-                }
-            }
-            // No response from core when initiating a rescan...
-            showMessage(message: "Blockchain rescan started.")
-        }
-    }
-    
-    private func increaseGapLimit() {
-        let env: [String: String] = ["TAG_NAME": env["TAG_NAME"]!, "GAP_AMOUNT": gapLimit, "WALLET_NAME": walletName]
-        ScriptUtil.runScript(script: .launchIncreaseGapLimit, env: env, args: nil) { (output, rawData, errorMessage) in
-            guard errorMessage == nil else {
-                if errorMessage != "" {
-                    showMessage(message: errorMessage!)
-                }
-                return
-            }
-            showMessage(message: "Gap limit increased, check the script output to be sure.")
-        }
-    }
-    
-    private func configureJm() {
-        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
-        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
-        switch chain {
-        case "main": chain = "mainnet"
-        case "regtest": chain = "testnet"
-        case "test": chain = "testnet"
-        default:
-            break
-        }
-        updateConf(key: "tx_fees", value: "7000")//https://github.com/openoms/bitcoin-tutorials/blob/master/joinmarket/README.md
-        updateConf(key: "network", value: chain)
-        updateConf(key: "rpc_port", value: port)
-        updateConf(key: "rpc_wallet_file", value: "jm_wallet")
-        updateConf(key: "tor_control_host", value: "/Users/\(NSUserName())/Library/Caches/tor/cp")
-        updateConf(key: "#max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
-        updateConf(key: "#max_cj_fee_rel", value: Double.random(in: 0.00199...0.00243).avoidNotation)
-        updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
-        updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00243...0.00421).avoidNotation)
-        
-        DataManager.retrieve(entityName: .rpcCreds) { rpcCreds in
-            guard let rpcCreds = rpcCreds,
-                    let encryptedPassword = rpcCreds["password"] as? Data,
-                    let decryptedPass = Crypto.decrypt(encryptedPassword),
-                  let stringPass = String(data: decryptedPass, encoding: .utf8) else {
-                showMessage(message: "Unable to get rpc creds to congifure JM.")
-                return
-            }
-            
-            updateConf(key: "rpc_password", value: stringPass)
-            updateConf(key: "rpc_user", value: "FullyNoded-Server")
-            
-            BitcoinRPC.shared.command(method: "createwallet", params: ["wallet_name": "jm_wallet", "descriptors": false]) { (result, error) in
-                guard error == nil else {
-                    if !error!.contains("Database already exists.") {
-                        showMessage(message: error!)
-                    } else {
-                        showMessage(message: "Join Market configured ✓")
-                    }
-                
-                    isAnimating = false
-                    return
-                }
-                
-                showMessage(message: "Join Market configured ✓")
-                isAnimating = false
-            }
-        }
-    }
-    
-    private func fileExists(path: String) -> Bool {
-        return FileManager.default.fileExists(atPath: path)
-    }
-    
-    private func updateConf(key: String, value: String) {
-        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard fileExists(path: jmConfPath) else { return }
-        guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
-            return
-        }
-        guard let string = String(data: conf, encoding: .utf8) else {
-            return
-        }
-        let arr = string.split(separator: "\n")
-        for item in arr {
-            let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
-            if item.hasPrefix("\(key) =") {
-                let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
-                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)                
-            }
-        }
-    }
-    
-    private func showConnectUrls() {
-        guard let hiddenServices = TorClient.sharedInstance.hostnames() else {
-            showMessage(message: "No hostnames.")
-            return
-        }
-        let host = hiddenServices[0] + ":" + "28183"
-        
-        let certPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/ssl/cert.pem"
-        if FileManager.default.fileExists(atPath: certPath) {
-            guard var cert = try? String(contentsOf: URL(fileURLWithPath: certPath)) else {
-                showMessage(message: "No joinmarket cert.")
-                return
-            }
-            cert = cert.replacingOccurrences(of: "\n", with: "")
-            cert = cert.replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
-            cert = cert.replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
-            cert = cert.replacingOccurrences(of: " ", with: "")
-            let quickConnectUrl = "http://" + host + "?cert=\(cert.urlSafeB64String)"
-            self.url = "joinmarket://localhost:28183?cert=\(cert.urlSafeB64String)"
-            qrImage = quickConnectUrl.qrQode
-        }
-    }
-    
-    private func openFile(file: String) {
-        let fileEnv = ["FILE": "/Users/\(NSUserName())/Library/Application Support/joinmarket/\(file)"]
-        ScriptUtil.runScript(script: .openFile, env: fileEnv, args: nil) { (_, _, errorMessage) in
-            guard errorMessage == nil else {
-                if errorMessage != "" {
-                    showMessage(message: errorMessage!)
-                }
-                return
-            }
-        }
-    }
-        
     private func startJoinMarket() {
         isAnimating = true
         statusText = "Starting..."

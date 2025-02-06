@@ -88,6 +88,8 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
+		59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */; };
+		59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */; };
 		59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */; };
 		59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF92D400BB500110A12 /* DownloadHelper.swift */; };
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
@@ -181,6 +183,8 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
+		59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMUtilsView.swift; sourceTree = "<group>"; };
+		59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMQuickConnectView.swift; sourceTree = "<group>"; };
 		59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinKnotsView.swift; sourceTree = "<group>"; };
 		59CD1FF92D400BB500110A12 /* DownloadHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadHelper.swift; sourceTree = "<group>"; };
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
@@ -218,6 +222,8 @@
 				0A6787582D36E119000AB105 /* Settings.swift */,
 				59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */,
 				59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */,
+				59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */,
+				59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -537,6 +543,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
+				59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */,
 				590EA1B92D2EE1680000BB1A /* QuickConnectView.swift in Sources */,
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
@@ -571,6 +578,7 @@
 				0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */,
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
+				59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
@@ -716,7 +724,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.5 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -731,7 +739,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.0.5;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -759,7 +767,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.0.5 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -774,7 +782,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.0.5;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
