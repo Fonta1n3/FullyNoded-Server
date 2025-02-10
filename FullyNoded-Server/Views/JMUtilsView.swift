@@ -58,6 +58,11 @@ struct JMUtilsView: View {
                 } label: {
                     Text("Order Book")
                 }
+                Button {
+                    //refreshConfig()
+                } label: {
+                    Text("Refresh Config")
+                }
                 
             }
             .padding([.leading, .trailing])
@@ -92,7 +97,7 @@ struct JMUtilsView: View {
     }
     
     private func openOrderBookNow() {
-        ScriptUtil.runScript(script: .launchObWatcher, env: self.env, args: nil) { (output, _, errorMessage) in
+        ScriptUtil.runScript(script: .launchObWatcher, env: ["TAG_NAME": tagName], args: nil) { (output, _, errorMessage) in
             guard let errorMess = errorMessage, errorMess != "" else {
                 openURL(URL(string: "http://localhost:62601")!)
                 return
@@ -101,8 +106,15 @@ struct JMUtilsView: View {
         }
     }
     
+    private var tagName: String {
+        return  UserDefaults.standard.object(forKey: "tagName") as? String ?? ""
+    }
+    
     private func increaseGapLimit() {
-        let env: [String: String] = ["TAG_NAME": env["TAG_NAME"]!, "GAP_AMOUNT": gapLimit, "WALLET_NAME": walletName]
+        if !walletName.hasSuffix(".jmdat") {
+            walletName += ".jmdat"
+        }
+        let env: [String: String] = ["TAG_NAME": tagName, "GAP_AMOUNT": gapLimit, "WALLET_NAME": walletName]
         ScriptUtil.runScript(script: .launchIncreaseGapLimit, env: env, args: nil) { (output, rawData, errorMessage) in
             guard errorMessage == nil else {
                 if errorMessage != "" {

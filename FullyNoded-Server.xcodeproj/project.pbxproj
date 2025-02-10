@@ -90,6 +90,7 @@
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
 		59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */; };
 		59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */; };
+		59CC77F62D565E64005D5A9B /* RefreshJMConfig.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */; };
 		59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */; };
 		59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF92D400BB500110A12 /* DownloadHelper.swift */; };
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
@@ -185,6 +186,7 @@
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
 		59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMUtilsView.swift; sourceTree = "<group>"; };
 		59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMQuickConnectView.swift; sourceTree = "<group>"; };
+		59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = RefreshJMConfig.command; sourceTree = "<group>"; };
 		59CD1FF72D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinKnotsView.swift; sourceTree = "<group>"; };
 		59CD1FF92D400BB500110A12 /* DownloadHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadHelper.swift; sourceTree = "<group>"; };
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
@@ -363,6 +365,7 @@
 				0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */,
 				0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */,
 				59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */,
+				59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -461,6 +464,7 @@
 				0AA692642C7F8EC700366192 /* LaunchBrewInstall.command in Resources */,
 				0AA6926D2C7F8EC700366192 /* Strap.command in Resources */,
 				0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */,
+				59CC77F62D565E64005D5A9B /* RefreshJMConfig.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
 				0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */,
 				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
