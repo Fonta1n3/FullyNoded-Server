@@ -113,49 +113,13 @@ struct JoinMarketTaggedReleasesView: View {
         }
     }
     
-    
     private func configureJm() {
-        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
-        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
-        switch chain {
-        case "main": chain = "mainnet"
-        case "regtest": chain = "testnet"
-        case "test": chain = "testnet"
-        default:
-            break
-        }
-        updateConf(key: "network", value: chain)
-        updateConf(key: "rpc_port", value: port)
-        updateConf(key: "rpc_wallet_file", value: "jm_wallet")
-        
-        DataManager.retrieve(entityName: .rpcCreds) { rpcCreds in
-            guard let rpcCreds = rpcCreds, 
-                    let encryptedPassword = rpcCreds["password"] as? Data,
-                    let decryptedPass = Crypto.decrypt(encryptedPassword),
-                  let stringPass = String(data: decryptedPass, encoding: .utf8) else {
-                showMessage(message: "Unable to get rpc creds to congifure JM.")
+        ConfigureJM.configureJm { (configured, error) in
+            guard configured else {
+                showMessage(message: error ?? "Unknown error configuring Join Market.")
                 return
             }
-            
-            updateConf(key: "rpc_password", value: stringPass)
-            updateConf(key: "rpc_user", value: "FullyNoded-Server")
-            
-            BitcoinRPC.shared.command(method: "createwallet", params: ["wallet_name": "jm_wallet", "descriptors": false]) { (result, error) in
-                guard error == nil else {
-                    if !error!.contains("Database already exists.") {
-                        showMessage(message: error!)
-                    }
-                    joinMarketInstallComplete = true
-                    startCheckingForJoinMarketInstall = false
-                    isAnimating = false
-                    return
-                }
-                
-                showMessage(message: "Join Market installed and configured ✓")
-                joinMarketInstallComplete = true
-                startCheckingForJoinMarketInstall = false
-                isAnimating = false
-            }
+            showMessage(message: "Join Market configured ✓")
         }
     }
     
@@ -219,6 +183,16 @@ struct JoinMarketTaggedReleasesView: View {
                     showMessage(message: error.localizedDescription)
                 }
             }
+            
+            let tempDirPath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/.temp")
+            if !fileExists(path: "/Users/\(NSUserName())/.fullynoded/JoinMarket/.temp") {
+                do {
+                    try FileManager.default.createDirectory(atPath: tempDirPath.path(), withIntermediateDirectories: true, attributes: nil)
+                } catch {
+                    showMessage(message: error.localizedDescription)
+                }
+            }
+            
             let filePath = URL(fileURLWithPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName).tar.gz")
             guard ((try? data.write(to: filePath)) != nil) else {
                 showMessage(message: "Writing file failed.")

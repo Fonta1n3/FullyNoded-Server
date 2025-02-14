@@ -16,7 +16,7 @@
 		0A573E312CB577D100899F84 /* GetRune.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E302CB577D100899F84 /* GetRune.command */; };
 		0A573E332CB578B300899F84 /* Rune.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E322CB578B300899F84 /* Rune.swift */; };
 		0A5CE8C62C89E87100534A8D /* LatestBtcCoreRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */; };
-		0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */; };
+		0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C72C89EB2400534A8D /* ConfigureBitcoinCore.swift */; };
 		0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */; };
 		0A5CE8CC2C89EBB300534A8D /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CB2C89EBB300534A8D /* Defaults.swift */; };
 		0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */; };
@@ -88,6 +88,7 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
+		5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5963C3832D5E4291007C89DC /* ConfigureJM.swift */; };
 		59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */; };
 		59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */; };
 		59CC77F62D565E64005D5A9B /* RefreshJMConfig.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */; };
@@ -109,7 +110,7 @@
 		0A573E302CB577D100899F84 /* GetRune.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = GetRune.command; sourceTree = "<group>"; };
 		0A573E322CB578B300899F84 /* Rune.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rune.swift; sourceTree = "<group>"; };
 		0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcCoreRelease.swift; sourceTree = "<group>"; };
-		0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallBtcCore.swift; sourceTree = "<group>"; };
+		0A5CE8C72C89EB2400534A8D /* ConfigureBitcoinCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureBitcoinCore.swift; sourceTree = "<group>"; };
 		0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinConf.swift; sourceTree = "<group>"; };
 		0A5CE8CB2C89EBB300534A8D /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCAuth.swift; sourceTree = "<group>"; };
@@ -184,6 +185,7 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
+		5963C3832D5E4291007C89DC /* ConfigureJM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureJM.swift; sourceTree = "<group>"; };
 		59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMUtilsView.swift; sourceTree = "<group>"; };
 		59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMQuickConnectView.swift; sourceTree = "<group>"; };
 		59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = RefreshJMConfig.command; sourceTree = "<group>"; };
@@ -261,7 +263,7 @@
 				0AA6924A2C7F89E800366192 /* Script.swift */,
 				0A5CE8C52C89E87100534A8D /* LatestBtcCoreRelease.swift */,
 				0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */,
-				0A5CE8C72C89EB2400534A8D /* InstallBtcCore.swift */,
+				0A5CE8C72C89EB2400534A8D /* ConfigureBitcoinCore.swift */,
 				0A5CE8C92C89EB8100534A8D /* BitcoinConf.swift */,
 				0A5CE8CB2C89EBB300534A8D /* Defaults.swift */,
 				0A5CE8CD2C89EC1F00534A8D /* RPCAuth.swift */,
@@ -273,6 +275,7 @@
 				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
 				0AD7BE1A2CBD921100428D02 /* Commands.swift */,
 				59CD1FF92D400BB500110A12 /* DownloadHelper.swift */,
+				5963C3832D5E4291007C89DC /* ConfigureJM.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -547,6 +550,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */,
+				5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */,
 				59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */,
 				590EA1B92D2EE1680000BB1A /* QuickConnectView.swift in Sources */,
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
@@ -583,7 +587,7 @@
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
 				59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */,
-				0A5CE8C82C89EB2400534A8D /* InstallBtcCore.swift in Sources */,
+				0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
 				0AD7BE1B2CBD921100428D02 /* Commands.swift in Sources */,
@@ -728,7 +732,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -771,7 +775,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

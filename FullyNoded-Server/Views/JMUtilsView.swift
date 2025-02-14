@@ -34,7 +34,7 @@ struct JMUtilsView: View {
                     Text("joinmarket.cfg")
                 }
                 Button {
-                    configureJm()
+                    confirgureJm()
                 } label: {
                     Text("Configure JM")
                 }
@@ -58,11 +58,11 @@ struct JMUtilsView: View {
                 } label: {
                     Text("Order Book")
                 }
-                Button {
-                    //refreshConfig()
-                } label: {
-                    Text("Refresh Config")
-                }
+//                Button {
+//                    refreshConfig()
+//                } label: {
+//                    Text("Refresh Config")
+//                }
                 
             }
             .padding([.leading, .trailing])
@@ -94,6 +94,16 @@ struct JMUtilsView: View {
     private func showMessage(message: String) {
         showError = true
         self.message = message
+    }
+    
+    private func confirgureJm() {
+        ConfigureJM.configureJm { (configured, error) in
+            guard configured else {
+                showMessage(message: error ?? "Unknown error configuring Join Market.")
+                return
+            }
+            showMessage(message: "Join Market configured ✓")
+        }
     }
     
     private func openOrderBookNow() {
@@ -166,79 +176,6 @@ struct JMUtilsView: View {
                 return
             }
         }
-    }
-    
-    private func configureJm() {
-        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
-        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
-        switch chain {
-        case "main": chain = "mainnet"
-        case "regtest": chain = "testnet"
-        case "test": chain = "testnet"
-        default:
-            break
-        }
-        updateConf(key: "tx_fees", value: "7000")//https://github.com/openoms/bitcoin-tutorials/blob/master/joinmarket/README.md
-        updateConf(key: "network", value: chain)
-        updateConf(key: "rpc_port", value: port)
-        updateConf(key: "rpc_wallet_file", value: "jm_wallet")
-        updateConf(key: "tor_control_host", value: "/Users/\(NSUserName())/Library/Caches/tor/cp")
-        updateConf(key: "#max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
-        updateConf(key: "#max_cj_fee_rel", value: Double.random(in: 0.00199...0.00243).avoidNotation)
-        updateConf(key: "max_cj_fee_abs", value: "\(Int.random(in: 2200...5000))")
-        updateConf(key: "max_cj_fee_rel", value: Double.random(in: 0.00243...0.00421).avoidNotation)
-        
-        DataManager.retrieve(entityName: .rpcCreds) { rpcCreds in
-            guard let rpcCreds = rpcCreds,
-                    let encryptedPassword = rpcCreds["password"] as? Data,
-                    let decryptedPass = Crypto.decrypt(encryptedPassword),
-                  let stringPass = String(data: decryptedPass, encoding: .utf8) else {
-                showMessage(message: "Unable to get rpc creds to congifure JM.")
-                return
-            }
-            
-            updateConf(key: "rpc_password", value: stringPass)
-            updateConf(key: "rpc_user", value: "FullyNoded-Server")
-            
-            BitcoinRPC.shared.command(method: "createwallet", params: ["wallet_name": "jm_wallet", "descriptors": false]) { (result, error) in
-                guard error == nil else {
-                    if !error!.contains("Database already exists.") {
-                        showMessage(message: error!)
-                    } else {
-                        showMessage(message: "Join Market configured ✓")
-                    }
-                
-                    isAnimating = false
-                    return
-                }
-                
-                showMessage(message: "Join Market configured ✓")
-                isAnimating = false
-            }
-        }
-    }
-    
-    private func updateConf(key: String, value: String) {
-        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard fileExists(path: jmConfPath) else { return }
-        guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
-            return
-        }
-        guard let string = String(data: conf, encoding: .utf8) else {
-            return
-        }
-        let arr = string.split(separator: "\n")
-        for item in arr {
-            let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
-            if item.hasPrefix("\(key) =") {
-                let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
-                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
-            }
-        }
-    }
-    
-    private func fileExists(path: String) -> Bool {
-        return FileManager.default.fileExists(atPath: path)
     }
 }
 

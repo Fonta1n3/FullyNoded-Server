@@ -312,7 +312,6 @@ struct TaggedReleasesBitcoinCoreView: View {
         description = "Downloading Bitcoin Core tarball from \(macOSUrl)"
         
         CreateFNDirConfigureCore.checkForExistingConf(updatedPruneValue: newPruneAmount) { startDownload in
-            print("startDownload")
             if startDownload {
                 isAnimating = true
                 downloadTask(url: URL(string: macOSUrl)!) { data in
