@@ -89,6 +89,8 @@
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
 		5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5963C3832D5E4291007C89DC /* ConfigureJM.swift */; };
+		59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */; };
+		59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */; };
 		59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */; };
 		59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */; };
 		59CC77F62D565E64005D5A9B /* RefreshJMConfig.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */; };
@@ -186,6 +188,8 @@
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
 		5963C3832D5E4291007C89DC /* ConfigureJM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureJM.swift; sourceTree = "<group>"; };
+		59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CloneJMMaster.command; sourceTree = "<group>"; };
+		59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMCloner.command; sourceTree = "<group>"; };
 		59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMUtilsView.swift; sourceTree = "<group>"; };
 		59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMQuickConnectView.swift; sourceTree = "<group>"; };
 		59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = RefreshJMConfig.command; sourceTree = "<group>"; };
@@ -272,9 +276,9 @@
 				0A573E192CA4715400899F84 /* TorClient.swift */,
 				0A573E1E2CADC5CF00899F84 /* Torrc.swift */,
 				0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */,
-				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
 				0AD7BE1A2CBD921100428D02 /* Commands.swift */,
 				59CD1FF92D400BB500110A12 /* DownloadHelper.swift */,
+				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
 				5963C3832D5E4291007C89DC /* ConfigureJM.swift */,
 			);
 			path = Helpers;
@@ -369,6 +373,8 @@
 				0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */,
 				59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */,
 				59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */,
+				59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */,
+				59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -480,10 +486,12 @@
 				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
+				59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */,
 				0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */,
 				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
+				59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
 				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,

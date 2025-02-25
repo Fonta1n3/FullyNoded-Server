@@ -450,6 +450,7 @@ struct BitcoinCore: View {
             switch error {
                 // We know these aren't really errors, just standard booting messages.
             case _ where error.contains("Loading block index"),
+                _ where error.contains("Using obfuscation key"),
                 _ where error.contains("Verifying blocks"),
                 _ where error.contains("Loading P2P addresses…"),
                 _ where error.contains("Pruning"),

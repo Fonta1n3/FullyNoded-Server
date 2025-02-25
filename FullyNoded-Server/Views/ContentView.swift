@@ -226,6 +226,7 @@ struct ContentView: View {
                                             .onReceive(timerForJMInstall) { _ in
                                                 if let tagName = UserDefaults.standard.string(forKey: "tagName") {
                                                     let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+                                                    
                                                     if FileManager.default.fileExists(atPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py") && FileManager.default.fileExists(atPath: jmConfigPath) {
                                                         joinMarketInstalled = true
                                                         self.timerForJMInstall.upstream.connect().cancel()
@@ -484,8 +485,8 @@ struct ContentView: View {
                     return
                 }
                 
-                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10"), FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11"),
-                      FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12")else {
+                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10") || FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11") ||
+                      FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12") else {
                     promptToShowPythonGuide = true
                     return
                 }
@@ -506,7 +507,7 @@ struct ContentView: View {
             }
         }
     }
-    
+        
     private func showMessage(message: String) {
         showError = true
         self.message = message

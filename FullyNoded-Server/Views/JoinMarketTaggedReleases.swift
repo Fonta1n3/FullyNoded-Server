@@ -53,14 +53,25 @@ struct JoinMarketTaggedReleasesView: View {
             Spacer()
         } else {
             if !joinMarketInstallComplete {
-                Picker("Select a Join Market version to install:", selection: $taggedRelease) {
-                    Text("Select a release").tag(UUID())
-                    ForEach(taggedReleases, id: \.self) {
-                        Text($0.tagName ?? "")
-                            .tag(Optional($0.uuid))
+                HStack() {
+                    Picker("Select a Join Market version to install:", selection: $taggedRelease) {
+                        Text("Select a release").tag(UUID())
+                        ForEach(taggedReleases, id: \.self) {
+                            Text($0.tagName ?? "")
+                                .tag(Optional($0.uuid))
+                        }
                     }
+                    .padding([.top, .leading, .trailing, .bottom])
+                    
+                    Button {
+                        downloadMaster()
+                    } label: {
+                        Text("Download master (advanced)")
+                    }
+                    
+                    Spacer()
                 }
-                .padding([.top, .leading, .trailing, .bottom])
+                
                 
                 if let author = taggedRelease.author, let login = author.login, let tagName = taggedRelease.tagName {
                     Text("Join Market \(tagName), written by \(login).")
@@ -110,6 +121,12 @@ struct JoinMarketTaggedReleasesView: View {
                 .alert(message, isPresented: $showError) {
                     Button("OK", role: .cancel) {}
                 }
+        }
+    }
+    
+    private func downloadMaster() {
+        ScriptUtil.runScript(script: .launchJmCloner, env: nil, args: nil) { (output, rawData, errorMessage) in
+            UserDefaults.standard.setValue("clientserver", forKey: "tagName")
         }
     }
     
@@ -202,6 +219,7 @@ struct JoinMarketTaggedReleasesView: View {
                 showMessage(message: "No assets url.")
                 return
             }
+            
             downloadPublicKey(url: assetsUrl, tagName: tagName, author: authorName)
         }
     }

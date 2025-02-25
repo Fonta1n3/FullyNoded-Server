@@ -31,8 +31,14 @@ struct JoinMarket: View {
             HStack() {
                 Image(systemName: "server.rack")
                     .padding(.leading)
-                
-                Text("Join Market Server v\(version)")
+                    .onAppear {
+                        if version == "clientserver" {
+                            version = "master"
+                        } else {
+                            version += "v"
+                        }
+                    }
+                Text("Join Market Server \(version)")
                 Spacer()
                 Button {
                     openWindow(id: "QuickConnect-JM")
