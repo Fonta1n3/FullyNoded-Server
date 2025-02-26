@@ -19,6 +19,7 @@ public struct BlockchainInfo: CustomStringConvertible {
     let chain:String
     let blocks:Int
     let initialblockdownload:Bool
+    var text: String
     
     init(_ dictionary: [String: Any]) {
         network = dictionary["chain"] as? String ?? ""
@@ -32,6 +33,11 @@ public struct BlockchainInfo: CustomStringConvertible {
         chain = dictionary["chain"] as? String ?? ""
         blocks = dictionary["blocks"] as? Int ?? 0
         initialblockdownload = dictionary["initialblockdownload"] as? Bool ?? false
+        text = ""
+        for (key, value) in dictionary {
+            text += "\(key): \(value)\n"
+        }
+        
     }
     
     public var description: String {
