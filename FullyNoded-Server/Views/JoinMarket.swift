@@ -35,7 +35,7 @@ struct JoinMarket: View {
                         if version == "clientserver" {
                             version = "master"
                         } else {
-                            version += "v"
+                            version = "v" + version
                         }
                     }
                 Text("Join Market Server \(version)")
