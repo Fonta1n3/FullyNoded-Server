@@ -19,7 +19,6 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
-    
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -315,7 +314,7 @@ struct ContentView: View {
         }
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
-        }
+        }        
     }
     
     private func checkForXcode() {
