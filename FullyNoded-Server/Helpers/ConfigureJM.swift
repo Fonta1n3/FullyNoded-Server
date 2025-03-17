@@ -105,7 +105,7 @@ enum ConfigureJM {
         let arr = string.split(separator: "\n")
         for item in arr {
             let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
-            if item.hasPrefix("\(key) =") {
+            if item.hasPrefix("\(key) =") || item.hasPrefix("#\(key) =") {
                 let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
                 try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
             }
