@@ -108,6 +108,9 @@ enum ConfigureJM {
             if item.hasPrefix("\(key) =") || item.hasPrefix("#\(key) =") {
                 let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
                 try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+            } else if item.hasPrefix("rpc_password = ") || item.hasPrefix("rpc_user = ") {
+                let newConf = string.replacingOccurrences(of: item, with: "#\(item)")
+                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
             }
         }
     }
