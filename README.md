@@ -9,10 +9,13 @@ FNS can be downloaded via github releases [here](https://github.com/Fonta1n3/Ful
 on the Home page.
 
 Download the latest release files, verify the signatures and hash match, then open the dmg.
-`gpg --import D3AC0FCA.asc` (my public key)
-`gpg --verify FullyNoded-Server.dmg.asc FullyNoded-Server.dmg`
-`gpg --verify SHA256SUMS.asc SHA256SUMS`
-`shasum -a 256 FullyNoded-Server.dmg` (this should output the same hash found in the SHA256SUMS file, if not ALL STOP.)
+```
+gpg --import D3AC0FCA.asc
+gpg --verify FullyNoded-Server.dmg.asc FullyNoded-Server.dmg
+gpg --verify SHA256SUMS.asc SHA256SUMS
+shasum -a 256 FullyNoded-Server.dmg
+``` 
+`shasum -a 256 FullyNoded-Server.dmg` should output the same hash found in the SHA256SUMS file, if not ALL STOP!
 
 ## What does it do?
 - Install any version of Bitcoin Core, Join Market and Tor, allowing you to very easily manage and connect to your servers remotely 
