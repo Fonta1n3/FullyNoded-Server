@@ -1,10 +1,12 @@
 # Fully Noded Server (FNS) beta
 
 ## Requirements
-- Python 3.10 to 3.12 for Join Market, should be located at `/Library/Frameworks/Python.framework/Versions`, if not a good guide can be found [here](https://www.codingforentrepreneurs.com/guides/install-python-on-macos).
+- Python 3.10 to 3.12 for Join Market, should be located at `/Library/Frameworks/Python.framework/Versions`, if not a good guide can 
+be found [here](https://www.codingforentrepreneurs.com/guides/install-python-on-macos).
 
 ## Installation
-FNS can be downloaded via github releases [here](https://github.com/Fonta1n3/FullyNoded-Server/releases) and via [fullynoded.app](https://fullynoded.app) on the Home page.
+FNS can be downloaded via github releases [here](https://github.com/Fonta1n3/FullyNoded-Server/releases) and via [fullynoded.app](https://fullynoded.app) 
+on the Home page.
 
 Download the latest release files, verify the signatures and hash match, then open the dmg.
 `gpg --import D3AC0FCA.asc` (my public key)
