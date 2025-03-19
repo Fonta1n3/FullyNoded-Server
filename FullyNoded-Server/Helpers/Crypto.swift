@@ -9,11 +9,11 @@ import Foundation
 import CryptoKit
 
 class Crypto {
-    static let encKeyUnify = UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as! String
+    static let encKeyFNS = UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as! String
     
     static func encrypt(_ data: Data) -> Data? {
-        guard let key = KeyChain.getData(encKeyUnify) else {
-            if KeyChain.set(Crypto.privKeyData(), forKey: encKeyUnify) {
+        guard let key = KeyChain.getData(encKeyFNS) else {
+            if KeyChain.set(Crypto.privKeyData(), forKey: encKeyFNS) {
                 return encrypt(data)
             } else {
                 return nil
@@ -25,7 +25,7 @@ class Crypto {
     
     
     static func decrypt(_ data: Data) -> Data? {
-        guard let key = KeyChain.getData(encKeyUnify),
+        guard let key = KeyChain.getData(encKeyFNS),
             let box = try? ChaChaPoly.SealedBox.init(combined: data) else {
                 return nil
         }
