@@ -37,7 +37,7 @@ installed locally you can connect to them with one click, or scan the QR code to
 
 ## How?
 A data directory for FNS will be created at `~/.fullynoded` which holds the binaries for Bitcoin Core and Join Market, users may 
-edit the location of the Bitcoin Core data directory otherwise FNS sticks to the defaults whichj means any Bitcoin Core or Join 
+edit the location of the Bitcoin Core data directory otherwise FNS sticks to the defaults which means any Bitcoin Core or Join 
 Market installation should work seamlessly with an existing instance without interfering with it.
 
 Bitcoin Core is downloaded from bitcoincore.org/bin. FNS then runs a script to verify the sha256sums match and allows the user to 
@@ -51,9 +51,9 @@ For Bitcoin Core a wallet named "jm_wallet" will automatically be created when i
 When installing Join Market it will automatically run the `wallet-tool.py` script to create a default config.
 
 If the user clicks "Configure JM" Join Market and Bitcoin Core will be configured by creating new RPC credentials for Join Market, 
-saving them to a hidden cookie file and converting them to and rpc auth string which is then saved to your bitcoin.conf. The port, 
+saving them to a hidden cookie file and converting them to a rpc auth string which is saved to your bitcoin.conf. The port, 
 network, chain and Tor host are all added to the Join Market config automatically. This configures Join Market to run the wallet 
-daemon `jmwalletd.py` in conjunction with whatever chain Bitcoin Core is currently set to. As a side not changing the local Join 
+daemon `jmwalletd.py` in conjunction with whatever chain Bitcoin Core is currently set to. As a side note changing the local Join 
 Market RPC creds will not effect the remote connection as that is not reliant on RPC credentails, you can read about how Join Market 
 remote connections work [here](https://github.com/JoinMarket-Org/joinmarket-clientserver/blob/master/docs/JSON-RPC-API-using-jmwalletd.md).
 
@@ -75,7 +75,7 @@ and does not do anything at all unless you click one of the menu bar app options
 The idea is to automate the right way to do things for newbs and devs alike.
 
 Initially a random string is created which we use as a namespace for a dedicated random encryption key which is stored on your 
-Mac's secure enclave/keychain. The random encryption key is created with the devices Cryptographically Secure random Number Generator.
+Mac's secure enclave/keychain. The random encryption key is created with the devices Cryptographically Secure Random Number Generator.
 When running FNS the first time you will be prompted to store this item on your keychain, the random letters you see are not the 
 encryption key itself but its namespace. FNS uses the randomly created namespace to fetch the encryption key from your secure enclave 
 to encrypt your RPC credentials which are stored encrypted on your device via "core data". Each time FNS fetches your own RPC credentials 
@@ -86,7 +86,7 @@ FNS does not make any remote calls using RPC credentials, they are striclty used
 Join Market RPC credentials are stored as a cookie in the FNS data directory, this is only done if you click "Configure JM", if you have 
 an existing config do not use this button.
 
-If you do use the "Configure JM" button a new RPC redentials are created and saved, any existing plain text RPC credentials in the JM 
+If you do use the "Configure JM" button new RPC credentials are created and saved, any existing plain text RPC credentials in the JM 
 config will be commented out, of course this can easily be overridden by opening the config and editing it.
     
 ## Features
@@ -99,8 +99,8 @@ config will be commented out, of course this can easily be overridden by opening
     - Refresh RPC authentication.
     - Open bitcoin.conf.
     - Open debug.log.
-    - QuickConnect for Fully Noded and Unify - Payjoin Wallet.
-    - Reindex
+    - Quick Connect for Fully Noded and Unify - Payjoin Wallet.
+    - Reindex.
     
 - Join Market
     - Installation.
