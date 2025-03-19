@@ -8,6 +8,10 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case launchJmCloner
+    case cloneJmMaster
+    case launchExtractKnots
+    case extractKnots
     case launchUpdateLightning
     case updateLightning
     case obWatcher
@@ -50,6 +54,14 @@ public enum SCRIPT: String {
     
     var stringValue:String {
         switch self {
+        case .launchJmCloner:
+            return "LaunchJMCloner"
+        case .cloneJmMaster:
+            return "CloneJMMaster"
+        case .launchExtractKnots:
+            return "LaunchKnotsExtractor"
+        case .extractKnots:
+            return "ExtractKnotsTarball"
         case .launchUpdateLightning:
             return "LaunchUpdateLightning"
         case .updateLightning:

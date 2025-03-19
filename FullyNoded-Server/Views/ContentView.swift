@@ -19,7 +19,6 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
-    
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -47,7 +46,7 @@ struct ContentView: View {
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
         "prefix": "bitcoin-27.2",
-        "dataDir": Defaults.shared.dataDir,
+        "dataDir": Defaults.shared.bitcoinCoreDataDir,
         "chain": Defaults.shared.chain
     ])
     
@@ -56,10 +55,12 @@ struct ContentView: View {
     private let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForTor = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
-    //private let coreLightning = Service(name: "Core Lightning", id: UUID())
+    private let bitcoinKnots = Service(name: "Bitcoin Knots", id: UUID())
+    private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
     private let help = Service(name: "Help", id: UUID())
+    private let settings = Service(name: "Settings", id: UUID())
     
 
     var body: some View {
@@ -73,35 +74,45 @@ struct ContentView: View {
                                 } else {
                                     Home(
                                         showBitcoinCoreInstallButton: true,
+                                        showBitcoinKnotsInstallButton: false,
                                         env: env,
                                         showJoinMarketInstallButton: false,
                                         jmTaggedReleases: []
                                     )
                                 }
-                            } else if service.name == "Core Lightning" {
-                                if isInstallingLightning {
-                                    HStack() {
-                                        ProgressView()
-                                            .scaleEffect(0.5)
-                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                                    .padding([.leading, .top])
-                                    
-                                } else if lightningInstalled {
-                                    CoreLightning()
-                                } else {
-                                    FNIcon()
-                                    Spacer()
-                                    if bitcoinCoreInstalled {
-                                        Button("Install Core Lightning") {
-                                            installLightning()
-                                        }
-                                        Spacer()
-                                    } else {
-                                        Text("First install Bitcoin Core.")
-                                    }
-                                }
+//                            } else if service.name == "Bitcoin Knots" {
+//                                Home(
+//                                    showBitcoinCoreInstallButton: false,
+//                                    showBitcoinKnotsInstallButton: true,
+//                                    env: env,
+//                                    showJoinMarketInstallButton: false,
+//                                    jmTaggedReleases: []
+//                                )
+                                
+//                            } else if service.name == "Core Lightning" {
+//                                if isInstallingLightning {
+//                                    HStack() {
+//                                        ProgressView()
+//                                            .scaleEffect(0.5)
+//                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
+//                                    }
+//                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+//                                    .padding([.leading, .top])
+//                                    
+//                                } else if lightningInstalled {
+//                                    CoreLightning()
+//                                } else {
+//                                    FNIcon()
+//                                    Spacer()
+//                                    if bitcoinCoreInstalled {
+//                                        Button("Install Core Lightning") {
+//                                            installLightning()
+//                                        }
+//                                        Spacer()
+//                                    } else {
+//                                        Text("First install Bitcoin Core.")
+//                                    }
+//                                }
                                 
                             } else if service.name == "Join Market" {
                                 if joinMarketInstalled {
@@ -112,6 +123,7 @@ struct ContentView: View {
                                     }
                                     Home(
                                         showBitcoinCoreInstallButton: false,
+                                        showBitcoinKnotsInstallButton: false,
                                         env: env,
                                         showJoinMarketInstallButton: true,
                                         jmTaggedReleases: jmTaggedReleases
@@ -151,6 +163,8 @@ struct ContentView: View {
                                 Spacer()
                             } else if service.name == "Help" {
                                 Help()
+                            } else if service.name == "Settings" {
+                                Settings(bitcoinEnvValues: bitcoinEnvValues)
                             }
                         } label: {
                             HStack() {
@@ -178,23 +192,27 @@ struct ContentView: View {
                                     }
                                 }
                                 
-                                if service.name == "Core Lightning" {
-                                    if lightningInstalled {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.green)
-                                    } else {
-                                        Image(systemName: "xmark")
-                                            .foregroundStyle(.gray)
-                                        EmptyView()
-                                            .onReceive(timerForLightningInstall) { _ in
-                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
-                                                    lightningInstalled = true
-                                                    isInstallingLightning = false
-                                                    self.timerForLightningInstall.upstream.connect().cancel()
-                                                }
-                                            }
-                                    }
-                                }
+//                                if service.name == "Bitcoin Knots" {
+//                                   
+//                                }
+                                
+//                                if service.name == "Core Lightning" {
+//                                    if lightningInstalled {
+//                                        Image(systemName: "checkmark")
+//                                            .foregroundStyle(.green)
+//                                    } else {
+//                                        Image(systemName: "xmark")
+//                                            .foregroundStyle(.gray)
+//                                        EmptyView()
+//                                            .onReceive(timerForLightningInstall) { _ in
+//                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
+//                                                    lightningInstalled = true
+//                                                    isInstallingLightning = false
+//                                                    self.timerForLightningInstall.upstream.connect().cancel()
+//                                                }
+//                                            }
+//                                    }
+//                                }
                                 
                                 if service.name == "Join Market" {
                                     if joinMarketInstalled {
@@ -207,6 +225,7 @@ struct ContentView: View {
                                             .onReceive(timerForJMInstall) { _ in
                                                 if let tagName = UserDefaults.standard.string(forKey: "tagName") {
                                                     let jmConfigPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+                                                    
                                                     if FileManager.default.fileExists(atPath: "/Users/\(NSUserName())/.fullynoded/JoinMarket/joinmarket-\(tagName)/scripts/jmwalletd.py") && FileManager.default.fileExists(atPath: jmConfigPath) {
                                                         joinMarketInstalled = true
                                                         self.timerForJMInstall.upstream.connect().cancel()
@@ -240,6 +259,11 @@ struct ContentView: View {
                                 
                                 if service.name == "Help" {
                                     Image(systemName: "questionmark.circle")
+                                        .foregroundStyle(.secondary)
+                                    Text(service.name)
+                                        .foregroundStyle(.secondary)
+                                } else if service.name == "Settings" {
+                                    Image(systemName: "gearshape")
                                         .foregroundStyle(.secondary)
                                     Text(service.name)
                                         .foregroundStyle(.secondary)
@@ -290,7 +314,7 @@ struct ContentView: View {
         }
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
-        }
+        }        
     }
     
     private func checkForXcode() {
@@ -360,7 +384,7 @@ struct ContentView: View {
             var lightningEnv: [String: String] = [:]
             lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
             lightningEnv["RPC_PASSWORD"] = rpcPass
-            lightningEnv["DATA_DIR"] = Defaults.shared.dataDir.replacingOccurrences(of: " ", with: "*")
+            lightningEnv["DATA_DIR"] = Defaults.shared.bitcoinCoreDataDir.replacingOccurrences(of: " ", with: "*")
             lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
             var network = "bitcoin"
             if Defaults.shared.chain != "main" {
@@ -387,7 +411,7 @@ struct ContentView: View {
                     "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
                     "version": "27.2",
                     "prefix": "bitcoin-27.2",
-                    "dataDir": Defaults.shared.dataDir,
+                    "dataDir": Defaults.shared.bitcoinCoreDataDir,
                     "chain": Defaults.shared.chain
                 ]
                 
@@ -401,12 +425,12 @@ struct ContentView: View {
                         "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                         "VERSION": self.bitcoinEnvValues.version,
                         "PREFIX": self.bitcoinEnvValues.prefix,
-                        "DATADIR": Defaults.shared.dataDir,
+                        "DATADIR": Defaults.shared.bitcoinCoreDataDir,
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    //services = [bitcoinCore, coreLightning, joinMarket, tor, help]
-                    services = [bitcoinCore, joinMarket, tor, help]
+                    //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
+                    services = [bitcoinCore, joinMarket, tor, settings, help]
                     checkForBitcoin()
                 }
                 
@@ -420,11 +444,11 @@ struct ContentView: View {
                 "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                 "VERSION": self.bitcoinEnvValues.version,
                 "PREFIX": self.bitcoinEnvValues.prefix,
-                "DATADIR": Defaults.shared.dataDir,
+                "DATADIR": Defaults.shared.bitcoinCoreDataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            //services = [bitcoinCore, coreLightning, joinMarket, tor, help]
+            //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
             services = [bitcoinCore, joinMarket, tor, help]
             checkForBitcoin()
         }
@@ -460,8 +484,8 @@ struct ContentView: View {
                     return
                 }
                 
-                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10"), FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11"),
-                      FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12")else {
+                guard FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.10") || FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.11") ||
+                      FileManager.default.fileExists(atPath: "/Library/Frameworks/Python.framework/Versions/3.12") else {
                     promptToShowPythonGuide = true
                     return
                 }
@@ -482,7 +506,7 @@ struct ContentView: View {
             }
         }
     }
-    
+        
     private func showMessage(message: String) {
         showError = true
         self.message = message

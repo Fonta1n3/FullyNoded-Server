@@ -13,36 +13,40 @@ struct Home: View {
     @State private var message = ""
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showingBitcoinReleases = false
+    @State private var showingKnotsReleases = false
     
     let showBitcoinCoreInstallButton: Bool
+    let showBitcoinKnotsInstallButton: Bool
     let env: [String: String]
     let showJoinMarketInstallButton: Bool
     let jmTaggedReleases: TaggedReleases
     
     var body: some View {
         VStack() {
-            if showBitcoinCoreInstallButton && taggedReleases == nil {
-                Button {
-                    LatestBtcCoreRelease.get { (taggedReleases, error) in
-                        guard error == nil else {
-                            showMessage(message: error ?? "Unknown error.")
-                            return
-                        }
-                        
-                        guard let taggedReleases = taggedReleases else {
-                            showMessage(message: error ?? "Unknown issue downloading bitcoin core releases.")
-                            return
-                        }
-                        self.taggedReleases = taggedReleases
-                        showingBitcoinReleases = true
+            if taggedReleases == nil {
+                if showBitcoinKnotsInstallButton {
+                    Button {
+                        getLatestBtcKnots()
+                    } label: {
+                        Text("Install Bitcoin Knots")
                     }
-                } label: {
-                    Text("Install Bitcoin Core")
+                    
+                } else if showBitcoinCoreInstallButton {
+                    Button {
+                        getLatestBtcCore()
+                    } label: {
+                        Text("Install Bitcoin Core")
+                    }
                 }
             }
             
+            
             if showingBitcoinReleases, let taggedReleases = taggedReleases {
-                TaggedReleasesView(taggedReleases: taggedReleases, existingVersion: env["PREFIX"]!)
+                TaggedReleasesBitcoinCoreView(taggedReleasesBitcoinCore: taggedReleases, existingVersion: env["PREFIX"]!)
+                
+//            } else if showingKnotsReleases, let taggedReleases = taggedReleases {
+//                TaggedReleasesBitcoinKnotsView(taggedReleasesBitcoinKnots: taggedReleases, existingVersion: env["PREFIX"]!)
+                
             } else if showJoinMarketInstallButton, jmTaggedReleases.count > 0 {
                 JoinMarketTaggedReleasesView(taggedReleases: jmTaggedReleases, existingVersion: "xx")
             } else {
@@ -63,6 +67,38 @@ struct Home: View {
                 TorClient.sharedInstance.start(delegate: nil)
             }
         })
+    }
+    
+    private func getLatestBtcKnots() {
+        LatestBtcKnotsRelease.get { (taggedReleases, error) in
+            guard error == nil else {
+                showMessage(message: error ?? "Unknown error.")
+                return
+            }
+            
+            guard let taggedReleases = taggedReleases else {
+                showMessage(message: error ?? "Unknown issue downloading bitcoin knots releases.")
+                return
+            }
+            self.taggedReleases = taggedReleases
+            showingKnotsReleases = true
+        }
+    }
+    
+    private func getLatestBtcCore() {
+        LatestBtcCoreRelease.get { (taggedReleases, error) in
+            guard error == nil else {
+                showMessage(message: error ?? "Unknown error.")
+                return
+            }
+            
+            guard let taggedReleases = taggedReleases else {
+                showMessage(message: error ?? "Unknown issue downloading bitcoin core releases.")
+                return
+            }
+            self.taggedReleases = taggedReleases
+            showingBitcoinReleases = true
+        }
     }
     
     private func runScript(script: SCRIPT, env: [String: String]) {

@@ -14,6 +14,8 @@ struct BtcUtilsView: View {
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
     
+    //var refresh: () -> Void
+    
     var body: some View {
         Spacer()
         VStack() {
@@ -29,7 +31,7 @@ struct BtcUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.dataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -78,7 +80,7 @@ struct BtcUtilsView: View {
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.dataDir,
+                    "DATADIR": Defaults.shared.bitcoinCoreDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -100,7 +102,7 @@ struct BtcUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.dataDir
+        let dataDir = Defaults.shared.bitcoinCoreDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -170,7 +172,7 @@ struct BtcUtilsView: View {
         let passData = Data(newCreds.rpcPassword.utf8)
         
         updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
-        updateCLNConfig(rpcpass: newCreds.rpcPassword)
+        //updateCLNConfig(rpcpass: newCreds.rpcPassword)
         
         guard let encryptedPass = Crypto.encrypt(passData) else {
             showMessage(message: "Can't encrypt rpcpass data.")
@@ -207,17 +209,17 @@ struct BtcUtilsView: View {
         }
     }
     
-    private func updateCLNConfig(rpcpass: String) {
-        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        guard let conf = conf(stringPath: lightningConfPath) else { return }
-        let arr = conf.split(separator: "\n")
-        for item in arr {
-            if item.hasPrefix("bitcoin-rpcpassword=") {
-                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
-                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-            }
-        }
-    }
+//    private func updateCLNConfig(rpcpass: String) {
+//        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//        guard let conf = conf(stringPath: lightningConfPath) else { return }
+//        let arr = conf.split(separator: "\n")
+//        for item in arr {
+//            if item.hasPrefix("bitcoin-rpcpassword=") {
+//                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
+//                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+//            }
+//        }
+//    }
     
     private func updateJMConf(key: String, value: String) {
         let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
@@ -243,6 +245,7 @@ struct BtcUtilsView: View {
                     }
                     return
                 }
+                //
                 showMessage(message: "Reindex initiated, this can take awhile. Refresh the Bitcoin Core view.")
             }
         
@@ -253,13 +256,13 @@ struct BtcUtilsView: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.dataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.dataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.dataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.dataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
         default:
             break
         }
@@ -267,7 +270,7 @@ struct BtcUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.dataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinCoreDataDir)
     }
     
     private func verify() {
@@ -275,8 +278,6 @@ struct BtcUtilsView: View {
             guard errorMessage == nil else {
                 if errorMessage != "" {
                     showMessage(message: errorMessage!)
-                } else {
-                    
                 }
                 return
             }
