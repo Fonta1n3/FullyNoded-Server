@@ -74,12 +74,7 @@ struct FullyNoded_ServerApp: App {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
-            if isRunning {
-                Image(systemName: "circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Image(systemName: "server.rack")
-            }
+            Image(systemName: "server.rack")
         }
     }
     

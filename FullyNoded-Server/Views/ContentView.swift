@@ -133,7 +133,7 @@ struct ContentView: View {
                                 FNIcon()
                                 HStack() {
                                     if torProgress < 100.0 {
-                                        ProgressView("Tor v0.4.8.12 bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
+                                        ProgressView("Tor v0.4.8.14 bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
                                             .padding([.leading, .trailing])
                                             .frame(alignment: .topLeading)
                                     } else {
@@ -141,12 +141,12 @@ struct ContentView: View {
                                             Image(systemName: "circle.fill")
                                                 .foregroundStyle(.green)
                                                 .padding([.leading])
-                                            Text("Tor v0.4.8.12 running")
+                                            Text("Tor v0.4.8.14 running")
                                         } else {
                                             Image(systemName: "circle.fill")
                                                 .foregroundStyle(.orange)
                                                 .padding([.leading])
-                                            Text("Tor v0.4.8.12 stopped")
+                                            Text("Tor v0.4.8.14 stopped")
                                         }
                                     }
                                     Toggle("", isOn: $torRunning)
