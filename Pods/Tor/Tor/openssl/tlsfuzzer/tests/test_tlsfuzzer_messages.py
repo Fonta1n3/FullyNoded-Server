@@ -15,11 +15,13 @@ except ImportError:
 
 import socket
 import os
+import io
+import struct
 
 from tlsfuzzer.messages import ClientHelloGenerator, ClientKeyExchangeGenerator,\
         ChangeCipherSpecGenerator, FinishedGenerator, \
         RenegotiationInfoExtension, ResetHandshakeHashes, SetMaxRecordSize, \
-        pad_handshake, truncate_handshake, Close, fuzz_message, \
+        pad_handshake, truncate_handshake, Close, CloseRST, fuzz_message, \
         RawMessageGenerator, split_message, PopMessageFromList, \
         FlushMessageList, fuzz_mac, fuzz_padding, ApplicationDataGenerator, \
         CertificateGenerator, CertificateVerifyGenerator, CertificateRequest, \
@@ -116,7 +118,26 @@ class TestClose(unittest.TestCase):
         close = Close()
         close.process(state)
 
-        state.msg_sock.sock.close.called_once_with()
+        state.msg_sock.sock.close.assert_called_once_with()
+
+class TestCloseRST(unittest.TestCase):
+    def test___init__(self):
+        close = CloseRST()
+
+        self.assertIsNotNone(close)
+
+    def test_process(self):
+        state = ConnectionState()
+        state.msg_sock = mock.MagicMock()
+
+        close = CloseRST()
+        close.process(state)
+
+        state.msg_sock.sock.setsockopt.assert_called_once_with(
+            socket.SOL_SOCKET, socket.SO_LINGER,
+                 struct.pack('ii', 1, 0)
+        )
+        state.msg_sock.sock.close.assert_called_once_with()
 
 class TestTCPBufferingEnable(unittest.TestCase):
     def test___init__(self):
@@ -458,9 +479,8 @@ class TestRawSocketWriteGenerator(unittest.TestCase):
 
         msg_gen.process(state)
 
-        self.assertTrue(
-            state.msg_sock._recordSocket.
-            sock.send.called_once_with(b'some data'))
+        state.msg_sock._recordSocket.sock.send.assert_called_once_with(
+            b'some data')
 
 
 class TestPlaintextMessageGenerator(unittest.TestCase):
@@ -883,9 +903,25 @@ class TestClientKeyExchangeGenerator(unittest.TestCase):
         self.assertEqual(len(cke.premaster_secret), 48)
 
     def test___init___with_invalid_param(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as e:
             cke = ClientKeyExchangeGenerator(p_as_share=True,
                                              p_1_as_share=True)
+
+        self.assertIn("both p_as_share and p_1_as_share", str(e.exception))
+
+    def test___init___with_incomplete_settings(self):
+        with self.assertRaises(ValueError) as e:
+            ClientKeyExchangeGenerator(encrypted_premaster_file="/dev/zero")
+
+        self.assertIn("length of data", str(e.exception))
+
+    def test___init___with_mutually_exclusive_settings(self):
+        with self.assertRaises(ValueError) as e:
+            ClientKeyExchangeGenerator(encrypted_premaster_file="/dev/zero",
+                                       encrypted_premaster_length="32",
+                                       modulus_as_encrypted_premaster=True)
+
+        self.assertIn("both modulus_as_encrypted_premaster", str(e.exception))
 
     def test_generate(self):
         state = ConnectionState()
@@ -900,6 +936,23 @@ class TestClientKeyExchangeGenerator(unittest.TestCase):
 
         self.assertEqual(decrypt[:2], bytearray([3, 3]))
         self.assertEqual(decrypt[2:], bytearray([0]*46))
+
+    def test_with_random_premaster(self):
+        state = ConnectionState()
+        state.get_server_public_key = lambda : self.priv_key
+        cke = ClientKeyExchangeGenerator(
+                cipher=constants.CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                random_premaster=True)
+
+        ret = cke.generate(state)
+
+        cke.post_send(state)
+
+        decrypt = self.priv_key.decrypt(ret.encryptedPreMasterSecret)
+
+        self.assertEqual(decrypt[:2], bytearray([3, 3]))
+        self.assertEqual(len(decrypt), 48)
+        self.assertNotEqual(decrypt[2:], bytearray([0]*46))
 
     def test_generate_with_custom_premaster_secret(self):
         state = ConnectionState()
@@ -1049,6 +1102,19 @@ class TestClientKeyExchangeGenerator(unittest.TestCase):
         ret = cke.generate(state)
         self.assertEqual(ret.dh_Yc, 20)
 
+    def test_generate_with_enc_PMS_from_file(self):
+        state = ConnectionState()
+        fake_file = io.BytesIO(b'\x01'*256)
+        cke = ClientKeyExchangeGenerator(
+                cipher=constants.CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                encrypted_premaster_file=fake_file,
+                encrypted_premaster_length=256)
+
+        ret = cke.generate(state)
+
+        self.assertEqual(len(ret.encryptedPreMasterSecret), 256)
+        self.assertEqual(ret.encryptedPreMasterSecret, b'\x01'*256)
+
     def test_post_send(self):
         state = ConnectionState()
         state.get_server_public_key = lambda : self.priv_key
@@ -1059,6 +1125,41 @@ class TestClientKeyExchangeGenerator(unittest.TestCase):
         ret = cke.generate(state)
 
         cke.post_send(state)
+
+    def test_with_random_substitutions(self):
+        state = ConnectionState()
+        state.get_server_public_key = lambda : self.priv_key
+        cke = ClientKeyExchangeGenerator(
+                cipher=constants.CipherSuite.TLS_RSA_WITH_NULL_MD5,
+                premaster_secret=bytearray(),
+                padding_subs={-1:-2, -2:-2, -3:-2, -4:-2, -5:-2, -6:-2, -7:0})
+
+        ret = cke.generate(state)
+
+        self.assertEqual(len(ret.encryptedPreMasterSecret), 128)
+        decrypt = self.priv_key.decrypt(ret.encryptedPreMasterSecret)
+
+        self.assertEqual(len(decrypt), 6)
+        for i in range(6):
+            self.assertNotEqual(decrypt[i], 0)
+
+    def test_with_random_xors(self):
+        state = ConnectionState()
+        state.get_server_public_key = lambda : self.priv_key
+        cke = ClientKeyExchangeGenerator(
+                cipher=constants.CipherSuite.TLS_RSA_WITH_NULL_MD5,
+                premaster_secret=bytearray(),
+                padding_xors={-1:-2},
+                padding_subs={-2:0})
+
+        ret = cke.generate(state)
+
+        self.assertEqual(len(ret.encryptedPreMasterSecret), 128)
+        decrypt = self.priv_key.decrypt(ret.encryptedPreMasterSecret)
+
+        self.assertEqual(len(decrypt), 1)
+        self.assertNotEqual(decrypt[0], 0)
+
 
 class TestChangeCipherSpecGenerator(unittest.TestCase):
     def test___init__(self):
@@ -2630,7 +2731,6 @@ class TestFinishedGenerator(unittest.TestCase):
 
         ret = fg.generate(state)
 
-        print(repr(ret.verify_data))
         self.assertEqual(ret.verify_data,
             bytearray(b'q\xf1l\x05\x94\xb8"\xb2L7\xce\xd5\xb3\x00\xa6\r\x17*'
                       b'\xcc\xe7\xdc\xa6\xf0c\xd7\x90I\x11}\xbfq:'))

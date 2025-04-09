@@ -22,8 +22,8 @@ from tlslite.messages import ClientHello, ServerHello, RecordHeader3, Alert, \
         Certificate, Finished, HelloMessage, ChangeCipherSpec, NextProtocol, \
         ApplicationData, EncryptedExtensions, CertificateEntry, \
         NewSessionTicket, SessionTicketPayload, Heartbeat, HelloRequest, \
-        KeyUpdate
-from tlslite.utils.codec import Parser
+        KeyUpdate, NewSessionTicket1_0
+from tlslite.utils.codec import Parser, DecodeError
 from tlslite.constants import CipherSuite, CertificateType, ContentType, \
         AlertLevel, AlertDescription, ExtensionType, ClientCertificateType, \
         HashAlgorithm, SignatureAlgorithm, ECCurveType, GroupName, \
@@ -206,6 +206,26 @@ class TestClientHello(unittest.TestCase):
         self.assertEqual([], client_hello.cipher_suites)
         self.assertEqual([], client_hello.compression_methods)
         self.assertEqual([], client_hello.extensions)
+
+    def test_parse_with_too_long_session_id(self):
+        p = Parser(bytearray(
+            # we don't include the type of message as it is handled by the
+            # hello protocol parser
+            #b'x01' +             # type of message - client_hello
+            b'\x00'*2 + b'\x48' + # length - 38 bytes
+            b'\x01\x01' +         # protocol version - arbitrary (invalid)
+            b'\x00'*32 +          # client random
+            b'\x21' +             # session ID length
+            b'\x00' * 33 +        # session ID
+            b'\x00'*2 +           # cipher suites length
+            b'\x00' +             # compression methods length
+            b'\x00\x00'           # extensions length
+            ))
+        client_hello = ClientHello()
+        with self.assertRaises(DecodeError) as e:
+            client_hello = client_hello.parse(p)
+
+        self.assertIn("session_id", str(e.exception))
 
     def test_parse_with_SNI_extension(self):
         p = Parser(bytearray(
@@ -488,6 +508,34 @@ class TestClientHello(unittest.TestCase):
 
         self.assertEqual("client_hello,version(3.0),random(...),"\
                 "session ID(bytearray(b'')),cipher suites([]),"\
+                "compression methods([0])", str(client_hello))
+
+    def test___str___with_one_cipher_suite(self):
+        client_hello = ClientHello().create((3,0), bytearray(4), bytearray(0),\
+                [CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA])
+
+        self.assertEqual("client_hello,version(3.0),random(...),"
+                "session ID(bytearray(b'')),cipher suites(["
+                "TLS_RSA_WITH_AES_128_CBC_SHA]),"
+                "compression methods([0])", str(client_hello))
+
+    def test___str___with_unassigned_cipher_suite(self):
+        client_hello = ClientHello().create((3,0), bytearray(4), bytearray(0),\
+                [93])
+
+        self.assertEqual("client_hello,version(3.0),random(...),"\
+                "session ID(bytearray(b'')),cipher suites([93]),"\
+                "compression methods([0])", str(client_hello))
+
+    def test___str___with_cipher_suites(self):
+        client_hello = ClientHello().create((3,0), bytearray(4), bytearray(0),\
+                [CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                 CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA])
+
+        self.assertEqual("client_hello,version(3.0),random(...),"
+                "session ID(bytearray(b'')),cipher suites(["
+                "TLS_RSA_WITH_AES_128_CBC_SHA, "
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA]),"
                 "compression methods([0])", str(client_hello))
 
     def test___str___with_all_null_session_id(self):
@@ -3250,6 +3298,14 @@ class TestChangeCipherSpec(unittest.TestCase):
         self.assertIsInstance(ccs, ChangeCipherSpec)
         self.assertEqual(ccs.type, 1)
 
+    def test_parse_wrong_size(self):
+        parser = Parser(bytearray(b'\x01\x01'))
+
+        ccs = ChangeCipherSpec()
+
+        with self.assertRaises(SyntaxError):
+            ccs.parse(parser)
+
 
 class TestNextProtocol(unittest.TestCase):
     def test___init__(self):
@@ -3478,6 +3534,29 @@ class TestSessionTicketPayload(unittest.TestCase):
                       self.der_cert + # certificate payload
                       b'\x00\x00'))
 
+    def test_write_v2(self):
+        ticket = SessionTicketPayload()
+        ticket.create(bytearray(b'\x11' * 32),
+                      (3, 3),
+                      0x00af,
+                      12345678,
+                      encrypt_then_mac=True,
+                      server_name=None)
+
+        self.assertEqual(
+            ticket.write(),
+            bytearray(b'\x00\x02' +  # version
+                      b'\x00\x20' +  # master secret length
+                      b'\x11' * 32 +  # master secret
+                      b'\x03\x03' +  # protocol version
+                      b'\x00\xaf' +  # cipher suite
+                      b'\x00' +  # nonce length
+                      b'\x00\x00\x00\x00\x00\xbc\x61\x4e' +  # creation time
+                      b'\x00\x00\x00' +  # length of certificate
+                      b'\x01' +  # encrypt then mac
+                      b'\x00' +  # extended master secret
+                      b'\x00\x00'))  # server name length
+
     def test_parse(self):
         parser = Parser(
             bytearray(b'\x00\x00' +  # version (internal)
@@ -3524,6 +3603,31 @@ class TestSessionTicketPayload(unittest.TestCase):
         self.assertEqual(ticket.client_cert_chain.x509List[0].writeBytes(),
                          self.der_cert)
 
+    def test_parse_v2(self):
+        parser = Parser(
+            bytearray(b'\x00\x02' +  # version
+                      b'\x00\x20' +  # master secret length
+                      b'\x11' * 32 +  # master secret
+                      b'\x03\x03' +  # protocol version
+                      b'\x00\xaf' +  # cipher suite
+                      b'\x00' +  # nonce length
+                      b'\x00\x00\x00\x00\x00\xbc\x61\x4e' +  # creation time
+                      b'\x00\x00\x00' +  # length of certificate
+                      b'\x01' +  # encrypt then mac
+                      b'\x00' +  # extended master secret
+                      b'\x00\x00'))  # server name length
+
+        ticket = SessionTicketPayload().parse(parser)
+
+        self.assertEqual(ticket.master_secret, bytearray(b'\x11' * 32))
+        self.assertEqual(ticket.protocol_version, (3, 3))
+        self.assertEqual(ticket.cipher_suite, 0x00af)
+        self.assertEqual(ticket.creation_time, 12345678)
+        self.assertEqual(ticket.nonce, bytearray())
+        self.assertEqual(ticket.client_cert_chain, None)
+        self.assertEqual(ticket.encrypt_then_mac, True)
+        self.assertEqual(ticket.extended_master_secret, False)
+        self.assertEqual(ticket.server_name, bytearray())
 
     def test_parse_with_wrong_version(self):
         parser = Parser(
@@ -3658,6 +3762,53 @@ class TestNewSessionTicket(unittest.TestCase):
 
         with self.assertRaises(SyntaxError):
             ticket.parse(parser)
+
+
+class TestNewSessionTicket1_0(unittest.TestCase):
+    def test___init__(self):
+        ticket = NewSessionTicket1_0()
+
+        self.assertEqual(ticket.ticket_lifetime, 0)
+        self.assertEqual(ticket.ticket, bytearray(0))
+
+    def test_create(self):
+        ticket = NewSessionTicket1_0()
+        lifetime = mock.Mock()
+        ticket_proper = mock.Mock()
+
+        ticket = ticket.create(lifetime, ticket_proper)
+
+        self.assertIs(ticket.ticket_lifetime, lifetime)
+        self.assertIs(ticket.ticket, ticket_proper)
+
+    def test_write(self):
+        ticket = NewSessionTicket1_0()
+        ticket = ticket.create(1, bytearray(b'ticket'))
+
+
+        self.assertEqual(ticket.write(), bytearray(
+            b'\x04'  # handshake type - new session ticket
+            b'\x00\x00\x0c'  # overall length
+            b'\x00\x00\x00\x01'  # ticket_lifetime
+            b'\x00\x06'  # ticket length
+            b'ticket'  # ticket
+            ))
+
+    def test_parse(self):
+        ticket = NewSessionTicket1_0()
+
+        parser = Parser(bytearray(
+            b'\x00\x00\x0c'  # overall length
+            b'\x00\x00\x00\x01'  # ticket_lifetime
+            b'\x00\x06'  # ticket length
+            b'ticket'  # ticket
+            ))
+
+        ticket = ticket.parse(parser)
+
+        self.assertIsInstance(ticket, NewSessionTicket1_0)
+        self.assertEqual(ticket.ticket_lifetime, 1)
+        self.assertEqual(ticket.ticket, bytearray(b'ticket'))
 
 
 class TestHeartbeat(unittest.TestCase):

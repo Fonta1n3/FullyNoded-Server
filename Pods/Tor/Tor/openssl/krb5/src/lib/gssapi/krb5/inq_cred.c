@@ -73,14 +73,9 @@
 #include "gssapiP_krb5.h"
 
 OM_uint32 KRB5_CALLCONV
-krb5_gss_inquire_cred(minor_status, cred_handle, name, lifetime_ret,
-                      cred_usage, mechanisms)
-    OM_uint32 *minor_status;
-    gss_cred_id_t cred_handle;
-    gss_name_t *name;
-    OM_uint32 *lifetime_ret;
-    gss_cred_usage_t *cred_usage;
-    gss_OID_set *mechanisms;
+krb5_gss_inquire_cred(OM_uint32 *minor_status, gss_cred_id_t cred_handle,
+                      gss_name_t *name, OM_uint32 *lifetime_ret,
+                      gss_cred_usage_t *cred_usage, gss_OID_set *mechanisms)
 {
     krb5_context context;
     gss_cred_id_t defcred = GSS_C_NO_CREDENTIAL;
@@ -127,11 +122,11 @@ krb5_gss_inquire_cred(minor_status, cred_handle, name, lifetime_ret,
     if ((code = krb5_timeofday(context, &now))) {
         *minor_status = code;
         ret = GSS_S_FAILURE;
-        goto fail;
+        goto cleanup;
     }
 
     if (cred->expire != 0) {
-        lifetime = ts_delta(cred->expire, now);
+        lifetime = ts_interval(now, cred->expire);
         if (lifetime < 0)
             lifetime = 0;
     }
@@ -158,7 +153,7 @@ krb5_gss_inquire_cred(minor_status, cred_handle, name, lifetime_ret,
             *minor_status = code;
             save_error_info(*minor_status, context);
             ret = GSS_S_FAILURE;
-            goto fail;
+            goto cleanup;
         }
     }
 
@@ -174,7 +169,7 @@ krb5_gss_inquire_cred(minor_status, cred_handle, name, lifetime_ret,
             if (ret_name)
                 kg_release_name(context, &ret_name);
             /* *minor_status set above */
-            goto fail;
+            goto cleanup;
         }
     }
 
@@ -190,20 +185,16 @@ krb5_gss_inquire_cred(minor_status, cred_handle, name, lifetime_ret,
 
     if (cred_usage)
         *cred_usage = cred->usage;
-    k5_mutex_unlock(&cred->lock);
 
     if (mechanisms) {
         *mechanisms = mechs;
         mechs = GSS_C_NO_OID_SET;
     }
 
-    if (cred_handle == GSS_C_NO_CREDENTIAL)
-        krb5_gss_release_cred(minor_status, (gss_cred_id_t *)&cred);
-
-    krb5_free_context(context);
     *minor_status = 0;
-    return((lifetime == 0)?GSS_S_CREDENTIALS_EXPIRED:GSS_S_COMPLETE);
-fail:
+    ret = (lifetime == 0) ? GSS_S_CREDENTIALS_EXPIRED : GSS_S_COMPLETE;
+
+cleanup:
     k5_mutex_unlock(&cred->lock);
     krb5_gss_release_cred(&tmpmin, &defcred);
     krb5_free_context(context);
@@ -213,16 +204,11 @@ fail:
 
 /* V2 interface */
 OM_uint32 KRB5_CALLCONV
-krb5_gss_inquire_cred_by_mech(minor_status, cred_handle,
-                              mech_type, name, initiator_lifetime,
-                              acceptor_lifetime, cred_usage)
-    OM_uint32           *minor_status;
-    gss_cred_id_t       cred_handle;
-    gss_OID             mech_type;
-    gss_name_t          *name;
-    OM_uint32           *initiator_lifetime;
-    OM_uint32           *acceptor_lifetime;
-    gss_cred_usage_t *cred_usage;
+krb5_gss_inquire_cred_by_mech(OM_uint32 *minor_status,
+                              gss_cred_id_t cred_handle, gss_OID mech_type,
+                              gss_name_t *name, OM_uint32 *initiator_lifetime,
+                              OM_uint32 *acceptor_lifetime,
+                              gss_cred_usage_t *cred_usage)
 {
     krb5_gss_cred_id_t  cred;
     OM_uint32           lifetime;

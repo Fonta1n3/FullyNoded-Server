@@ -1,4 +1,4 @@
-# Author: Hubert Kario, (c) 2018
+# Author: Hubert Kario, (c) 2018-2022
 # Released under Gnu GPL v2.0, see LICENSE file for details
 
 """Test for correct handling of short DHE shared secret."""
@@ -22,11 +22,14 @@ from tlsfuzzer.expect import ExpectServerHello, ExpectCertificate, \
 from tlsfuzzer.utils.lists import natural_sort_keys
 
 from tlslite.constants import CipherSuite, AlertLevel, AlertDescription, \
-        ExtensionType
+        ExtensionType, GroupName
+from tlslite.extensions import SupportedGroupsExtension, \
+        SignatureAlgorithmsExtension, SignatureAlgorithmsCertExtension
 from tlslite.utils.cryptomath import numBytes
+from tlsfuzzer.helpers import SIG_ALL, AutoEmptyExtension
 
 
-version = 4
+version = 8
 
 
 def help_msg():
@@ -50,11 +53,14 @@ def help_msg():
     print("                shared secret for test case to be valid,")
     print("                1 by default")
     print(" -z             don't expect 1/n-1 record split in TLS1.0")
+    print(" --extra-exts   Send additional extensions to advertise support for")
+    print("                stronger primes and signatures")
+    print(" -M | --ems     enable support for Extended Master Secret")
     print(" --help         this message")
 
 
 def main():
-    """Verify correct DHE shared secret handling."""
+    """Verify correct DHE shared secret and key share handling."""
     host = "localhost"
     port = 4433
     num_limit = 1
@@ -63,9 +69,12 @@ def main():
     last_exp_tmp = None
     min_zeros = 1
     record_split = True
+    extra_exts = False
+    ems = False
 
     argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, "h:p:e:x:X:n:z", ["help", "min-zeros="])
+    opts, args = getopt.getopt(argv, "h:p:e:x:X:n:zM", ["help", "min-zeros=",
+        "extra-exts", "ems"])
     for opt, arg in opts:
         if opt == '-h':
             host = arg
@@ -76,6 +85,8 @@ def main():
         elif opt == '-x':
             expected_failures[arg] = None
             last_exp_tmp = str(arg)
+        elif opt == '-M' or opt == '--ems':
+            ems = True
         elif opt == '-X':
             if not last_exp_tmp:
                 raise ValueError("-x has to be specified before -X")
@@ -84,6 +95,8 @@ def main():
             num_limit = int(arg)
         elif opt == '-z':
             record_split = False
+        elif opt == '--extra-exts':
+            extra_exts = True
         elif opt == '--help':
             help_msg()
             sys.exit(0)
@@ -99,27 +112,45 @@ def main():
 
     collected_premaster_secrets = []
     collected_dh_primes = []
+    collected_client_key_shares = []
     variables_check = \
         {'premaster_secret':
          collected_premaster_secrets,
          'ServerKeyExchange.dh_p':
-         collected_dh_primes}
+         collected_dh_primes,
+         'ClientKeyExchange.dh_Yc':
+         collected_client_key_shares}
 
     conversations = {}
 
     conversation = Connect(host, port)
     node = conversation
+    exts = {}
+    exts[ExtensionType.renegotiation_info] = None
+    if ems:
+        exts[ExtensionType.extended_master_secret] = AutoEmptyExtension()
+    if extra_exts:
+        exts[ExtensionType.supported_groups] = SupportedGroupsExtension()\
+            .create([GroupName.ffdhe2048, GroupName.ffdhe3072,
+                     GroupName.ffdhe4096])
+        exts[ExtensionType.signature_algorithms_cert] = \
+            SignatureAlgorithmsCertExtension().create(SIG_ALL)
+        exts[ExtensionType.signature_algorithms] = \
+            SignatureAlgorithmsExtension().create(SIG_ALL)
     ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA]
     node = node.add_child(ClientHelloGenerator(
         ciphers,
-        extensions={ExtensionType.renegotiation_info:None}))
+        extensions=exts))
+    srv_ext = {ExtensionType.renegotiation_info:None}
+    if ems:
+        srv_ext[ExtensionType.extended_master_secret] = None
     node = node.add_child(ExpectServerHello(
-        extensions={ExtensionType.renegotiation_info:None}))
+        extensions=srv_ext))
     node = node.add_child(ExpectCertificate())
     node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(CopyVariables(variables_check))
     node = node.add_child(ExpectServerHelloDone())
     node = node.add_child(ClientKeyExchangeGenerator())
+    node = node.add_child(CopyVariables(variables_check))
     node = node.add_child(ChangeCipherSpecGenerator())
     node = node.add_child(FinishedGenerator())
     node = node.add_child(ExpectChangeCipherSpec())
@@ -139,22 +170,28 @@ def main():
             conversation = Connect(host, port,
                                    version=(0, 2) if ssl2 else (3, 0))
             node = conversation
-            ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+            if ssl2:
+                ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+                           CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+            else:
+                ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA]
             node = node.add_child(ClientHelloGenerator(ciphers,
+                                                       extensions=exts,
                                                        version=prot,
                                                        ssl2=ssl2))
             if prot > (3, 0):
                 ext = {ExtensionType.renegotiation_info: None}
+                if ems and not ssl2:
+                    ext[ExtensionType.extended_master_secret] = None
             else:
                 ext = None
             node = node.add_child(ExpectServerHello(extensions=ext,
                                                     version=prot))
             node = node.add_child(ExpectCertificate())
             node = node.add_child(ExpectServerKeyExchange())
-            node = node.add_child(CopyVariables(variables_check))
             node = node.add_child(ExpectServerHelloDone())
             node = node.add_child(ClientKeyExchangeGenerator())
+            node = node.add_child(CopyVariables(variables_check))
             node = node.add_child(ChangeCipherSpecGenerator())
             node = node.add_child(FinishedGenerator())
             node = node.add_child(ExpectChangeCipherSpec())
@@ -204,15 +241,18 @@ def main():
             continue
         i = 0
         break_loop = False
+        break_loop_clnt = False
         while True:
             # don't hog the memory unnecessairly
             collected_dh_primes[:] = []
             collected_premaster_secrets[:] = []
+            collected_client_key_shares[:] = []
 
             print("\"{1}\" repeat {0}...".format(i, c_name))
             i += 1
             if c_name == "sanity":
                 break_loop = True
+                break_loop_clnt = True
 
             runner = Runner(c_test)
 
@@ -246,25 +286,36 @@ def main():
                 if res:
                     good += 1
                     if numBytes(collected_dh_primes[-1]) \
-                            >= len(collected_premaster_secrets[-1]) + min_zeros:
-                        print("Got prime {0} bytes long and a premaster_secret "
-                              "{1} bytes long"
+                            >= len(collected_premaster_secrets[-1]) \
+                            + min_zeros:
+                        print("Got prime {0} bytes long and a premaster_secret"
+                              " {1} bytes long"
                               .format(numBytes(collected_dh_primes[-1]),
                                   len(collected_premaster_secrets[-1])))
                         break_loop = True
+                    if numBytes(collected_dh_primes[-1]) \
+                            >= numBytes(collected_client_key_shares[-1]) + \
+                            min_zeros:
+                        print("Got prime {0} bytes long and a client "
+                              "key share {1} bytes long"
+                              .format(
+                                  numBytes(collected_dh_primes[-1]),
+                                  numBytes(collected_client_key_shares[-1])))
+                        break_loop_clnt = True
                     print("OK\n")
                 else:
                     bad += 1
                     failed.append(c_name)
                     break
-            if break_loop:
+            if break_loop and break_loop_clnt:
                 break
 
 
     print('')
 
     print("Check if the calculated DHE pre_master_secret is truncated when")
-    print("there are zeros on most significant bytes")
+    print("there are zeros on most significant bytes, and that server")
+    print("accepts a client key share when it does the same")
 
     print("Test end")
     print(20 * '=')

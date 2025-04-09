@@ -39,12 +39,14 @@
           "comment": "tlslite-ng doesn't support renegotiation, only session id based resumption is supported"
          },
          {"name" : "test-atypical-padding.py" },
-         {"name" : "test-bleichenbacher-timing.py"},
-         {"name" : "test-bleichenbacher-timing.py",
-          "arguments" : ["--static-enc"]},
+         {"name" : "test-bleichenbacher-timing-marvin.py",
+          "arguments" : ["--srv-key", "tests/serverX509Key.pem",
+                         "--srv-cert", "tests/serverX509Cert.pem"]},
+         {"name" : "test-bleichenbacher-timing-pregenerate.py"},
          {"name" : "test-bleichenbacher-workaround.py",
           "arguments" : ["-t", "0.01"],
-          "comment" : "test over loopback so 10ms RTT is entirely reasonable"},
+          "comment" : "test over loopback, so 10ms RTT is entirely reasonable"},
+         {"name" : "test-ccs.py"},
          {"name" : "test-chacha20.py"},
          {"name" : "test-chacha20.py",
           "arguments" : ["--extra-exts",
@@ -65,6 +67,7 @@
           "arguments" : ["-d", "sanity"],
           "comment" : "non-sanity probes use specific ciphers, we cannot alter them with -d option"
          },
+         {"name" : "test-connection-abort.py"},
          {"name" : "test-conversation.py"},
          {"name" : "test-conversation.py",
           "arguments" : ["-d"]},
@@ -113,7 +116,7 @@
           "comment": "tlslite-ng doesn't support SSLv3 by default",
           "arguments": ["--min-ver", "TLSv1.0"]},
          {"name" : "test-export-ciphers-rejected.py",
-          "arguments": ["-d", "--min-ver", "TLSv1.0"]},
+          "arguments" : ["-d", "--min-ver", "TLSv1.0"]},
          {"name" : "test-extensions.py"},
          {"name" : "test-extended-master-secret-extension.py",
           "arguments" : ["-x", "extended master secret with renegotiation",
@@ -172,9 +175,7 @@
          {"name" : "test-invalid-server-name-extension-resumption.py",
           "comment" : "test requires support for multiple virtual hosts on server side",
           "exp_pass" : false},
-         {"name" : "test-invalid-session-id.py",
-          "comment" : "session id is not verified correctly by tlslite-ng",
-          "exp_pass" : false},
+         {"name" : "test-invalid-session-id.py"},
          {"name" : "test-invalid-version.py"},
          {"name" : "test-large-hello.py"},
          {"name" : "test-large-number-of-extensions.py"},
@@ -241,7 +242,14 @@
                          "-x", "Protocol (3, 0) in SSLv2 compatible ClientHello",
                          "-X", "protocol_version"],
           "comment" : "tlslite-ng does not support SSLv3 by default"},
+         {"name" : "test-session-ticket-resumption.py",
+          "comment" : "tlslite-ng doesn't implement renegotiation tlslite-ng#66.",
+          "arguments" : ["--no-new-ticket-on-resumption",
+                         "-x", "renegotiation with removal of session_ticket ext", "-X", "Alert(warning, no_renegotiation)",
+                         "-x", "session resumption with renegotiation", "-X", "Alert(warning, no_renegotiation)"]},
          {"name" : "test-sessionID-resumption.py"},
+         {"name" : "test-sessionID-resumption.py",
+          "arguments" : ["-d"]},
          {"name" : "test-sig-algs.py",
           "comment" : "server has just one certificate configured",
           "arguments" : ["-x", "rsa_pss_pss_sha256 only",
@@ -255,12 +263,14 @@
           "arguments" : ["--alerts", "0",
                          "--alert-level", "warning",
                          "--alert-description", "close_notify"],
-          "comment" : "tlslite-ng does not allow client to send warning alerts, thus the number of allowed alerts (-n) is 0"},
+          "comment" : "tlslite-ng does not allow client to send warning alerts, thus the number of allowed alerts (--alerts) is 0"
+         },
          {"name" : "test-ssl-death-alert.py",
           "arguments" : ["-d", "--alerts", "0",
                          "--alert-level", "warning",
                          "--alert-description", "close_notify"],
-          "comment" : "tlslite-ng does not allow client to send warning alerts, thus the number of allowed alerts (-n) is 0"},
+          "comment" : "tlslite-ng does not allow client to send warning alerts, thus the number of allowed alerts (--alerts) is 0"
+         },
          {"name" : "test-sslv2-connection.py"},
          {"name" : "test-sslv2-force-cipher-3des.py"},
          {"name" : "test-sslv2-force-cipher-non3des.py"},
@@ -272,6 +282,7 @@
          {"name" : "test-tls13-0rtt-garbage.py",
           "arguments" : ["--cookie"]},
          {"name" : "test-tls13-ccs.py"},
+         {"name" : "test-tls13-connection-abort.py"},
          {"name" : "test-tls13-conversation.py"},
          {"name" : "test-tls13-count-tickets.py",
           "arguments" : ["-t", "2"]},
@@ -292,8 +303,7 @@
           "arguments" : ["-e", "1/4 fragmented keyupdate msg, appdata between",
                          "-e", "2/3 fragmented keyupdate msg, appdata between",
                          "-e", "3/2 fragmented keyupdate msg, appdata between",
-                         "-e", "4/1 fragmented keyupdate msg, appdata between"]
-         },
+                         "-e", "4/1 fragmented keyupdate msg, appdata between"]},
          {"name" : "test-tls13-keyupdate-from-server.py"},
          {"name" : "test-tls13-large-number-of-extensions.py",
           "arguments" : ["--exc", "9",
@@ -315,8 +325,8 @@
                          "-x", "CH and multiple CCS Messages in one TCP packet",
                          "-X", "Timeout",
                          "-x", "multiple CCS Messages in one TLS record",
-                         "-X", "Timeout"],
-          "comment" : "tlslite actually allows multiple CCS messages"},
+                         "-X", "does not match received \"decode_error\""],
+          "comment" : "tlslite actually allows multiple CCS messages, but it's not forbidden in TLS 1.3"},
          {"name" : "test-tls13-nociphers.py"},
          {"name" : "test-tls13-obsolete-curves.py",
           "arguments" : ["--cookie"]},
@@ -324,7 +334,8 @@
          {"name" : "test-tls13-post-handshake-auth.py",
           "arguments" : ["-k", "tests/clientX509Key.pem",
                          "-c", "tests/clientX509Cert.pem",
-                         "--pha-as-reply"]
+                         "--pha-as-reply",
+                         "--query", "GET /secret HTTP/1.0\r\n\r\n"]
           },
          {"name" : "test-tls13-record-layer-limits.py"},
          {"name" : "test-tls13-record-padding.py"},
@@ -335,11 +346,12 @@
           "arguments" : ["--cookie"]},
          {"name" : "test-tls13-signature-algorithms.py"},
          {"name" : "test-tls13-symetric-ciphers.py"},
+         {"name" : "test-tls13-unencrypted-alert.py"},
          {"name" : "test-tls13-unrecognised-groups.py",
           "arguments": ["--cookie"]},
          {"name" : "test-tls13-version-negotiation.py"},
          {"name" : "test-tls13-version-negotiation.py",
-          "arguemnts": ["-d"]},
+           "arguments": ["-d"]},
          {"name" : "test-tls13-zero-content-type.py"},
          {"name" : "test-tls13-zero-length-data.py"},
          {"name" : "test-TLSv1_2-rejected-without-TLSv1_2.py"},
@@ -361,10 +373,17 @@
                            "-c", "tests/clientX509Cert.pem"],
      "tests" : [
          {"name": "test-certificate-malformed.py"},
-         {"name" : "test-certificate-request.py"},
+         {"name" : "test-certificate-request.py",
+          "arguments" : ["-T", "rsa_sign ecdsa_sign dss_sign",
+                         "-s",
+                         "ed25519 ed448 ecdsa_secp521r1_sha512 ecdsa_secp384r1_sha384 ecdsa_secp256r1_sha256 ecdsa_sha224 ecdsa_sha1 dsa_sha512 dsa_sha384 dsa_sha256 dsa_sha224 dsa_sha1 rsa_pss_rsae_sha512 rsa_pss_pss_sha512 rsa_pss_rsae_sha384 rsa_pss_pss_sha384 rsa_pss_rsae_sha256 rsa_pss_pss_sha256 rsa_pkcs1_sha512 rsa_pkcs1_sha384 rsa_pkcs1_sha256 rsa_pkcs1_sha224 rsa_pkcs1_sha1"]
+          },
          {"name" : "test-certificate-request.py",
           "arguments" : ["-k", "tests/clientRSAPSSKey.pem",
-                         "-c", "tests/clientRSAPSSCert.pem"]
+                         "-c", "tests/clientRSAPSSCert.pem",
+                         "-T", "rsa_sign ecdsa_sign dss_sign",
+                         "-s",
+                         "ed25519 ed448 ecdsa_secp521r1_sha512 ecdsa_secp384r1_sha384 ecdsa_secp256r1_sha256 ecdsa_sha224 ecdsa_sha1 dsa_sha512 dsa_sha384 dsa_sha256 dsa_sha224 dsa_sha1 rsa_pss_rsae_sha512 rsa_pss_pss_sha512 rsa_pss_rsae_sha384 rsa_pss_pss_sha384 rsa_pss_rsae_sha256 rsa_pss_pss_sha256 rsa_pkcs1_sha512 rsa_pkcs1_sha384 rsa_pkcs1_sha256 rsa_pkcs1_sha224 rsa_pkcs1_sha1"]
           },
          {"name" : "test-certificate-verify-malformed-sig.py"},
          {"name" : "test-certificate-verify-malformed-sig.py",
@@ -387,12 +406,16 @@
                          "-c", "tests/serverEd448Cert.pem"]
           },
          {"name" : "test-rsa-pss-sigs-on-certificate-verify.py",
-          "arguments" : ["--illegpar"]
+          "arguments" : ["--illegpar",
+                         "-s",
+                         "ed25519 ed448 ecdsa_secp521r1_sha512 ecdsa_secp384r1_sha384 ecdsa_secp256r1_sha256 ecdsa_sha224 ecdsa_sha1 dsa_sha512 dsa_sha384 dsa_sha256 dsa_sha224 dsa_sha1 rsa_pss_rsae_sha512 rsa_pss_pss_sha512 rsa_pss_rsae_sha384 rsa_pss_pss_sha384 rsa_pss_rsae_sha256 rsa_pss_pss_sha256 rsa_pkcs1_sha512 rsa_pkcs1_sha384 rsa_pkcs1_sha256 rsa_pkcs1_sha224 rsa_pkcs1_sha1"]
           },
          {"name" : "test-rsa-pss-sigs-on-certificate-verify.py",
           "arguments" : ["-k", "tests/clientRSAPSSKey.pem",
                          "-c", "tests/clientRSAPSSCert.pem",
-                         "--illegpar"]
+                         "--illegpar",
+                         "-s",
+                         "ed25519 ed448 ecdsa_secp521r1_sha512 ecdsa_secp384r1_sha384 ecdsa_secp256r1_sha256 ecdsa_sha224 ecdsa_sha1 dsa_sha512 dsa_sha384 dsa_sha256 dsa_sha224 dsa_sha1 rsa_pss_rsae_sha512 rsa_pss_pss_sha512 rsa_pss_rsae_sha384 rsa_pss_pss_sha384 rsa_pss_rsae_sha256 rsa_pss_pss_sha256 rsa_pkcs1_sha512 rsa_pkcs1_sha384 rsa_pkcs1_sha256 rsa_pkcs1_sha224 rsa_pkcs1_sha1"]
           },
          {"name" : "test-extended-master-secret-extension-with-client-cert.py"},
          {"name" : "test-rsa-sigs-on-certificate-verify.py"},
@@ -400,9 +423,9 @@
           "arguments" : ["-d"]},
          {"name" : "test-tls13-certificate-request.py"},
          {"name" : "test-tls13-certificate-request.py",
-          "arguments" : ["-E", "status_request:CH:CT key_share:SH supported_versions:SH"],
-          "comment": "Test with additional extensions"
-         },
+          "comment": "Test with additional extensions",
+          "arguments" : ["-E", "status_request:CH:CT key_share:SH supported_versions:SH"]
+          },
          {"name" : "test-tls13-certificate-verify.py",
           "arguments" : ["-k", "tests/clientRSAPSSKey.pem",
                          "-c", "tests/clientRSAPSSCert.pem"]
@@ -480,7 +503,7 @@
          "arguments" : ["-x", "rsa_pss_rsae_sha256 only",
                         "-x", "rsa_pss_rsae_sha384 only",
                         "-x", "rsa_pss_rsae_sha512 only"]
-	}
+        }
      ]
     },
     {"server_command": ["{python}", "-u", "{command}", "server",
@@ -536,8 +559,12 @@
      ]
     },
     {"server_command": ["{python}", "-u", "{command}", "server",
-                "-k", "tests/serverECKey.pem",
                 "-c", "tests/serverECCert.pem",
+                "-k", "tests/serverECKey.pem",
+                "-c", "tests/serverP384ECCert.pem",
+                "-k", "tests/serverP384ECKey.pem",
+                "-c", "tests/serverP521ECCert.pem",
+                "-k", "tests/serverP521ECKey.pem",
                 "--cipherlist", "chacha20-poly1305",
                 "--cipherlist", "aes256gcm",
                 "--cipherlist", "aes128gcm",
@@ -576,7 +603,43 @@
           "comments": "use ECDSA signatures instead of RSA",
           "arguments": ["--ecdsa"]},
          {"name": "test-tls13-conversation.py"},
-         {"name": "test-tls13-ecdsa-support.py"}
+         {"name": "test-tls13-ecdsa-support.py"},
+         {"name" : "test-tls13-minerva.py",
+          "arguments": ["-i", "lo",
+                        "--curve", "P-256",
+                        "--repeat", "100",
+                        "--priv-key", "tests/serverECKey.pem",
+                        "--status-newline"]}
+     ]
+    },
+    {"server_command": ["{python}", "-u", "{command}", "server",
+                "--echo",
+                "-k", "tests/serverX509Key.pem",
+                "-c", "tests/serverX509Cert.pem",
+                "localhost:4434"],
+     "server_hostname": "localhost",
+     "server_port": 4434,
+     "environment": {"PYTHONPATH": "."},
+     "tests" : [
+         {"name": "test-lengths.py",
+          "arguments": ["-p", "4434", "-n", "0"]},
+         {"name": "test-tls13-lengths.py",
+          "arguments": ["-p", "4434", "-n", "0"]}
+     ]
+    },
+    {"server_command": ["{python}", "-u", "{command}", "server",
+                "--reqcert",
+                "-k", "tests/serverDSAKey.pem",
+                "-c", "tests/serverDSACert.pem",
+                "localhost:4433"],
+     "server_hostname": "localhost",
+     "server_port": 4433,
+     "environment": {"PYTHONPATH": "."},
+     "tests" : [
+         {"name": "test-dsa-in-certificate-verify.py",
+          "arguments": ["-d",
+                        "-k", "tests/clientDSAKey.pem",
+                        "-c", "tests/clientDSACert.pem"]}
      ]
     }
 ]

@@ -298,7 +298,7 @@ class HandshakeSettings(object):
         (bytearray, can be empty for TLS 1.2 and earlier), second element is
         the binary secret (bytearray), third is an optional parameter
         specifying the PRF hash to be used in TLS 1.3 (``sha256`` or
-        ``sha384``)
+        ``sha384``, with ``sha256`` being the default)
 
     :vartype ticketKeys: list(bytearray)
     :ivar ticketKeys: keys to be used for encrypting and decrypting session
@@ -320,6 +320,11 @@ class HandshakeSettings(object):
     :vartype ticketLifetime: int
     :ivar ticketLifetime: maximum allowed lifetime of ticket encryption key,
         in seconds. 1 day by default
+
+    :vartype ticket_count: int
+    :ivar ticket_count: number of tickets the server will send to the client
+        after establishing the connection in TLS 1.3. If a positive integer,
+        it enabled support for ticket based resumption in TLS 1.2 and earlier.
 
     :vartype psk_modes: list(str)
     :ivar psk_modes: acceptable modes for the PSK key exchange in TLS 1.3

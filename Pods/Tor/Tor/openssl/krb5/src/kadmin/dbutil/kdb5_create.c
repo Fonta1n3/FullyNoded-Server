@@ -139,9 +139,8 @@ extern int exit_status;
 extern kadm5_config_params global_params;
 extern krb5_context util_context;
 
-void kdb5_create(argc, argv)
-    int argc;
-    char *argv[];
+void
+kdb5_create(int argc, char *argv[])
 {
     int optchar;
 
@@ -152,7 +151,6 @@ void kdb5_create(argc, argv)
     krb5_data pwd, seed;
     kdb_log_context *log_ctx;
     krb5_kvno mkey_kvno;
-    int strong_random = 1;
 
     while ((optchar = getopt(argc, argv, "sW")) != -1) {
         switch(optchar) {
@@ -160,7 +158,7 @@ void kdb5_create(argc, argv)
             do_stash++;
             break;
         case 'W':
-            strong_random = 0;
+            /* Ignore (deprecated weak random option). */
             break;
         case '?':
         default:
@@ -177,13 +175,6 @@ void kdb5_create(argc, argv)
     rblock.kslist = global_params.keysalts;
 
     log_ctx = util_context->kdblog_context;
-
-    printf(_("Loading random data\n"));
-    retval = krb5_c_random_os_entropy (util_context, strong_random, NULL);
-    if (retval) {
-        com_err(progname, retval, _("Loading random data"));
-        exit_status++; return;
-    }
 
     /* assemble & parse the master key name */
 
@@ -345,9 +336,7 @@ void kdb5_create(argc, argv)
 }
 
 static krb5_error_code
-tgt_keysalt_iterate(ksent, ptr)
-    krb5_key_salt_tuple *ksent;
-    krb5_pointer        ptr;
+tgt_keysalt_iterate(krb5_key_salt_tuple *ksent, krb5_pointer ptr)
 {
     krb5_context        context;
     krb5_error_code     kret;
@@ -386,14 +375,11 @@ tgt_keysalt_iterate(ksent, ptr)
 }
 
 static krb5_error_code
-add_principal(context, princ, op, pblock)
-    krb5_context context;
-    krb5_principal princ;
-    enum ap_op op;
-    struct realm_info *pblock;
+add_principal(krb5_context context, krb5_principal princ, enum ap_op op,
+              struct realm_info *pblock)
 {
     krb5_error_code       retval;
-    krb5_db_entry         *entry;
+    krb5_db_entry         *entry = NULL;
     krb5_kvno             mkey_kvno;
     krb5_timestamp        now;
     struct iterate_args   iargs;
@@ -410,20 +396,20 @@ add_principal(context, princ, op, pblock)
     entry->expiration = pblock->expiration;
 
     if ((retval = krb5_copy_principal(context, princ, &entry->princ)))
-        goto error_out;
+        goto cleanup;
 
     if ((retval = krb5_timeofday(context, &now)))
-        goto error_out;
+        goto cleanup;
 
     if ((retval = krb5_dbe_update_mod_princ_data(context, entry,
                                                  now, &db_create_princ)))
-        goto error_out;
+        goto cleanup;
 
     switch (op) {
     case MASTER_KEY:
         if ((entry->key_data=(krb5_key_data*)malloc(sizeof(krb5_key_data)))
             == NULL)
-            goto error_out;
+            goto cleanup;
         memset(entry->key_data, 0, sizeof(krb5_key_data));
         entry->n_key_data = 1;
 
@@ -435,7 +421,7 @@ add_principal(context, princ, op, pblock)
         if ((retval = krb5_dbe_encrypt_key_data(context, pblock->key,
                                                 &master_keyblock, NULL,
                                                 mkey_kvno, entry->key_data)))
-            return retval;
+            goto cleanup;
         /*
          * There should always be at least one "active" mkey so creating the
          * KRB5_TL_ACTKVNO entry now so the initial mkey is active.
@@ -445,11 +431,11 @@ add_principal(context, princ, op, pblock)
         /* earliest possible time in case system clock is set back */
         actkvno.act_time = 0;
         if ((retval = krb5_dbe_update_actkvno(context, entry, &actkvno)))
-            return retval;
+            goto cleanup;
 
         /* so getprinc shows the right kvno */
         if ((retval = krb5_dbe_update_mkvno(context, entry, mkey_kvno)))
-            return retval;
+            goto cleanup;
 
         break;
     case TGT_KEY:
@@ -464,10 +450,11 @@ add_principal(context, princ, op, pblock)
                                            1,
                                            tgt_keysalt_iterate,
                                            (krb5_pointer) &iargs)))
-            return retval;
+            goto cleanup;
         break;
     case NULL_KEY:
-        return EOPNOTSUPP;
+        retval = EOPNOTSUPP;
+        goto cleanup;
     default:
         break;
     }
@@ -479,7 +466,7 @@ add_principal(context, princ, op, pblock)
 
     retval = krb5_db_put_principal(context, entry);
 
-error_out:
+cleanup:
     krb5_db_free_principal(context, entry);
     return retval;
 }

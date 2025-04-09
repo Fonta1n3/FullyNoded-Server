@@ -28,6 +28,13 @@ from .curves import (
     SECP160r1,
     Ed25519,
     Ed448,
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
 )
 from .ecdh import (
     ECDH,
@@ -37,13 +44,9 @@ from .ecdh import (
     InvalidSharedSecretError,
 )
 from .der import UnexpectedDER
+from . import _version
 
 # This code comes from http://github.com/tlsfuzzer/python-ecdsa
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
-del get_versions
-
 __all__ = [
     "curves",
     "der",
@@ -88,5 +91,14 @@ _hush_pyflakes = [
     Ed25519,
     Ed448,
     six.b(""),
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
 ]
 del _hush_pyflakes
+
+__version__ = _version.get_versions()["version"]

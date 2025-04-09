@@ -30,7 +30,7 @@ from tlslite.extensions import KeyShareEntry, ClientKeyShareExtension, \
 from tlsfuzzer.helpers import key_share_gen, SIG_ALL, key_share_ext_gen
 
 
-version = 6
+version = 7
 
 
 def help_msg():
@@ -341,7 +341,7 @@ def main():
         ext[ExtensionType.supported_versions] = SupportedVersionsExtension()\
             .create([TLS_1_3_DRAFT, (3, 3)])
         ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
+            .create(both_groups)
         sig_algs = [SignatureScheme.rsa_pss_rsae_sha256,
                     SignatureScheme.rsa_pss_pss_sha256,
                     SignatureScheme.ecdsa_secp256r1_sha256]

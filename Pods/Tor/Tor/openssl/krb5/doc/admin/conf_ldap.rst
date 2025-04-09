@@ -6,7 +6,7 @@ Configuring Kerberos with OpenLDAP back-end
 
  1. Make sure the LDAP server is using local authentication
     (``ldapi://``) or TLS (``ldaps``).  See
-    https://www.openldap.org/doc/admin24/tls.html for instructions on
+    https://www.openldap.org/doc/admin/tls.html for instructions on
     configuring TLS support in OpenLDAP.
 
  2. Add the Kerberos schema file to the LDAP Server using the OpenLDAP
@@ -87,8 +87,7 @@ Configuring Kerberos with OpenLDAP back-end
        ldap_service_password_file
        ldap_servers
 
- 8. Create the realm using :ref:`kdb5_ldap_util(8)` (see
-    :ref:`ldap_create_realm`)::
+ 8. Create the realm using :ref:`kdb5_ldap_util(8)`:
 
        kdb5_ldap_util create -subtrees ou=users,dc=example,dc=com -s
 
@@ -109,7 +108,7 @@ Configuring Kerberos with OpenLDAP back-end
 
  9. Add an ``eq`` index for ``krbPrincipalName`` to speed up principal
     lookup operations.  See
-    https://www.openldap.org/doc/admin24/tuning.html#Indexes for
+    https://www.openldap.org/doc/admin/tuning.html#Indexes for
     details.
 
 With the LDAP back end it is possible to provide aliases for principal

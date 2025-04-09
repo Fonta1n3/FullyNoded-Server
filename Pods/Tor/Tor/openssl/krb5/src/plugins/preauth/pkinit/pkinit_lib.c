@@ -33,9 +33,6 @@
 
 #define FAKECERT
 
-const krb5_data dh_oid = { 0, 7, "\x2A\x86\x48\xce\x3e\x02\x01" };
-
-
 krb5_error_code
 pkinit_init_req_opts(pkinit_req_opts **reqopts)
 {
@@ -50,7 +47,6 @@ pkinit_init_req_opts(pkinit_req_opts **reqopts)
     opts->require_eku = 1;
     opts->accept_secondary_eku = 0;
     opts->allow_upn = 0;
-    opts->dh_or_rsa = DH_PROTOCOL;
     opts->require_crl_checking = 0;
     opts->dh_size = PKINIT_DEFAULT_DH_MIN_BITS;
 
@@ -79,7 +75,6 @@ pkinit_init_plg_opts(pkinit_plg_opts **plgopts)
 
     opts->require_eku = 1;
     opts->accept_secondary_eku = 0;
-    opts->dh_or_rsa = DH_PROTOCOL;
     opts->allow_upn = 0;
     opts->require_crl_checking = 0;
     opts->require_freshness = 0;
@@ -123,12 +118,7 @@ void
 free_krb5_auth_pack(krb5_auth_pack **in)
 {
     if ((*in) == NULL) return;
-    if ((*in)->clientPublicValue != NULL) {
-        free((*in)->clientPublicValue->algorithm.algorithm.data);
-        free((*in)->clientPublicValue->algorithm.parameters.data);
-        free((*in)->clientPublicValue->subjectPublicKey.data);
-        free((*in)->clientPublicValue);
-    }
+    krb5_free_data_contents(NULL, &(*in)->clientPublicValue);
     free((*in)->pkAuthenticator.paChecksum.contents);
     krb5_free_data(NULL, (*in)->pkAuthenticator.freshnessToken);
     if ((*in)->supportedCMSTypes != NULL)
@@ -199,15 +189,6 @@ free_krb5_algorithm_identifiers(krb5_algorithm_identifier ***in)
 }
 
 void
-free_krb5_subject_pk_info(krb5_subject_pk_info **in)
-{
-    if ((*in) == NULL) return;
-    free((*in)->algorithm.parameters.data);
-    free((*in)->subjectPublicKey.data);
-    free(*in);
-}
-
-void
 free_krb5_kdc_dh_key_info(krb5_kdc_dh_key_info **in)
 {
     if (*in == NULL) return;
@@ -250,17 +231,6 @@ init_krb5_pa_pk_as_rep(krb5_pa_pk_as_rep **in)
     (*in)->u.encKeyPack.length = 0;
     (*in)->u.encKeyPack.data = NULL;
     (*in)->u.dh_Info.kdfID = NULL;
-}
-
-void
-init_krb5_subject_pk_info(krb5_subject_pk_info **in)
-{
-    (*in) = malloc(sizeof(krb5_subject_pk_info));
-    if ((*in) == NULL) return;
-    (*in)->algorithm.parameters.data = NULL;
-    (*in)->algorithm.parameters.length = 0;
-    (*in)->subjectPublicKey.data = NULL;
-    (*in)->subjectPublicKey.length = 0;
 }
 
 krb5_error_code

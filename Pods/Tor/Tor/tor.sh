@@ -14,6 +14,7 @@ PATH=$PATH:/usr/local/bin:/usr/local/opt/gettext/bin:/usr/local/opt/automake/bin
 
 ## Apply patches:
 git apply --quiet ../mmap-cache.patch
+git apply --quiet ../free-and-null.patch
 
 # If there is a space in BUILT_PRODUCTS_DIR, make a symlink without a space and use that.
 if [[ "${BUILT_PRODUCTS_DIR}" =~ \  ]]; then
@@ -36,8 +37,6 @@ touch "${PSEUDO_SYS_INCLUDE_DIR}/sys/ptrace.h"
 
 if [[ "${BITCODE_GENERATION_MODE}" = "bitcode" ]]; then
     BITCODE_CFLAGS="-fembed-bitcode"
-elif [[ "${BITCODE_GENERATION_MODE}" = "marker" ]]; then
-    BITCODE_CFLAGS="-fembed-bitcode-marker"
 fi
 
 if [[ "${CONFIGURATION}" = "Debug" ]]; then

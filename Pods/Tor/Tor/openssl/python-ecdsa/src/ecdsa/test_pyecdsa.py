@@ -1,28 +1,33 @@
-from __future__ import with_statement, division
+from __future__ import with_statement, division, print_function
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 import os
-import sys
 import shutil
 import subprocess
 import pytest
+import sys
 from binascii import hexlify, unhexlify
-from hashlib import sha1, sha256, sha384, sha512
 import hashlib
 from functools import partial
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as st
 
-from six import b, print_, binary_type
+from six import binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError, MalformedPointError, BadDigestError
 from . import util
-from .util import sigencode_der, sigencode_strings
-from .util import sigdecode_der, sigdecode_strings
+from .util import (
+    sigencode_der,
+    sigencode_strings,
+    sigencode_strings_canonize,
+    sigencode_string_canonize,
+    sigencode_der_canonize,
+)
+from .util import sigdecode_der, sigdecode_strings, sigdecode_string
 from .util import number_to_string, encoded_oid_ecPublicKey, MalformedSignature
 from .curves import Curve, UnknownCurveError
 from .curves import (
@@ -43,6 +48,15 @@ from .curves import (
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
+    Ed25519,
+    Ed448,
     curves,
 )
 from .ecdsa import (
@@ -59,6 +73,13 @@ from . import ecdsa
 
 class SubprocessError(Exception):
     pass
+
+
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SETTINGS["max_examples"] = 2
 
 
 def run_openssl(cmd):
@@ -82,24 +103,29 @@ class ECDSA(unittest.TestCase):
         priv = SigningKey.generate()
         pub = priv.get_verifying_key()
 
-        data = b("blahblah")
+        data = b"blahblah"
         sig = priv.sign(data)
 
         self.assertTrue(pub.verify(sig, data))
-        self.assertRaises(BadSignatureError, pub.verify, sig, data + b("bad"))
+        self.assertRaises(BadSignatureError, pub.verify, sig, data + b"bad")
 
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.assertTrue(pub2.verify(sig, data))
 
     def test_deterministic(self):
-        data = b("blahblah")
+        data = b"blahblah"
         secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16)
 
-        priv = SigningKey.from_secret_exponent(secexp, SECP256k1, sha256)
+        priv = SigningKey.from_secret_exponent(
+            secexp, SECP256k1, hashlib.sha256
+        )
         pub = priv.get_verifying_key()
 
         k = rfc6979.generate_k(
-            SECP256k1.generator.order(), secexp, sha256, sha256(data).digest()
+            SECP256k1.generator.order(),
+            secexp,
+            hashlib.sha256,
+            hashlib.sha256(data).digest(),
         )
 
         sig1 = priv.sign(data, k=k)
@@ -108,7 +134,7 @@ class ECDSA(unittest.TestCase):
         sig2 = priv.sign(data, k=k)
         self.assertTrue(pub.verify(sig2, data))
 
-        sig3 = priv.sign_deterministic(data, sha256)
+        sig3 = priv.sign_deterministic(data, hashlib.sha256)
         self.assertTrue(pub.verify(sig3, data))
 
         self.assertEqual(sig1, sig2)
@@ -119,37 +145,16 @@ class ECDSA(unittest.TestCase):
         self.assertRaises(TypeError, SigningKey)
         self.assertRaises(TypeError, VerifyingKey)
 
-    def test_lengths(self):
+    def test_lengths_default(self):
         default = NIST192p
         priv = SigningKey.generate()
         pub = priv.get_verifying_key()
         self.assertEqual(len(pub.to_string()), default.verifying_key_length)
-        sig = priv.sign(b("data"))
+        sig = priv.sign(b"data")
         self.assertEqual(len(sig), default.signature_length)
-        for curve in (
-            NIST192p,
-            NIST224p,
-            NIST256p,
-            NIST384p,
-            NIST521p,
-            BRAINPOOLP160r1,
-            BRAINPOOLP192r1,
-            BRAINPOOLP224r1,
-            BRAINPOOLP256r1,
-            BRAINPOOLP320r1,
-            BRAINPOOLP384r1,
-            BRAINPOOLP512r1,
-        ):
-            priv = SigningKey.generate(curve=curve)
-            pub1 = priv.get_verifying_key()
-            pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
-            self.assertEqual(pub1.to_string(), pub2.to_string())
-            self.assertEqual(len(pub1.to_string()), curve.verifying_key_length)
-            sig = priv.sign(b("data"))
-            self.assertEqual(len(sig), curve.signature_length)
 
     def test_serialize(self):
-        seed = b("secret")
+        seed = b"secret"
         curve = NIST192p
         secexp1 = util.randrange_from_seed__trytryagain(seed, curve.order)
         secexp2 = util.randrange_from_seed__trytryagain(seed, curve.order)
@@ -162,7 +167,7 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(priv1.to_pem(), priv2.to_pem())
         pub1 = priv1.get_verifying_key()
         pub2 = priv2.get_verifying_key()
-        data = b("data")
+        data = b"data"
         sig1 = priv1.sign(data)
         sig2 = priv2.sign(data)
         self.assertTrue(pub1.verify(sig1, data))
@@ -172,7 +177,7 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(hexlify(pub1.to_string()), hexlify(pub2.to_string()))
 
     def test_nonrandom(self):
-        s = b("all the entropy in the entire world, compressed into one line")
+        s = b"all the entropy in the entire world, compressed into one line"
 
         def not_much_entropy(numbytes):
             return s[:numbytes]
@@ -188,8 +193,8 @@ class ECDSA(unittest.TestCase):
         # want to do this with keys you care about, because the secrecy of
         # the private key depends upon using different random numbers for
         # each signature
-        sig1 = priv1.sign(b("data"), entropy=not_much_entropy)
-        sig2 = priv2.sign(b("data"), entropy=not_much_entropy)
+        sig1 = priv1.sign(b"data", entropy=not_much_entropy)
+        sig2 = priv2.sign(b"data", entropy=not_much_entropy)
         self.assertEqual(hexlify(sig1), hexlify(sig2))
 
     def assertTruePrivkeysEqual(self, priv1, priv2):
@@ -202,7 +207,7 @@ class ECDSA(unittest.TestCase):
         )
 
     def test_privkey_creation(self):
-        s = b("all the entropy in the entire world, compressed into one line")
+        s = b"all the entropy in the entire world, compressed into one line"
 
         def not_much_entropy(numbytes):
             return s[:numbytes]
@@ -237,8 +242,8 @@ class ECDSA(unittest.TestCase):
 
         s1 = priv1.to_pem()
         self.assertEqual(type(s1), binary_type)
-        self.assertTrue(s1.startswith(b("-----BEGIN EC PRIVATE KEY-----")))
-        self.assertTrue(s1.strip().endswith(b("-----END EC PRIVATE KEY-----")))
+        self.assertTrue(s1.startswith(b"-----BEGIN EC PRIVATE KEY-----"))
+        self.assertTrue(s1.strip().endswith(b"-----END EC PRIVATE KEY-----"))
         priv2 = SigningKey.from_pem(s1)
         self.assertTruePrivkeysEqual(priv1, priv2)
 
@@ -250,8 +255,8 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate(curve=NIST256p)
         s1 = priv1.to_pem()
         self.assertEqual(type(s1), binary_type)
-        self.assertTrue(s1.startswith(b("-----BEGIN EC PRIVATE KEY-----")))
-        self.assertTrue(s1.strip().endswith(b("-----END EC PRIVATE KEY-----")))
+        self.assertTrue(s1.startswith(b"-----BEGIN EC PRIVATE KEY-----"))
+        self.assertTrue(s1.strip().endswith(b"-----END EC PRIVATE KEY-----"))
         priv2 = SigningKey.from_pem(s1)
         self.assertTruePrivkeysEqual(priv1, priv2)
 
@@ -264,8 +269,8 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate(curve=BRAINPOOLP512r1)
         s1 = priv1.to_pem()
         self.assertEqual(type(s1), binary_type)
-        self.assertTrue(s1.startswith(b("-----BEGIN EC PRIVATE KEY-----")))
-        self.assertTrue(s1.strip().endswith(b("-----END EC PRIVATE KEY-----")))
+        self.assertTrue(s1.startswith(b"-----BEGIN EC PRIVATE KEY-----"))
+        self.assertTrue(s1.strip().endswith(b"-----END EC PRIVATE KEY-----"))
         priv2 = SigningKey.from_pem(s1)
         self.assertTruePrivkeysEqual(priv1, priv2)
 
@@ -302,7 +307,7 @@ class ECDSA(unittest.TestCase):
         self.assertTruePubkeysEqual(pub1, pub2)
 
         self.assertRaises(
-            der.UnexpectedDER, VerifyingKey.from_der, pub1_der + b("junk")
+            der.UnexpectedDER, VerifyingKey.from_der, pub1_der + b"junk"
         )
         badpub = VerifyingKey.from_der(pub1_der)
 
@@ -326,10 +331,8 @@ class ECDSA(unittest.TestCase):
 
         pem = pub1.to_pem()
         self.assertEqual(type(pem), binary_type)
-        self.assertTrue(pem.startswith(b("-----BEGIN PUBLIC KEY-----")), pem)
-        self.assertTrue(
-            pem.strip().endswith(b("-----END PUBLIC KEY-----")), pem
-        )
+        self.assertTrue(pem.startswith(b"-----BEGIN PUBLIC KEY-----"), pem)
+        self.assertTrue(pem.strip().endswith(b"-----END PUBLIC KEY-----"), pem)
         pub2 = VerifyingKey.from_pem(pem)
         self.assertTruePubkeysEqual(pub1, pub2)
 
@@ -362,8 +365,8 @@ class ECDSA(unittest.TestCase):
 
     def test_vk_from_der_garbage_after_curve_oid(self):
         type_oid_der = encoded_oid_ecPublicKey
-        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b(
-            "garbage"
+        curve_oid_der = (
+            der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b"garbage"
         )
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
         point_der = der.encode_bitstring(b"\x00\xff", None)
@@ -386,7 +389,7 @@ class ECDSA(unittest.TestCase):
         type_oid_der = encoded_oid_ecPublicKey
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
-        point_der = der.encode_bitstring(b"\x00\xff", None) + b("garbage")
+        point_der = der.encode_bitstring(b"\x00\xff", None) + b"garbage"
         to_decode = der.encode_sequence(enc_type_der, point_der)
 
         with self.assertRaises(der.UnexpectedDER):
@@ -425,7 +428,7 @@ class ECDSA(unittest.TestCase):
     def test_signature_strings(self):
         priv1 = SigningKey.generate()
         pub1 = priv1.get_verifying_key()
-        data = b("data")
+        data = b"data"
 
         sig = priv1.sign(data)
         self.assertEqual(type(sig), binary_type)
@@ -445,24 +448,96 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(type(sig_der), binary_type)
         self.assertTrue(pub1.verify(sig_der, data, sigdecode=sigdecode_der))
 
+    def test_sigencode_string_canonize_no_change(self):
+        r = 12
+        s = 400
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_string(
+            sigencode_string_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_string_canonize(self):
+        r = 12
+        order = SECP112r1.order
+        s = order - 10
+
+        new_r, new_s = sigdecode_string(
+            sigencode_string_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
+    def test_sigencode_strings_canonize_no_change(self):
+        r = 12
+        s = 400
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_strings(
+            sigencode_strings_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_strings_canonize(self):
+        r = 12
+        order = SECP112r1.order
+        s = order - 10
+
+        new_r, new_s = sigdecode_strings(
+            sigencode_strings_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
+    def test_sigencode_der_canonize_no_change(self):
+        r = 13
+        s = 200
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_der(
+            sigencode_der_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_der_canonize(self):
+        r = 13
+        order = SECP112r1.order
+        s = order - 14
+
+        new_r, new_s = sigdecode_der(
+            sigencode_der_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
     def test_sig_decode_strings_with_invalid_count(self):
         with self.assertRaises(MalformedSignature):
-            sigdecode_strings([b("one"), b("two"), b("three")], 0xFF)
+            sigdecode_strings([b"one", b"two", b"three"], 0xFF)
 
     def test_sig_decode_strings_with_wrong_r_len(self):
         with self.assertRaises(MalformedSignature):
-            sigdecode_strings([b("one"), b("two")], 0xFF)
+            sigdecode_strings([b"one", b"two"], 0xFF)
 
     def test_sig_decode_strings_with_wrong_s_len(self):
         with self.assertRaises(MalformedSignature):
-            sigdecode_strings([b("\xa0"), b("\xb0\xff")], 0xFF)
+            sigdecode_strings([b"\xa0", b"\xb0\xff"], 0xFF)
 
     def test_verify_with_too_long_input(self):
         sk = SigningKey.generate()
         vk = sk.verifying_key
 
         with self.assertRaises(BadDigestError):
-            vk.verify_digest(None, b("\x00") * 128)
+            vk.verify_digest(None, b"\x00" * 128)
 
     def test_sk_from_secret_exponent_with_wrong_sec_exponent(self):
         with self.assertRaises(MalformedPointError):
@@ -470,11 +545,11 @@ class ECDSA(unittest.TestCase):
 
     def test_sk_from_string_with_wrong_len_string(self):
         with self.assertRaises(MalformedPointError):
-            SigningKey.from_string(b("\x01"))
+            SigningKey.from_string(b"\x01")
 
     def test_sk_from_der_with_junk_after_sequence(self):
         ver_der = der.encode_integer(1)
-        to_decode = der.encode_sequence(ver_der) + b("garbage")
+        to_decode = der.encode_sequence(ver_der) + b"garbage"
 
         with self.assertRaises(der.UnexpectedDER):
             SigningKey.from_der(to_decode)
@@ -488,7 +563,7 @@ class ECDSA(unittest.TestCase):
 
     def test_sk_from_der_invalid_const_tag(self):
         ver_der = der.encode_integer(1)
-        privkey_der = der.encode_octet_string(b("\x00\xff"))
+        privkey_der = der.encode_octet_string(b"\x00\xff")
         curve_oid_der = der.encode_oid(*(1, 2, 3))
         const_der = der.encode_constructed(1, curve_oid_der)
         to_decode = der.encode_sequence(
@@ -500,8 +575,8 @@ class ECDSA(unittest.TestCase):
 
     def test_sk_from_der_garbage_after_privkey_oid(self):
         ver_der = der.encode_integer(1)
-        privkey_der = der.encode_octet_string(b("\x00\xff"))
-        curve_oid_der = der.encode_oid(*(1, 2, 3)) + b("garbage")
+        privkey_der = der.encode_octet_string(b"\x00\xff")
+        curve_oid_der = der.encode_oid(*(1, 2, 3)) + b"garbage"
         const_der = der.encode_constructed(0, curve_oid_der)
         to_decode = der.encode_sequence(
             ver_der, privkey_der, const_der, curve_oid_der
@@ -512,7 +587,7 @@ class ECDSA(unittest.TestCase):
 
     def test_sk_from_der_with_short_privkey(self):
         ver_der = der.encode_integer(1)
-        privkey_der = der.encode_octet_string(b("\x00\xff"))
+        privkey_der = der.encode_octet_string(b"\x00\xff")
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
         const_der = der.encode_constructed(0, curve_oid_der)
         to_decode = der.encode_sequence(
@@ -596,30 +671,32 @@ class ECDSA(unittest.TestCase):
         sk = SigningKey.from_secret_exponent(12)
 
         with self.assertRaises(BadDigestError):
-            sk.sign_digest(b("\xff") * 64)
+            sk.sign_digest(b"\xff" * 64)
 
     def test_hashfunc(self):
-        sk = SigningKey.generate(curve=NIST256p, hashfunc=sha256)
-        data = b("security level is 128 bits")
+        sk = SigningKey.generate(curve=NIST256p, hashfunc=hashlib.sha256)
+        data = b"security level is 128 bits"
         sig = sk.sign(data)
         vk = VerifyingKey.from_string(
-            sk.get_verifying_key().to_string(), curve=NIST256p, hashfunc=sha256
+            sk.get_verifying_key().to_string(),
+            curve=NIST256p,
+            hashfunc=hashlib.sha256,
         )
         self.assertTrue(vk.verify(sig, data))
 
         sk2 = SigningKey.generate(curve=NIST256p)
-        sig2 = sk2.sign(data, hashfunc=sha256)
+        sig2 = sk2.sign(data, hashfunc=hashlib.sha256)
         vk2 = VerifyingKey.from_string(
             sk2.get_verifying_key().to_string(),
             curve=NIST256p,
-            hashfunc=sha256,
+            hashfunc=hashlib.sha256,
         )
         self.assertTrue(vk2.verify(sig2, data))
 
         vk3 = VerifyingKey.from_string(
             sk.get_verifying_key().to_string(), curve=NIST256p
         )
-        self.assertTrue(vk3.verify(sig, data, hashfunc=sha256))
+        self.assertTrue(vk3.verify(sig, data, hashfunc=hashlib.sha256))
 
     def test_public_key_recovery(self):
         # Create keys
@@ -629,7 +706,7 @@ class ECDSA(unittest.TestCase):
         vk = sk.get_verifying_key()
 
         # Sign a message
-        data = b("blahblah")
+        data = b"blahblah"
         signature = sk.sign(data)
 
         # Recover verifying keys
@@ -658,16 +735,20 @@ class ECDSA(unittest.TestCase):
         # Create keys
         curve = BRAINPOOLP160r1
 
-        sk = SigningKey.generate(curve=curve, hashfunc=sha256)
+        sk = SigningKey.generate(curve=curve, hashfunc=hashlib.sha256)
         vk = sk.get_verifying_key()
 
         # Sign a message
-        data = b("blahblah")
+        data = b"blahblah"
         signature = sk.sign(data)
 
         # Recover verifying keys
         recovered_vks = VerifyingKey.from_public_key_recovery(
-            signature, data, curve, hashfunc=sha256, allow_truncate=True
+            signature,
+            data,
+            curve,
+            hashfunc=hashlib.sha256,
+            allow_truncate=True,
         )
 
         # Test if each pk is valid
@@ -677,7 +758,7 @@ class ECDSA(unittest.TestCase):
 
             # Test if properties are equal
             self.assertEqual(vk.curve, recovered_vk.curve)
-            self.assertEqual(sha256, recovered_vk.default_hashfunc)
+            self.assertEqual(hashlib.sha256, recovered_vk.default_hashfunc)
 
         # Test if original vk is the list of recovered keys
         self.assertIn(
@@ -689,45 +770,45 @@ class ECDSA(unittest.TestCase):
         sk = SigningKey.from_secret_exponent(123456789)
         vk = sk.verifying_key
 
-        exp = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        exp = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         self.assertEqual(vk.to_string(), exp)
         self.assertEqual(vk.to_string("raw"), exp)
-        self.assertEqual(vk.to_string("uncompressed"), b("\x04") + exp)
-        self.assertEqual(vk.to_string("compressed"), b("\x02") + exp[:24])
-        self.assertEqual(vk.to_string("hybrid"), b("\x06") + exp)
+        self.assertEqual(vk.to_string("uncompressed"), b"\x04" + exp)
+        self.assertEqual(vk.to_string("compressed"), b"\x02" + exp[:24])
+        self.assertEqual(vk.to_string("hybrid"), b"\x06" + exp)
 
     def test_decoding(self):
         sk = SigningKey.from_secret_exponent(123456789)
         vk = sk.verifying_key
 
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         from_raw = VerifyingKey.from_string(enc)
         self.assertEqual(from_raw.pubkey.point, vk.pubkey.point)
 
-        from_uncompressed = VerifyingKey.from_string(b("\x04") + enc)
+        from_uncompressed = VerifyingKey.from_string(b"\x04" + enc)
         self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
 
-        from_compressed = VerifyingKey.from_string(b("\x02") + enc[:24])
+        from_compressed = VerifyingKey.from_string(b"\x02" + enc[:24])
         self.assertEqual(from_compressed.pubkey.point, vk.pubkey.point)
 
-        from_uncompressed = VerifyingKey.from_string(b("\x06") + enc)
+        from_uncompressed = VerifyingKey.from_string(b"\x06" + enc)
         self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
 
     def test_uncompressed_decoding_as_only_alowed(self):
-        enc = b(
-            "\x04"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x04"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         vk = VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
         sk = SigningKey.from_secret_exponent(123456789)
@@ -735,10 +816,10 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(vk, sk.verifying_key)
 
     def test_raw_decoding_with_blocked_format(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
@@ -752,11 +833,11 @@ class ECDSA(unittest.TestCase):
         self.assertIn("Only uncompressed, compressed", str(e.exception))
 
     def test_uncompressed_decoding_with_blocked_format(self):
-        enc = b(
-            "\x04"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x04"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
@@ -764,23 +845,39 @@ class ECDSA(unittest.TestCase):
         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
 
     def test_hybrid_decoding_with_blocked_format(self):
-        enc = b(
-            "\x06"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x06"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
 
         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
 
+    def test_hybrid_decoding_with_inconsistent_encoding_and_no_validation(
+        self,
+    ):
+        sk = SigningKey.from_secret_exponent(123456789)
+        vk = sk.verifying_key
+
+        enc = vk.to_string("hybrid")
+        self.assertEqual(enc[:1], b"\x06")
+        enc = b"\x07" + enc[1:]
+
+        b = VerifyingKey.from_string(
+            enc, valid_encodings=("hybrid",), validate_point=False
+        )
+
+        self.assertEqual(vk, b)
+
     def test_compressed_decoding_with_blocked_format(self):
-        enc = b(
-            "\x02"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x02"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )[:25]
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid", "raw"))
@@ -788,55 +885,66 @@ class ECDSA(unittest.TestCase):
         self.assertIn("(hybrid, raw)", str(exp.exception))
 
     def test_decoding_with_malformed_uncompressed(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x02") + enc)
+            VerifyingKey.from_string(b"\x02" + enc)
 
     def test_decoding_with_malformed_compressed(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x01") + enc[:24])
+            VerifyingKey.from_string(b"\x01" + enc[:24])
 
     def test_decoding_with_inconsistent_hybrid(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x07") + enc)
+            VerifyingKey.from_string(b"\x07" + enc)
+
+    def test_decoding_with_inconsistent_hybrid_odd_point(self):
+        sk = SigningKey.from_secret_exponent(123456791)
+        vk = sk.verifying_key
+
+        enc = vk.to_string("hybrid")
+        self.assertEqual(enc[:1], b"\x07")
+        enc = b"\x06" + enc[1:]
+
+        with self.assertRaises(MalformedPointError):
+            b = VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
 
     def test_decoding_with_point_not_on_curve(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(enc[:47] + b("\x00"))
+            VerifyingKey.from_string(enc[:47] + b"\x00")
 
     def test_decoding_with_point_at_infinity(self):
         # decoding it is unsupported, as it's not necessary to encode it
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x00"))
+            VerifyingKey.from_string(b"\x00")
 
     def test_not_lying_on_curve(self):
         enc = number_to_string(NIST192p.curve.p(), NIST192p.curve.p() + 1)
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x02") + enc)
+            VerifyingKey.from_string(b"\x02" + enc)
 
     def test_from_string_with_invalid_curve_too_short_ver_key_len(self):
         # both verifying_key_length and baselen are calculated internally
@@ -847,7 +955,7 @@ class ECDSA(unittest.TestCase):
         curve.baselen = 32
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x00") * 16, curve)
+            VerifyingKey.from_string(b"\x00" * 16, curve)
 
     def test_from_string_with_invalid_curve_too_long_ver_key_len(self):
         # both verifying_key_length and baselen are calculated internally
@@ -858,7 +966,7 @@ class ECDSA(unittest.TestCase):
         curve.baselen = 16
 
         with self.assertRaises(MalformedPointError):
-            VerifyingKey.from_string(b("\x00") * 16, curve)
+            VerifyingKey.from_string(b"\x00" * 16, curve)
 
 
 @pytest.mark.parametrize(
@@ -868,9 +976,9 @@ def test_VerifyingKey_decode_with_small_values(val, even):
     enc = number_to_string(val, NIST192p.order)
 
     if even:
-        enc = b("\x02") + enc
+        enc = b"\x02" + enc
     else:
-        enc = b("\x03") + enc
+        enc = b"\x03" + enc
 
     # small values can both be actual valid public keys and not, verify that
     # only expected exceptions are raised if they are not
@@ -901,6 +1009,24 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
+if "--fast" in sys.argv:  # pragma: no cover
+    params = [NIST192p, BRAINPOOLP160r1]
+else:
+    params = curves
+
+
+@pytest.mark.parametrize("curve", params)
+def test_lengths(curve):
+    priv = SigningKey.generate(curve=curve)
+    pub1 = priv.get_verifying_key()
+    pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
+    assert pub1.to_string() == pub2.to_string()
+    assert len(pub1.to_string()) == curve.verifying_key_length
+    sig = priv.sign(b"data")
+    assert len(sig) == curve.signature_length
+
+
+@pytest.mark.slow
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
     # sign/verify arguments changed between 0.9.8 and 1.0.0: the early
@@ -937,6 +1063,7 @@ class OpenSSL(unittest.TestCase):
     # vk: 3:OpenSSL->python  4:python->OpenSSL
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r1",
@@ -944,6 +1071,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp112r1(self):
         return self.do_test_from_openssl(SECP112r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r2",
@@ -951,6 +1079,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp112r2(self):
         return self.do_test_from_openssl(SECP112r2)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp128r1",
@@ -958,6 +1087,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp128r1(self):
         return self.do_test_from_openssl(SECP128r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp160r1",
@@ -965,6 +1095,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp160r1(self):
         return self.do_test_from_openssl(SECP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -972,6 +1103,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist192p(self):
         return self.do_test_from_openssl(NIST192p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -979,6 +1111,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist192p_sha256(self):
         return self.do_test_from_openssl(NIST192p, "SHA256")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp224r1",
@@ -986,6 +1119,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist224p(self):
         return self.do_test_from_openssl(NIST224p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -993,6 +1127,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p(self):
         return self.do_test_from_openssl(NIST256p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1000,6 +1135,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p_sha384(self):
         return self.do_test_from_openssl(NIST256p, "SHA384")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1007,6 +1143,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p_sha512(self):
         return self.do_test_from_openssl(NIST256p, "SHA512")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp384r1",
@@ -1014,6 +1151,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist384p(self):
         return self.do_test_from_openssl(NIST384p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp521r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp521r1",
@@ -1021,6 +1159,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist521p(self):
         return self.do_test_from_openssl(NIST521p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp256k1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp256k1",
@@ -1028,6 +1167,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp256k1(self):
         return self.do_test_from_openssl(SECP256k1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160r1",
@@ -1035,6 +1175,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp160r1(self):
         return self.do_test_from_openssl(BRAINPOOLP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192r1",
@@ -1042,6 +1183,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp192r1(self):
         return self.do_test_from_openssl(BRAINPOOLP192r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224r1",
@@ -1049,6 +1191,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp224r1(self):
         return self.do_test_from_openssl(BRAINPOOLP224r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256r1",
@@ -1056,6 +1199,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp256r1(self):
         return self.do_test_from_openssl(BRAINPOOLP256r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320r1",
@@ -1063,6 +1207,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp320r1(self):
         return self.do_test_from_openssl(BRAINPOOLP320r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384r1",
@@ -1070,12 +1215,69 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp384r1(self):
         return self.do_test_from_openssl(BRAINPOOLP384r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512r1",
     )
     def test_from_openssl_brainpoolp512r1(self):
         return self.do_test_from_openssl(BRAINPOOLP512r1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP160t1",
+    )
+    def test_from_openssl_brainpoolp160t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP160t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP192t1",
+    )
+    def test_from_openssl_brainpoolp192t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP192t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP224t1",
+    )
+    def test_from_openssl_brainpoolp224t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP224t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP256t1",
+    )
+    def test_from_openssl_brainpoolp256t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP256t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP320t1",
+    )
+    def test_from_openssl_brainpoolp320t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP320t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP384t1",
+    )
+    def test_from_openssl_brainpoolp384t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP384t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP512t1",
+    )
+    def test_from_openssl_brainpoolp512t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP512t1)
 
     def do_test_from_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name
@@ -1088,7 +1290,7 @@ class OpenSSL(unittest.TestCase):
         os.mkdir("t")
         run_openssl("ecparam -name %s -genkey -out t/privkey.pem" % curvename)
         run_openssl("ec -in t/privkey.pem -pubout -out t/pubkey.pem")
-        data = b("data")
+        data = b"data"
         with open("t/data.txt", "wb") as e:
             e.write(data)
         run_openssl(
@@ -1129,6 +1331,7 @@ class OpenSSL(unittest.TestCase):
         sk_from_p8 = SigningKey.from_pem(privkey_p8_pem)
         self.assertEqual(sk, sk_from_p8)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r1",
@@ -1136,6 +1339,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp112r1(self):
         self.do_test_to_openssl(SECP112r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r2",
@@ -1143,6 +1347,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp112r2(self):
         self.do_test_to_openssl(SECP112r2)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp128r1",
@@ -1150,6 +1355,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp128r1(self):
         self.do_test_to_openssl(SECP128r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp160r1",
@@ -1157,6 +1363,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp160r1(self):
         self.do_test_to_openssl(SECP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1164,6 +1371,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist192p(self):
         self.do_test_to_openssl(NIST192p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1171,6 +1379,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist192p_sha256(self):
         self.do_test_to_openssl(NIST192p, "SHA256")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp224r1",
@@ -1178,6 +1387,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist224p(self):
         self.do_test_to_openssl(NIST224p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1185,6 +1395,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p(self):
         self.do_test_to_openssl(NIST256p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1192,6 +1403,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p_sha384(self):
         self.do_test_to_openssl(NIST256p, "SHA384")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1199,6 +1411,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p_sha512(self):
         self.do_test_to_openssl(NIST256p, "SHA512")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp384r1",
@@ -1206,6 +1419,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist384p(self):
         self.do_test_to_openssl(NIST384p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp521r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp521r1",
@@ -1213,6 +1427,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist521p(self):
         self.do_test_to_openssl(NIST521p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp256k1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp256k1",
@@ -1220,6 +1435,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp256k1(self):
         self.do_test_to_openssl(SECP256k1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160r1",
@@ -1227,6 +1443,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp160r1(self):
         self.do_test_to_openssl(BRAINPOOLP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192r1",
@@ -1234,6 +1451,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp192r1(self):
         self.do_test_to_openssl(BRAINPOOLP192r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224r1",
@@ -1241,6 +1459,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp224r1(self):
         self.do_test_to_openssl(BRAINPOOLP224r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256r1",
@@ -1248,6 +1467,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp256r1(self):
         self.do_test_to_openssl(BRAINPOOLP256r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320r1",
@@ -1255,6 +1475,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp320r1(self):
         self.do_test_to_openssl(BRAINPOOLP320r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384r1",
@@ -1262,12 +1483,69 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp384r1(self):
         self.do_test_to_openssl(BRAINPOOLP384r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512r1",
     )
     def test_to_openssl_brainpoolp512r1(self):
         self.do_test_to_openssl(BRAINPOOLP512r1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP160t1",
+    )
+    def test_to_openssl_brainpoolp160t1(self):
+        self.do_test_to_openssl(BRAINPOOLP160t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP192t1",
+    )
+    def test_to_openssl_brainpoolp192t1(self):
+        self.do_test_to_openssl(BRAINPOOLP192t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP224t1",
+    )
+    def test_to_openssl_brainpoolp224t1(self):
+        self.do_test_to_openssl(BRAINPOOLP224t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP256t1",
+    )
+    def test_to_openssl_brainpoolp256t1(self):
+        self.do_test_to_openssl(BRAINPOOLP256t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP320t1",
+    )
+    def test_to_openssl_brainpoolp320t1(self):
+        self.do_test_to_openssl(BRAINPOOLP320t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP384t1",
+    )
+    def test_to_openssl_brainpoolp384t1(self):
+        self.do_test_to_openssl(BRAINPOOLP384t1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP512t1",
+    )
+    def test_to_openssl_brainpoolp512t1(self):
+        self.do_test_to_openssl(BRAINPOOLP512t1)
 
     def do_test_to_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name
@@ -1280,7 +1558,7 @@ class OpenSSL(unittest.TestCase):
         os.mkdir("t")
         sk = SigningKey.generate(curve=curve)
         vk = sk.get_verifying_key()
-        data = b("data")
+        data = b"data"
         with open("t/pubkey.der", "wb") as e:
             e.write(vk.to_der())  # 4
         with open("t/pubkey.pem", "wb") as e:
@@ -1296,7 +1574,7 @@ class OpenSSL(unittest.TestCase):
         with open("t/data.txt", "wb") as e:
             e.write(data)
         with open("t/baddata.txt", "wb") as e:
-            e.write(data + b("corrupt"))
+            e.write(data + b"corrupt")
 
         self.assertRaises(
             SubprocessError,
@@ -1354,6 +1632,122 @@ class OpenSSL(unittest.TestCase):
             % mdarg
         )
 
+    OPENSSL_SUPPORTED_TYPES = set()
+    try:
+        if "-rawin" in run_openssl("pkeyutl -help"):
+            OPENSSL_SUPPORTED_TYPES = set(  # pragma: no branch
+                c.lower()
+                for c in ("ED25519", "ED448")
+                if c in run_openssl("list -public-key-methods")
+            )
+    except SubprocessError:  # pragma: no cover
+        pass
+
+    def do_eddsa_test_to_openssl(self, curve):
+        if os.path.isdir("t"):
+            shutil.rmtree("t")
+        os.mkdir("t")
+
+        sk = SigningKey.generate(curve=curve)
+        vk = sk.get_verifying_key()
+
+        data = b"data"
+        with open("t/pubkey.der", "wb") as e:
+            e.write(vk.to_der())
+        with open("t/pubkey.pem", "wb") as e:
+            e.write(vk.to_pem())
+
+        sig = sk.sign(data)
+
+        with open("t/data.sig", "wb") as e:
+            e.write(sig)
+        with open("t/data.txt", "wb") as e:
+            e.write(data)
+        with open("t/baddata.txt", "wb") as e:
+            e.write(data + b"corrupt")
+
+        with self.assertRaises(SubprocessError):
+            run_openssl(
+                "pkeyutl -verify -pubin -inkey t/pubkey.pem -rawin "
+                "-in t/baddata.txt -sigfile t/data.sig"
+            )
+        run_openssl(
+            "pkeyutl -verify -pubin -inkey t/pubkey.pem -rawin "
+            "-in t/data.txt -sigfile t/data.sig"
+        )
+
+        shutil.rmtree("t")
+
+    # in practice at least OpenSSL 3.0.0 is needed to make EdDSA signatures
+    # earlier versions support EdDSA only in X.509 certificates
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "ed25519" not in OPENSSL_SUPPORTED_TYPES,
+        reason="system openssl does not support signing with Ed25519",
+    )
+    def test_to_openssl_ed25519(self):
+        return self.do_eddsa_test_to_openssl(Ed25519)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "ed448" not in OPENSSL_SUPPORTED_TYPES,
+        reason="system openssl does not support signing with Ed448",
+    )
+    def test_to_openssl_ed448(self):
+        return self.do_eddsa_test_to_openssl(Ed448)
+
+    def do_eddsa_test_from_openssl(self, curve):
+        curvename = curve.name
+
+        if os.path.isdir("t"):
+            shutil.rmtree("t")
+        os.mkdir("t")
+
+        data = b"data"
+
+        run_openssl(
+            "genpkey -algorithm {0} -outform PEM -out t/privkey.pem".format(
+                curvename
+            )
+        )
+        run_openssl(
+            "pkey -outform PEM -pubout -in t/privkey.pem -out t/pubkey.pem"
+        )
+
+        with open("t/data.txt", "wb") as e:
+            e.write(data)
+        run_openssl(
+            "pkeyutl -sign -inkey t/privkey.pem "
+            "-rawin -in t/data.txt -out t/data.sig"
+        )
+
+        with open("t/data.sig", "rb") as e:
+            sig = e.read()
+        with open("t/pubkey.pem", "rb") as e:
+            vk = VerifyingKey.from_pem(e.read())
+
+        self.assertIs(vk.curve, curve)
+
+        vk.verify(sig, data)
+
+        shutil.rmtree("t")
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "ed25519" not in OPENSSL_SUPPORTED_TYPES,
+        reason="system openssl does not support signing with Ed25519",
+    )
+    def test_from_openssl_ed25519(self):
+        return self.do_eddsa_test_from_openssl(Ed25519)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(
+        "ed448" not in OPENSSL_SUPPORTED_TYPES,
+        reason="system openssl does not support signing with Ed448",
+    )
+    def test_from_openssl_ed448(self):
+        return self.do_eddsa_test_from_openssl(Ed448)
+
 
 class TooSmallCurve(unittest.TestCase):
     OPENSSL_SUPPORTED_CURVES = set(
@@ -1367,7 +1761,7 @@ class TooSmallCurve(unittest.TestCase):
     )
     def test_sign_too_small_curve_dont_allow_truncate_raises(self):
         sk = SigningKey.generate(curve=NIST192p)
-        data = b("data")
+        data = b"data"
         with self.assertRaises(BadDigestError):
             sk.sign(
                 data,
@@ -1383,7 +1777,7 @@ class TooSmallCurve(unittest.TestCase):
     def test_verify_too_small_curve_dont_allow_truncate_raises(self):
         sk = SigningKey.generate(curve=NIST192p)
         vk = sk.get_verifying_key()
-        data = b("data")
+        data = b"data"
         sig_der = sk.sign(
             data,
             hashfunc=partial(hashlib.new, "SHA256"),
@@ -1402,119 +1796,121 @@ class TooSmallCurve(unittest.TestCase):
 
 class DER(unittest.TestCase):
     def test_integer(self):
-        self.assertEqual(der.encode_integer(0), b("\x02\x01\x00"))
-        self.assertEqual(der.encode_integer(1), b("\x02\x01\x01"))
-        self.assertEqual(der.encode_integer(127), b("\x02\x01\x7f"))
-        self.assertEqual(der.encode_integer(128), b("\x02\x02\x00\x80"))
-        self.assertEqual(der.encode_integer(256), b("\x02\x02\x01\x00"))
-        # self.assertEqual(der.encode_integer(-1), b("\x02\x01\xff"))
+        self.assertEqual(der.encode_integer(0), b"\x02\x01\x00")
+        self.assertEqual(der.encode_integer(1), b"\x02\x01\x01")
+        self.assertEqual(der.encode_integer(127), b"\x02\x01\x7f")
+        self.assertEqual(der.encode_integer(128), b"\x02\x02\x00\x80")
+        self.assertEqual(der.encode_integer(256), b"\x02\x02\x01\x00")
+        # self.assertEqual(der.encode_integer(-1), b"\x02\x01\xff")
 
         def s(n):
-            return der.remove_integer(der.encode_integer(n) + b("junk"))
+            return der.remove_integer(der.encode_integer(n) + b"junk")
 
-        self.assertEqual(s(0), (0, b("junk")))
-        self.assertEqual(s(1), (1, b("junk")))
-        self.assertEqual(s(127), (127, b("junk")))
-        self.assertEqual(s(128), (128, b("junk")))
-        self.assertEqual(s(256), (256, b("junk")))
+        self.assertEqual(s(0), (0, b"junk"))
+        self.assertEqual(s(1), (1, b"junk"))
+        self.assertEqual(s(127), (127, b"junk"))
+        self.assertEqual(s(128), (128, b"junk"))
+        self.assertEqual(s(256), (256, b"junk"))
         self.assertEqual(
             s(1234567890123456789012345678901234567890),
-            (1234567890123456789012345678901234567890, b("junk")),
+            (1234567890123456789012345678901234567890, b"junk"),
         )
 
     def test_number(self):
-        self.assertEqual(der.encode_number(0), b("\x00"))
-        self.assertEqual(der.encode_number(127), b("\x7f"))
-        self.assertEqual(der.encode_number(128), b("\x81\x00"))
-        self.assertEqual(der.encode_number(3 * 128 + 7), b("\x83\x07"))
+        self.assertEqual(der.encode_number(0), b"\x00")
+        self.assertEqual(der.encode_number(127), b"\x7f")
+        self.assertEqual(der.encode_number(128), b"\x81\x00")
+        self.assertEqual(der.encode_number(3 * 128 + 7), b"\x83\x07")
         # self.assertEqual(der.read_number("\x81\x9b" + "more"), (155, 2))
-        # self.assertEqual(der.encode_number(155), b("\x81\x9b"))
+        # self.assertEqual(der.encode_number(155), b"\x81\x9b")
         for n in (0, 1, 2, 127, 128, 3 * 128 + 7, 840, 10045):  # , 155):
-            x = der.encode_number(n) + b("more")
+            x = der.encode_number(n) + b"more"
             n1, llen = der.read_number(x)
             self.assertEqual(n1, n)
-            self.assertEqual(x[llen:], b("more"))
+            self.assertEqual(x[llen:], b"more")
 
     def test_length(self):
-        self.assertEqual(der.encode_length(0), b("\x00"))
-        self.assertEqual(der.encode_length(127), b("\x7f"))
-        self.assertEqual(der.encode_length(128), b("\x81\x80"))
-        self.assertEqual(der.encode_length(255), b("\x81\xff"))
-        self.assertEqual(der.encode_length(256), b("\x82\x01\x00"))
-        self.assertEqual(der.encode_length(3 * 256 + 7), b("\x82\x03\x07"))
-        self.assertEqual(der.read_length(b("\x81\x9b") + b("more")), (155, 2))
-        self.assertEqual(der.encode_length(155), b("\x81\x9b"))
+        self.assertEqual(der.encode_length(0), b"\x00")
+        self.assertEqual(der.encode_length(127), b"\x7f")
+        self.assertEqual(der.encode_length(128), b"\x81\x80")
+        self.assertEqual(der.encode_length(255), b"\x81\xff")
+        self.assertEqual(der.encode_length(256), b"\x82\x01\x00")
+        self.assertEqual(der.encode_length(3 * 256 + 7), b"\x82\x03\x07")
+        self.assertEqual(der.read_length(b"\x81\x9b" + b"more"), (155, 2))
+        self.assertEqual(der.encode_length(155), b"\x81\x9b")
         for n in (0, 1, 2, 127, 128, 255, 256, 3 * 256 + 7, 155):
-            x = der.encode_length(n) + b("more")
+            x = der.encode_length(n) + b"more"
             n1, llen = der.read_length(x)
             self.assertEqual(n1, n)
-            self.assertEqual(x[llen:], b("more"))
+            self.assertEqual(x[llen:], b"more")
 
     def test_sequence(self):
-        x = der.encode_sequence(b("ABC"), b("DEF")) + b("GHI")
-        self.assertEqual(x, b("\x30\x06ABCDEFGHI"))
+        x = der.encode_sequence(b"ABC", b"DEF") + b"GHI"
+        self.assertEqual(x, b"\x30\x06ABCDEFGHI")
         x1, rest = der.remove_sequence(x)
-        self.assertEqual(x1, b("ABCDEF"))
-        self.assertEqual(rest, b("GHI"))
+        self.assertEqual(x1, b"ABCDEF")
+        self.assertEqual(rest, b"GHI")
 
     def test_constructed(self):
         x = der.encode_constructed(0, NIST224p.encoded_oid)
-        self.assertEqual(hexlify(x), b("a007") + b("06052b81040021"))
-        x = der.encode_constructed(1, unhexlify(b("0102030a0b0c")))
-        self.assertEqual(hexlify(x), b("a106") + b("0102030a0b0c"))
+        self.assertEqual(hexlify(x), b"a007" + b"06052b81040021")
+        x = der.encode_constructed(1, unhexlify(b"0102030a0b0c"))
+        self.assertEqual(hexlify(x), b"a106" + b"0102030a0b0c")
 
 
 class Util(unittest.TestCase):
+    @pytest.mark.slow
     def test_trytryagain(self):
         tta = util.randrange_from_seed__trytryagain
         for i in range(1000):
             seed = "seed-%d" % i
             for order in (
-                2 ** 8 - 2,
-                2 ** 8 - 1,
-                2 ** 8,
-                2 ** 8 + 1,
-                2 ** 8 + 2,
-                2 ** 16 - 1,
-                2 ** 16 + 1,
+                2**8 - 2,
+                2**8 - 1,
+                2**8,
+                2**8 + 1,
+                2**8 + 2,
+                2**16 - 1,
+                2**16 + 1,
             ):
                 n = tta(seed, order)
                 self.assertTrue(1 <= n < order, (1, n, order))
         # this trytryagain *does* provide long-term stability
         self.assertEqual(
             ("%x" % (tta("seed", NIST224p.order))).encode(),
-            b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"),
+            b"6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc",
         )
 
     def test_trytryagain_single(self):
         tta = util.randrange_from_seed__trytryagain
-        order = 2 ** 8 - 2
+        order = 2**8 - 2
         seed = b"text"
         n = tta(seed, order)
         # known issue: https://github.com/warner/python-ecdsa/issues/221
         if sys.version_info < (3, 0):  # pragma: no branch
             self.assertEqual(n, 228)
-        else:
+        else:  # pragma: no branch
             self.assertEqual(n, 18)
 
-    @given(st.integers(min_value=0, max_value=10 ** 200))
+    @settings(**HYP_SETTINGS)
+    @given(st.integers(min_value=0, max_value=10**200))
     def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
         # change the algorithm in the future.
         entropy = util.PRNG("seed-%d" % i)
         for order in (
-            2 ** 8 - 2,
-            2 ** 8 - 1,
-            2 ** 8,
-            2 ** 16 - 1,
-            2 ** 16 + 1,
+            2**8 - 2,
+            2**8 - 1,
+            2**8,
+            2**16 - 1,
+            2**16 + 1,
         ):
             # that oddball 2**16+1 takes half our runtime
             n = util.randrange(order, entropy=entropy)
             self.assertTrue(1 <= n < order, (1, n, order))
 
     def OFF_test_prove_uniformity(self):  # pragma: no cover
-        order = 2 ** 8 - 2
+        order = 2**8 - 2
         counts = dict([(i, 0) for i in range(1, order)])
         assert 0 not in counts
         assert order not in counts
@@ -1525,7 +1921,7 @@ class Util(unittest.TestCase):
         # this technique should use the full range
         self.assertTrue(counts[order - 1])
         for i in range(1, order):
-            print_("%3d: %s" % (i, "*" * (counts[i] // 100)))
+            print("%3d: %s" % (i, "*" * (counts[i] // 100)))
 
 
 class RFC6979(unittest.TestCase):
@@ -1540,8 +1936,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=int("9d0219792467d7d37b4d43298a7d0c05", 16),
-            hsh=sha256(b("sample")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"sample").digest(),
+            hash_func=hashlib.sha256,
             expected=int(
                 "8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd",
                 16,
@@ -1555,8 +1951,8 @@ class RFC6979(unittest.TestCase):
                 "cca9fbcc1b41e5a95d369eaa6ddcff73b61a4efaa279cfc6567e8daa39cbaf50",
                 16,
             ),
-            hsh=sha256(b("sample")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"sample").digest(),
+            hash_func=hashlib.sha256,
             expected=int(
                 "2df40ca70e639d89528a6b670d9d48d9165fdc0febc0974056bdce192b8e16a3",
                 16,
@@ -1567,8 +1963,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0x1,
-            hsh=sha256(b("Satoshi Nakamoto")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"Satoshi Nakamoto").digest(),
+            hash_func=hashlib.sha256,
             expected=0x8F8A276C19F4149656B280621E358CCE24F5F52542772691EE69063B74F15D15,
         )
 
@@ -1576,12 +1972,10 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0x1,
-            hsh=sha256(
-                b(
-                    "All those moments will be lost in time, like tears in rain. Time to die..."
-                )
+            hsh=hashlib.sha256(
+                b"All those moments will be lost in time, like tears in rain. Time to die..."
             ).digest(),
-            hash_func=sha256,
+            hash_func=hashlib.sha256,
             expected=0x38AA22D72376B4DBC472E06C3BA403EE0A394DA63FC58D88686C611ABA98D6B3,
         )
 
@@ -1589,8 +1983,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140,
-            hsh=sha256(b("Satoshi Nakamoto")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"Satoshi Nakamoto").digest(),
+            hash_func=hashlib.sha256,
             expected=0x33A19B60E25FB6F4435AF53A3D42D493644827367E6453928554F43E49AA6F90,
         )
 
@@ -1598,8 +1992,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0xF8B8AF8CE3C7CCA5E300D33939540C10D45CE001B8F252BFBC57BA0342904181,
-            hsh=sha256(b("Alan Turing")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"Alan Turing").digest(),
+            hash_func=hashlib.sha256,
             expected=0x525A82B70E67874398067543FD84C83D30C175FDC45FDEEE082FE13B1D7CFDF1,
         )
 
@@ -1614,11 +2008,9 @@ class RFC6979(unittest.TestCase):
             ),
             secexp=int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
             hsh=unhexlify(
-                b(
-                    "AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
-                )
+                b"AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
             ),
-            hash_func=sha256,
+            hash_func=hashlib.sha256,
             expected=int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16),
         )
 
@@ -1626,8 +2018,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha1(b("sample")).digest(),
-            hash_func=sha1,
+            hsh=hashlib.sha1(b"sample").digest(),
+            hash_func=hashlib.sha1,
             expected=int(
                 "37D7CA00D2C7B0E5E412AC03BD44BA837FDD5B28CD3B0021", 16
             ),
@@ -1637,8 +2029,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha256(b("sample")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"sample").digest(),
+            hash_func=hashlib.sha256,
             expected=int(
                 "32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496", 16
             ),
@@ -1648,8 +2040,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha512(b("sample")).digest(),
-            hash_func=sha512,
+            hsh=hashlib.sha512(b"sample").digest(),
+            hash_func=hashlib.sha512,
             expected=int(
                 "A2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1", 16
             ),
@@ -1659,8 +2051,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha1(b("test")).digest(),
-            hash_func=sha1,
+            hsh=hashlib.sha1(b"test").digest(),
+            hash_func=hashlib.sha1,
             expected=int(
                 "D9CF9C3D3297D3260773A1DA7418DB5537AB8DD93DE7FA25", 16
             ),
@@ -1670,8 +2062,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha256(b("test")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"test").digest(),
+            hash_func=hashlib.sha256,
             expected=int(
                 "5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C", 16
             ),
@@ -1681,8 +2073,8 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh=sha512(b("test")).digest(),
-            hash_func=sha512,
+            hsh=hashlib.sha512(b"test").digest(),
+            hash_func=hashlib.sha512,
             expected=int(
                 "0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527", 16
             ),
@@ -1695,8 +2087,8 @@ class RFC6979(unittest.TestCase):
                 "0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538",
                 16,
             ),
-            hsh=sha1(b("sample")).digest(),
-            hash_func=sha1,
+            hsh=hashlib.sha1(b"sample").digest(),
+            hash_func=hashlib.sha1,
             expected=int(
                 "089C071B419E1C2820962321787258469511958E80582E95D8378E0C2CCDB3CB42BEDE42F50E3FA3C71F5A76724281D31D9C89F0F91FC1BE4918DB1C03A5838D0F9",
                 16,
@@ -1710,8 +2102,8 @@ class RFC6979(unittest.TestCase):
                 "0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538",
                 16,
             ),
-            hsh=sha256(b("sample")).digest(),
-            hash_func=sha256,
+            hsh=hashlib.sha256(b"sample").digest(),
+            hash_func=hashlib.sha256,
             expected=int(
                 "0EDF38AFCAAECAB4383358B34D67C9F2216C8382AAEA44A3DAD5FDC9C32575761793FEF24EB0FC276DFC4F6E3EC476752F043CF01415387470BCBD8678ED2C7E1A0",
                 16,
@@ -1725,8 +2117,8 @@ class RFC6979(unittest.TestCase):
                 "0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538",
                 16,
             ),
-            hsh=sha512(b("test")).digest(),
-            hash_func=sha512,
+            hsh=hashlib.sha512(b"test").digest(),
+            hash_func=hashlib.sha512,
             expected=int(
                 "16200813020EC986863BEDFC1B121F605C1215645018AEA1A7B215A564DE9EB1B38A67AA1128B80CE391C4FB71187654AAA3431027BFC7F395766CA988C964DC56D",
                 16,
@@ -1829,6 +2221,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -1875,6 +2268,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,
@@ -1979,6 +2373,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -2025,6 +2420,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,
@@ -2090,7 +2486,7 @@ class RFC7027(ECDH):
             "6FC98BD7E50211A4A27102FA3549DF79EBCB4BF246B80945CDDFE7D509BBFD7D",
             "9E56F509196784D963D1C0A401510EE7ADA3DCC5DEE04B154BF61AF1D5A6DECE",
             b"abc",
-            sha256,
+            hashlib.sha256,
             "CB28E0999B9C7715FD0A80D8E47A77079716CBBF917DD72E97566EA1C066957C",
             "86FA3BB4E26CAD5BF90B7F81899256CE7594BB1EA0C89212748BFF3B3D5B0315",
             NIST256p,
@@ -2106,7 +2502,7 @@ class RFC7027(ECDH):
             "B4B74E44D71A13D568003D7489908D564C7761E229C58CBFA18950096EB7463B"
             "854D7FA992F934D927376285E63414FA",
             b"abc",
-            sha384,
+            hashlib.sha384,
             "FB017B914E29149432D8BAC29A514640B46F53DDAB2C69948084E2930F1C8F7E"
             "08E07C9C63F2D21A07DCB56A6AF56EB3",
             "B263A1305E057F984D38726A1B46874109F417BCA112674C528262A40A629AF1"
@@ -2128,7 +2524,7 @@ class RFC7027(ECDH):
             "373778F9DE6B6497B1EF825FF24F42F9B4A4BD7382CFC3378A540B1B7F0C1B95"
             "6C2F",
             b"abc",
-            sha512,
+            hashlib.sha512,
             "0154FD3836AF92D0DCA57DD5341D3053988534FDE8318FC6AAAAB68E2E6F4339"
             "B19F2F281A7E0B22C269D93CF8794A9278880ED7DBB8D9362CAEACEE54432055"
             "2251",

@@ -66,9 +66,11 @@ jobs:
             target: linux-armv4,
             tests: -test_includes -test_store -test_x509_store
           }, {
+            # gcc hppa seems to have some potential compiler issues
+            # with -O2 on this platform, reduce optimization to -01
             arch: hppa-linux-gnu,
             libs: libc6-dev-hppa-cross,
-            target: -static linux-generic32,
+            target: -static -O1 linux-generic32,
             fips: no,
             tests: -test_includes -test_store -test_x509_store
           }, {
@@ -148,7 +150,7 @@ jobs:
             tests: none
           }
         ]
-    runs-on: ${{ github.server_url == 'https://github.com' && 'ubuntu-latest' || 'ubuntu-22.04-self-hosted' }}
+    runs-on: ubuntu-latest
     steps:
     - name: install package repository
       if: matrix.platform.ppa != ''
@@ -217,7 +219,7 @@ jobs:
                   TESTS="test_evp*" \
                   QEMU_LD_PREFIX=/usr/${{ matrix.platform.arch }}
     - name: save artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: "cross-compiles@${{ matrix.platform.arch }}"
         path: artifacts.tar.gz

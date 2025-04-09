@@ -1,4 +1,3 @@
-import six
 import timeit
 from ecdsa.curves import curves
 
@@ -8,7 +7,7 @@ def do(setup_statements, statement):
     t = timeit.Timer(stmt=statement, setup="\n".join(setup_statements))
     # determine number so that 0.2 <= total time < 2.0
     for i in range(1, 10):
-        number = 10 ** i
+        number = 10**i
         x = t.timeit(number)
         if x >= 0.2:
             break
@@ -43,9 +42,9 @@ print(
 )
 
 for curve in [i.name for i in curves]:
-    S1 = "import six; from ecdsa import SigningKey, %s" % curve
+    S1 = "from ecdsa import SigningKey, %s" % curve
     S2 = "sk = SigningKey.generate(%s)" % curve
-    S3 = "msg = six.b('msg')"
+    S3 = "msg = b'msg'"
     S4 = "sig = sk.sign(msg)"
     S5 = "vk = sk.get_verifying_key()"
     S6 = "vk.precompute()"
@@ -61,7 +60,7 @@ for curve in [i.name for i in curves]:
     import ecdsa
 
     c = getattr(ecdsa, curve)
-    sig = ecdsa.SigningKey.generate(c).sign(six.b("msg"))
+    sig = ecdsa.SigningKey.generate(c).sign(b"msg")
     print(
         prnt_form.format(
             name=curve,

@@ -360,6 +360,13 @@ class RecordLayer(object):
         self._pendingWriteState.encryptThenMAC = value
         self._pendingReadState.encryptThenMAC = value
 
+    def _get_pending_state_etm(self):
+        """
+        Return the state of encrypt then MAC for the connection after
+        CCS will be exchanged
+        """
+        return self._pendingWriteState.encryptThenMAC
+
     @property
     def blockSize(self):
         """Return the size of block used by current symmetric cipher (R/O)"""
@@ -915,6 +922,15 @@ class RecordLayer(object):
                 elif self._is_tls13_plus() and \
                         header.type == ContentType.change_cipher_spec:
                     pass
+                # when we're in the early handshake, then unencrypted alerts
+                # are fine too
+                elif self._is_tls13_plus() and \
+                        header.type == ContentType.alert and \
+                        len(data) < 3 and \
+                        self._readState and \
+                        self._readState.encContext and \
+                        self._readState.seqnum == 0:
+                    pass
                 elif self._readState and \
                     self._readState.encContext and \
                     self._readState.encContext.isAEAD:
@@ -950,10 +966,10 @@ class RecordLayer(object):
             # start checking the MACs
             self.early_data_ok = False
 
-            # TLS 1.3 encrypts the type, CCS is not encrypted
+            # TLS 1.3 encrypts the type, CCS and Alerts are not encrypted
             if self._is_tls13_plus() and self._readState and \
                     self._readState.encContext and\
-                    header.type != ContentType.change_cipher_spec:
+                    header.type == ContentType.application_data:
                 # check if plaintext is not too big, RFC 8446, section 5.4
                 if len(data) > self.recv_record_limit + 1:
                     raise TLSRecordOverflow()

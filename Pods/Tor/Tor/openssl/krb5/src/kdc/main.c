@@ -32,7 +32,6 @@
 #include "kdc_audit.h"
 #include "extern.h"
 #include "policy.h"
-#include "kdc5_err.h"
 #include "kdb_kt.h"
 #include "net-server.h"
 #ifdef HAVE_NETINET_IN_H
@@ -62,7 +61,6 @@ static int nofork = 0;
 static int workers = 0;
 static int time_offset = 0;
 static const char *pid_file = NULL;
-static int rkey_init_done = 0;
 static volatile int signal_received = 0;
 static volatile int sighup_received = 0;
 
@@ -334,6 +332,11 @@ init_realm(kdc_realm_t * rdp, krb5_pointer aprof, char *realm,
     free(svalue);
     svalue = NULL;
 
+    hierarchy[2] = KRB5_CONF_DISABLE_PAC;
+    if (krb5_aprof_get_boolean(aprof, hierarchy, TRUE,
+                               &rdp->realm_disable_pac))
+        rdp->realm_disable_pac = FALSE;
+
     /*
      * We've got our parameters, now go and setup our realm context.
      */
@@ -409,22 +412,6 @@ init_realm(kdc_realm_t * rdp, krb5_pointer aprof, char *realm,
         goto whoops;
     }
 
-    if (!rkey_init_done) {
-        krb5_data seed;
-        /*
-         * If all that worked, then initialize the random key
-         * generators.
-         */
-
-        seed.length = rdp->realm_mkey.length;
-        seed.data = (char *)rdp->realm_mkey.contents;
-
-        if ((kret = krb5_c_random_add_entropy(rdp->realm_context,
-                                              KRB5_C_RANDSOURCE_TRUSTEDPARTY, &seed)))
-            goto whoops;
-
-        rkey_init_done = 1;
-    }
 whoops:
     /*
      * If we choked, then clean up any dirt we may have dropped on the floor.
@@ -620,7 +607,7 @@ initialize_realms(krb5_context kcontext, int argc, char **argv,
     krb5_boolean        def_restrict_anon;
     char                *def_udp_listen = NULL;
     char                *def_tcp_listen = NULL;
-    krb5_pointer        aprof = NULL;
+    krb5_pointer        aprof = kcontext->profile;
     const char          *hierarchy[3];
     char                *no_referral = NULL;
     char                *hostbased = NULL;
@@ -629,40 +616,38 @@ initialize_realms(krb5_context kcontext, int argc, char **argv,
 
     extern char *optarg;
 
-    if (!krb5_aprof_init(DEFAULT_KDC_PROFILE, KDC_PROFILE_ENV, &aprof)) {
-        hierarchy[0] = KRB5_CONF_KDCDEFAULTS;
-        hierarchy[1] = KRB5_CONF_KDC_LISTEN;
-        hierarchy[2] = (char *) NULL;
-        if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_udp_listen)) {
-            hierarchy[1] = KRB5_CONF_KDC_PORTS;
-            if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_udp_listen))
-                def_udp_listen = NULL;
-        }
-        hierarchy[1] = KRB5_CONF_KDC_TCP_LISTEN;
-        if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_tcp_listen)) {
-            hierarchy[1] = KRB5_CONF_KDC_TCP_PORTS;
-            if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_tcp_listen))
-                def_tcp_listen = NULL;
-        }
-        hierarchy[1] = KRB5_CONF_KDC_MAX_DGRAM_REPLY_SIZE;
-        if (krb5_aprof_get_int32(aprof, hierarchy, TRUE, &max_dgram_reply_size))
-            max_dgram_reply_size = MAX_DGRAM_SIZE;
-        if (tcp_listen_backlog_out != NULL) {
-            hierarchy[1] = KRB5_CONF_KDC_TCP_LISTEN_BACKLOG;
-            if (krb5_aprof_get_int32(aprof, hierarchy, TRUE,
-                                     tcp_listen_backlog_out))
-                *tcp_listen_backlog_out = DEFAULT_TCP_LISTEN_BACKLOG;
-        }
-        hierarchy[1] = KRB5_CONF_RESTRICT_ANONYMOUS_TO_TGT;
-        if (krb5_aprof_get_boolean(aprof, hierarchy, TRUE, &def_restrict_anon))
-            def_restrict_anon = FALSE;
-        hierarchy[1] = KRB5_CONF_NO_HOST_REFERRAL;
-        if (krb5_aprof_get_string_all(aprof, hierarchy, &no_referral))
-            no_referral = 0;
-        hierarchy[1] = KRB5_CONF_HOST_BASED_SERVICES;
-        if (krb5_aprof_get_string_all(aprof, hierarchy, &hostbased))
-            hostbased = 0;
+    hierarchy[0] = KRB5_CONF_KDCDEFAULTS;
+    hierarchy[1] = KRB5_CONF_KDC_LISTEN;
+    hierarchy[2] = NULL;
+    if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_udp_listen)) {
+        hierarchy[1] = KRB5_CONF_KDC_PORTS;
+        if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_udp_listen))
+            def_udp_listen = NULL;
     }
+    hierarchy[1] = KRB5_CONF_KDC_TCP_LISTEN;
+    if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_tcp_listen)) {
+        hierarchy[1] = KRB5_CONF_KDC_TCP_PORTS;
+        if (krb5_aprof_get_string(aprof, hierarchy, TRUE, &def_tcp_listen))
+            def_tcp_listen = NULL;
+    }
+    hierarchy[1] = KRB5_CONF_KDC_MAX_DGRAM_REPLY_SIZE;
+    if (krb5_aprof_get_int32(aprof, hierarchy, TRUE, &max_dgram_reply_size))
+        max_dgram_reply_size = MAX_DGRAM_SIZE;
+    if (tcp_listen_backlog_out != NULL) {
+        hierarchy[1] = KRB5_CONF_KDC_TCP_LISTEN_BACKLOG;
+        if (krb5_aprof_get_int32(aprof, hierarchy, TRUE,
+                                 tcp_listen_backlog_out))
+            *tcp_listen_backlog_out = DEFAULT_TCP_LISTEN_BACKLOG;
+    }
+    hierarchy[1] = KRB5_CONF_RESTRICT_ANONYMOUS_TO_TGT;
+    if (krb5_aprof_get_boolean(aprof, hierarchy, TRUE, &def_restrict_anon))
+        def_restrict_anon = FALSE;
+    hierarchy[1] = KRB5_CONF_NO_HOST_REFERRAL;
+    if (krb5_aprof_get_string_all(aprof, hierarchy, &no_referral))
+        no_referral = 0;
+    hierarchy[1] = KRB5_CONF_HOST_BASED_SERVICES;
+    if (krb5_aprof_get_string_all(aprof, hierarchy, &hostbased))
+        hostbased = 0;
 
     if (def_udp_listen == NULL) {
         def_udp_listen = strdup(DEFAULT_KDC_UDP_PORTLIST);
@@ -848,8 +833,6 @@ initialize_realms(krb5_context kcontext, int argc, char **argv,
         free(hostbased);
     if (no_referral)
         free(no_referral);
-    if (aprof)
-        krb5_aprof_finish(aprof);
 
     return;
 }
@@ -870,7 +853,7 @@ write_pid_file(const char *path)
 }
 
 static void
-finish_realms()
+finish_realms(void)
 {
     int i;
 
@@ -948,8 +931,6 @@ int main(int argc, char **argv)
        file, and not to stderr.  We use the kdc_err wrapper around
        com_err to ensure that the error state exists in the context
        known to the krb5_klog callback. */
-
-    initialize_kdc5_error_table();
 
     /*
      * Scan through the argument list
@@ -1053,7 +1034,6 @@ int main(int argc, char **argv)
     kau_kdc_start(kcontext, TRUE);
 
     verto_run(ctx);
-    loop_free(ctx);
     kau_kdc_stop(kcontext, TRUE);
     krb5_klog_syslog(LOG_INFO, _("shutting down"));
     unload_preauth_plugins(kcontext);
@@ -1067,6 +1047,7 @@ int main(int argc, char **argv)
 #ifndef NOCACHE
     kdc_free_lookaside(kcontext);
 #endif
+    loop_free(ctx);
     krb5_free_context(kcontext);
     return errout;
 }

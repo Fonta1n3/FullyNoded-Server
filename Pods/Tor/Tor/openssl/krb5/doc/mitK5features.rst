@@ -19,8 +19,8 @@ Quick facts
 License - :ref:`mitK5license`
 
 Releases:
-    - Latest stable: https://web.mit.edu/kerberos/krb5-1.18/
-    - Supported: https://web.mit.edu/kerberos/krb5-1.17/
+    - Latest stable: https://web.mit.edu/kerberos/krb5-1.20/
+    - Supported: https://web.mit.edu/kerberos/krb5-1.19/
     - Release cycle: approximately 12 months
 
 Supported platforms \/ OS distributions:
@@ -594,6 +594,97 @@ User experience:
   - Added kvno flags --out-cache, --no-store, and --cached-only
     (inspired by Heimdal's kgetcred).
 
+Release 1.20
+
+* Administrator experience:
+
+  - Added a "disable_pac" realm relation to suppress adding PAC
+    authdata to tickets, for realms which do not need to support S4U
+    requests.
+
+  - Most credential cache types will use atomic replacement when a
+    cache is reinitialized using kinit or refreshed from the client
+    keytab.
+
+  - kprop can now propagate databases with a dump size larger than
+    4GB, if both the client and server are upgraded.
+
+  - kprop can now work over NATs that change the destination IP
+    address, if the client is upgraded.
+
+* Developer experience:
+
+  - Updated the KDB interface.  The sign_authdata() method is replaced
+    with the issue_pac() method, allowing KDB modules to add logon
+    info and other buffers to the PAC issued by the KDC.
+
+  - Host-based initiator names are better supported in the GSS krb5
+    mechanism.
+
+* Protocol evolution:
+
+  - Replaced AD-SIGNEDPATH authdata with minimal PACs.
+
+  - To avoid spurious replay errors, password change requests will not
+    be attempted over UDP until the attempt over TCP fails.
+
+  - PKINIT will sign its CMS messages with SHA-256 instead of SHA-1.
+
+* Code quality:
+
+  - Updated all code using OpenSSL to be compatible with OpenSSL 3.
+
+  - Reorganized the libk5crypto build system to allow the OpenSSL
+    back-end to pull in material from the builtin back-end depending
+    on the OpenSSL version.
+
+  - Simplified the PRNG logic to always use the platform PRNG.
+
+  - Converted the remaining Tcl tests to Python.
+
+Release 1.21
+
+* User experience:
+
+  - Added a credential cache type providing compatibility with the
+    macOS 11 native credential cache.
+
+* Developer experience:
+
+  - libkadm5 will use the provided krb5_context object to read
+    configuration values, instead of creating its own.
+
+  - Added an interface to retrieve the ticket session key from a GSS
+    context.
+
+* Protocol evolution:
+
+  - The KDC will no longer issue tickets with RC4 or triple-DES
+    session keys unless explicitly configured with the new allow_rc4
+    or allow_des3 variables respectively.
+
+  - The KDC will assume that all services can handle aes256-sha1
+    session keys unless the service principal has a session_enctypes
+    string attribute.
+
+  - Support for PAC full KDC checksums has been added to mitigate an
+    S4U2Proxy privilege escalation attack.
+
+  - The PKINIT client will advertise a more modern set of supported
+    CMS algorithms.
+
+* Code quality:
+
+  - Removed unused code in libkrb5, libkrb5support, and the PKINIT
+    module.
+
+  - Modernized the KDC code for processing TGS requests, the code for
+    encrypting and decrypting key data, the PAC handling code, and the
+    GSS library packet parsing and composition code.
+
+  - Improved the test framework's detection of memory errors in daemon
+    processes when used with asan.
+
 `Pre-authentication mechanisms`
 
 - PW-SALT                                         :rfc:`4120#section-5.2.7.3`
@@ -606,10 +697,3 @@ User experience:
 - S4U-X509-USER                (release 1.8)      https://msdn.microsoft.com/en-us/library/cc246091
 - OTP                          (release 1.12)     :ref:`otp_preauth`
 - SPAKE                        (release 1.17)     :ref:`spake`
-
-`PRNG`
-
-- modularity       (release 1.9)
-- Yarrow PRNG      (release < 1.10)
-- Fortuna PRNG     (release 1.9)       https://www.schneier.com/book-practical.html
-- OS PRNG          (release 1.10)      OS's native PRNG

@@ -45,7 +45,7 @@ else:
 
 # General information about the project.
 project = u'MIT Kerberos'
-copyright = u'1985-2021, MIT'
+copyright = u'1985-2024, MIT'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -242,6 +242,7 @@ if 'mansubs' in tags:
     ccache = '``@CCNAME@``'
     keytab = '``@KTNAME@``'
     ckeytab = '``@CKTNAME@``'
+    pkcs11_modname = '``@PKCS11MOD@``'
 elif 'pathsubs' in tags:
     # Read configured paths from a file produced by the build system.
     exec(open("paths.py").read())
@@ -255,11 +256,12 @@ else:
     ccache = ':ref:`DEFCCNAME <paths>`'
     keytab = ':ref:`DEFKTNAME <paths>`'
     ckeytab = ':ref:`DEFCKTNAME <paths>`'
+    pkcs11_modname = ':ref:`PKCS11_MODNAME <paths>`'
 
 rst_epilog = '\n'
 
 if 'notice' in tags:
-    exclude_patterns = [ 'admin', 'appdev', 'basic', 'build',
+    exclude_patterns = [ 'admin', 'appdev', 'basic', 'build', 'formats',
                          'plugindev', 'user' ]
     exclude_patterns += [ 'about.rst', 'build_this.rst', 'copyright.rst',
                           'index.rst', 'mitK5*.rst', 'resources.rst' ]
@@ -275,6 +277,7 @@ else:
     rst_epilog += '.. |ccache| replace:: %s\n' % ccache
     rst_epilog += '.. |keytab| replace:: %s\n' % keytab
     rst_epilog += '.. |ckeytab| replace:: %s\n' % ckeytab
+    rst_epilog += '.. |pkcs11_modname| replace:: %s\n' % pkcs11_modname
     rst_epilog += '''
 .. |krb5conf| replace:: ``/etc/krb5.conf``
 .. |defkeysalts| replace:: ``aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal``

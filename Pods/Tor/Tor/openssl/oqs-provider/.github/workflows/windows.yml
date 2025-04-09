@@ -18,6 +18,8 @@ jobs:
         platform:
           - arch: win64
             oqsconfig: -DOQS_ALGS_ENABLED=STD
+            # empty `config` property here to prevent actionlint error (property "config" is not defined in object type) on line 62 below
+            config:
 #          - arch: win32
 #            config: --strict-warnings no-fips enable-quic
     runs-on: ${{matrix.os}}
@@ -29,24 +31,26 @@ jobs:
       MAKE_PARAMS: -j 4
     steps:
       - name: Checkout provider
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
       - name: Checkout openssl
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
         with:
           set-safe-directory: true
           repository: openssl/openssl
           path: openssl
+          # TODO: Revert ref tag once openssl master doesn't crash any more
+          ref: openssl-3.3.0
       - name: checkout liboqs
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
         with:
           set-safe-directory: true
           repository: open-quantum-safe/liboqs
-          ref: 0.10.0
+          ref: main
           path: liboqs
       - name: Install cygwin
         uses: cygwin/cygwin-install-action@master
         with:
-          packages: perl git ninja gcc-core cmake make
+          packages: perl git ninja gcc-core cmake make python3 python3-devel python3-setuptools python3-exceptiongroup
       - name: Retrieve OpenSSL32 from cache
         id: cache-openssl32
         uses: actions/cache@v3
@@ -80,11 +84,17 @@ jobs:
            cmake -GNinja -DOPENSSL_ROOT_DIR=/opt/openssl32 -DCMAKE_INSTALL_PREFIX="${{ env.IP }}" ${{ matrix.platform.oqsconfig }} -DCMAKE_C_COMPILER=gcc ..
            ninja
            ninja install
+           pip install pytest psutil pytest-xdist pyyaml
+           # TODO: as "autoprocesses" not recognized, don't run ninja run_tests
         working-directory: liboqs
       - name: build oqs-provider
         run: bash -c "git config --global --add safe.directory $(cygpath -u $PWD) && liboqs_DIR='${{ env.IP }}' cmake -GNinja -DCMAKE_C_COMPILER=gcc -DOPENSSL_ROOT_DIR=/opt/openssl32 -S . -B _build && cd _build && ninja && cd .."
       - name: Check Openssl providers
         run: bash -c "OPENSSL_MODULES=_build/lib /opt/openssl32/bin/openssl list -providers -provider oqsprovider -provider default"
+      - name: Check Openssl provider signature algorithms
+        run: bash -c "OPENSSL_MODULES=_build/lib /opt/openssl32/bin/openssl list -signature-algorithms -provider oqsprovider -provider default"
+      - name: Check Openssl provider KEM algorithms
+        run: bash -c "OPENSSL_MODULES=_build/lib /opt/openssl32/bin/openssl list -kem-algorithms -provider oqsprovider -provider default"
       - name: Run tests
         run: bash -c "echo $PATH && PATH=/opt/openssl32/bin:/usr/bin ctest -V"
         working-directory: _build
@@ -118,19 +128,19 @@ jobs:
         with:
           path: c:\openssl32
           key: ${{ runner.os }}-msvcopenssl32
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
       - name: Checkout OpenSSL master
         if: steps.cache-openssl32.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
         with:
           set-safe-directory: true
           repository: openssl/openssl
           path: openssl
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
         with:
           set-safe-directory: true
           repository: open-quantum-safe/liboqs
-          ref: 0.10.0
+          ref: main
           path: liboqs
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -232,19 +242,19 @@ jobs:
           with:
             path: c:\openssl32n
             key: ${{ runner.os }}-msvcopenssl32n
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
         - name: Checkout OpenSSL master
           if: steps.cache-openssl32n.outputs.cache-hit != 'true'
-          uses: actions/checkout@v3
+          uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
           with:
             set-safe-directory: true
             repository: openssl/openssl
             path: openssl
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
           with:
             set-safe-directory: true
             repository: open-quantum-safe/liboqs
-            ref: 0.10.0
+            ref: main
             path: liboqs
         - uses: ilammy/msvc-dev-cmd@v1
           with:

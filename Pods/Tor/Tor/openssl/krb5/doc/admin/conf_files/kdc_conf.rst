@@ -208,6 +208,12 @@ The following tags may be specified in a [realms] subsection:
     if there is no policy assigned to the principal, no dictionary
     checks of passwords will be performed.
 
+**disable_pac**
+    (Boolean value.)  If true, the KDC will not issue PACs for this
+    realm, and S4U2Self and S4U2Proxy operations will be disabled.
+    The default is false, which will permit the KDC to issue PACs.
+    New in release 1.20.
+
 **encrypted_challenge_indicator**
     (String.)  Specifies the authentication indicator value that the KDC
     asserts into tickets obtained using FAST encrypted challenge
@@ -762,8 +768,11 @@ For information about the syntax of some of these options, see
     be specified multiple times.
 
 **pkinit_dh_min_bits**
-    Specifies the minimum number of bits the KDC is willing to accept
-    for a client's Diffie-Hellman key.  The default is 2048.
+    Specifies the minimum strength of Diffie-Hellman group the KDC is
+    willing to accept for key exchange.  Valid values in order of
+    increasing strength are 1024, 2048, P-256, 4096, P-384, and P-521.
+    The default is 2048.  (P-256, P-384, and P-521 are new in release
+    1.22.)
 
 **pkinit_allow_upn**
     Specifies that the KDC is willing to accept client certificates

@@ -137,6 +137,9 @@ Environment variables
     This option allows one to specify libraries to be passed to the
     linker (e.g., ``-l<library>``)
 
+**PKCS11_MODNAME=**\ *library*
+    Override the built-in default PKCS11 library name.
+
 **SS_LIB=**\ *libs*...
     If ``-lss`` is not the correct way to link in your installed ss
     library, for example if additional support libraries are needed,
@@ -281,6 +284,9 @@ Optional features
     given, it controls the -fsanitize compilation flag value (the
     default is "address").
 
+**-**\ **-enable-ossfuzz**
+    Enable building fuzzing targets with OSS-Fuzz build support.
+
 
 Optional packages
 -----------------
@@ -336,11 +342,6 @@ Optional packages
     Kerberos implementation ``builtin``.  The other currently
     implemented crypto backend is ``openssl``.  (See
     :ref:`mitK5features`)
-
-**-**\ **-with-prng-alg=**\ *ALG*
-    Use specified PRNG algorithm.  For example, to use the OS native
-    prng specify ``--with-prng-alg=os``.  The default is ``fortuna``.
-    (See :ref:`mitK5features`)
 
 **-**\ **-without-libedit**
     Do not compile and link against libedit.  Some utilities will no

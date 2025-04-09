@@ -17,6 +17,18 @@ this, e.g., as follows:
 OpenSSL 3.2.0-dev  (Library: OpenSSL 3.2.0-dev )
 ```
 
+### Note on OpenSSL installation
+
+If one does not have an OpenSSL version installed in a suitable version, care
+is advised installing such version such as not to damage a pre-installed/system-wide
+`openssl` installation.
+
+In order to experiment with a local `openssl` version, we have made available
+[a shell script](scripts/fullbuild.sh) creating a local, non-system wide installed
+`openssl` binary. By default, the current "master" branch is built by this script
+but it can be configured to build any release/tag by setting the [OPENSSL_BRANCH](CONFIGURE.md#openssl_branch)
+environment variable.
+
 ## Activation
 
 Every OpenSSL provider needs to be activated for use. There are three main ways
@@ -183,6 +195,10 @@ These examples create QSC dilithium3 keys but the very same commands can be used
 to create QSC certificates replacing the key type "dilithium3" with any of the QSC
 [signature algorithms supported](README.md#signature-algorithms).
 Of course, also any classic signature algorithm like "rsa" may be used.
+
+Note: While generating QSC certificates is supported with OpenSSL 3.0+, using 
+QSC CA's and server certificates is not supported in versions prior to OpenSSL 3.2.
+Refer to [Note on OpenSSL versions](README.md#note-on-openssl-versions).
 
 ### Setting up a (quantum-safe) test server
 

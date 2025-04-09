@@ -256,6 +256,7 @@ local.properties
 /src/kdc/kdc5_err.[ch]
 /src/kdc/krb5kdc
 /src/kdc/rtest
+/src/kdc/t_ndr
 /src/kdc/t_replay
 
 /src/lib/k5sprt32.def
@@ -292,16 +293,11 @@ local.properties
 /src/lib/crypto/crypto_tests/t_nfold
 /src/lib/crypto/crypto_tests/t_prf
 /src/lib/crypto/crypto_tests/t_prf.output
-/src/lib/crypto/crypto_tests/t_prng
-/src/lib/crypto/crypto_tests/t_prng.output
 /src/lib/crypto/crypto_tests/t_sha2
 /src/lib/crypto/crypto_tests/t_short
 /src/lib/crypto/crypto_tests/t_str2key
 /src/lib/crypto/crypto_tests/vk.txt
 /src/lib/crypto/crypto_tests/vt.txt
-
-/src/lib/crypto/krb/t_fortuna
-/src/lib/crypto/krb/t_fortuna.output
 
 /src/lib/gssapi/merged-gssapi-header.h
 
@@ -362,6 +358,7 @@ local.properties
 /src/lib/krb5/krb/t_sname_match
 /src/lib/krb5/krb/t_valid_times
 
+/src/lib/krb5/os/t_ctxprf
 /src/lib/krb5/os/t_expand_path
 /src/lib/krb5/os/t_locate_kdc
 /src/lib/krb5/os/t_std_conf
@@ -436,6 +433,18 @@ local.properties
 
 /src/tests/create/kdb5_mkdums
 
+/src/tests/fuzzing/fuzz_chpw
+/src/tests/fuzzing/fuzz_gss
+/src/tests/fuzzing/fuzz_json
+/src/tests/fuzzing/fuzz_krad
+/src/tests/fuzzing/fuzz_krb5_ticket
+/src/tests/fuzzing/fuzz_marshal_cred
+/src/tests/fuzzing/fuzz_marshal_princ
+/src/tests/fuzzing/fuzz_ndr
+/src/tests/fuzzing/fuzz_pac
+/src/tests/fuzzing/fuzz_profile
+/src/tests/fuzzing/fuzz_util
+
 /src/tests/gss-threads/gss-client
 /src/tests/gss-threads/gss-server
 
@@ -454,6 +463,7 @@ local.properties
 /src/tests/gssapi/t_export_cred
 /src/tests/gssapi/t_export_name
 /src/tests/gssapi/t_gssexts
+/src/tests/gssapi/t_iakerb
 /src/tests/gssapi/t_imp_cred
 /src/tests/gssapi/t_imp_name
 /src/tests/gssapi/t_invalid
@@ -470,6 +480,7 @@ local.properties
 /src/tests/gssapi/t_saslname
 /src/tests/gssapi/t_spnego
 /src/tests/gssapi/t_srcattrs
+/src/tests/gssapi/t_store_cred
 /src/tests/gssapi/t_inq_ctx
 
 /src/tests/hammer/kdc5_hammer

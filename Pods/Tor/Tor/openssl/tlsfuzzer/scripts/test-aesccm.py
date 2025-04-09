@@ -1,4 +1,5 @@
 # Author: Ivan Nikolchev, (c) 2019
+# Author: Alicja Kario, (c) 2024
 # Released under Gnu GPL v2.0, see LICENSE file for details
 
 from __future__ import print_function
@@ -22,11 +23,11 @@ from tlslite.constants import CipherSuite, AlertLevel, AlertDescription, \
         ContentType, GroupName, ExtensionType
 from tlslite.extensions import SupportedGroupsExtension, \
         SignatureAlgorithmsExtension, SignatureAlgorithmsCertExtension
-from tlsfuzzer.helpers import SIG_ALL
+from tlsfuzzer.helpers import SIG_ALL, AutoEmptyExtension
 from tlsfuzzer.utils.lists import natural_sort_keys
 
 
-version = 4
+version = 6
 
 
 def help_msg():
@@ -47,8 +48,75 @@ def help_msg():
     print(" -n num         run 'num' or all(if 0) tests instead of default(100)")
     print("                (excluding \"sanity\" tests)")
     print(" -d             negotiate (EC)DHE instead of RSA key exchange")
+    print(" -M | --ems     Advertise support for Extended Master Secret")
     print(" --help         this message")
 
+
+def build_ext_aes128_ccm(dhe, ems, type_8):
+    """ Build the AES ext with CCM 8 and ciphers """
+    ext = {}
+    if ems:
+        ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
+    if dhe:
+        groups = [GroupName.secp256r1,
+                  GroupName.ffdhe2048]
+        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
+            .create(groups)
+        ext[ExtensionType.signature_algorithms] = \
+            SignatureAlgorithmsExtension().create(SIG_ALL)
+        ext[ExtensionType.signature_algorithms_cert] = \
+            SignatureAlgorithmsCertExtension().create(SIG_ALL)
+
+        if type_8:
+            ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
+                       CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
+                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+        else:
+            ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
+                       CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
+                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+    else:
+        if type_8:
+            ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
+                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+        else:
+            ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
+                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+    if not ext:
+        ext = None
+
+    return (ext, ciphers)
+
+
+def build_conn_graph(host, port, ccm_type_8, dhe, ems, application_data_length):
+    """ Use one function to build all the graphs to make it easier to understand """
+    if ccm_type_8:
+        (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=True)
+    else:
+        (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=False)
+
+    conversation = Connect(host, port)
+    node = conversation
+    node = node.add_child(SetMaxRecordSize(2**16-1))
+
+    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
+    node = node.add_child(ExpectServerHello())
+    node = node.add_child(ExpectCertificate())
+    if dhe:
+        node = node.add_child(ExpectServerKeyExchange())
+    node = node.add_child(ExpectServerHelloDone())
+    node = node.add_child(ClientKeyExchangeGenerator())
+    node = node.add_child(ChangeCipherSpecGenerator())
+    node = node.add_child(FinishedGenerator())
+    node = node.add_child(ExpectChangeCipherSpec())
+    node = node.add_child(ExpectFinished())
+    data = bytearray(b"GET / HTTP/1.0\r\n" +
+                     b"X-test: " + b"A" * (application_data_length - 28) +
+                     b"\r\n\r\n")
+    assert len(data) == (application_data_length)
+    node = node.add_child(ApplicationDataGenerator(data))
+
+    return (conversation, node)
 
 def main():
     host = "localhost"
@@ -58,9 +126,10 @@ def main():
     expected_failures = {}
     last_exp_tmp = None
     dhe = False
+    ems = False
 
     argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, "h:p:e:x:X:n:d", ["help"])
+    opts, args = getopt.getopt(argv, "h:p:e:x:X:n:dM", ["help", "ems"])
     for opt, arg in opts:
         if opt == '-h':
             host = arg
@@ -79,6 +148,8 @@ def main():
             num_limit = int(arg)
         elif opt == '-d':
             dhe = True
+        elif opt == '-M' or opt == '--ems':
+            ems = True
         elif opt == '--help':
             help_msg()
             sys.exit(0)
@@ -92,9 +163,9 @@ def main():
 
     conversations = {}
 
-    conversation = Connect(host, port)
-    node = conversation
     ext = {}
+    if ems:
+        ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
     if dhe:
         groups = [GroupName.secp256r1,
                   GroupName.ffdhe2048]
@@ -114,12 +185,17 @@ def main():
                    CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8,
                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
     else:
-        ext = None
         ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
                    CipherSuite.TLS_RSA_WITH_AES_256_CCM,
                    CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
                    CipherSuite.TLS_RSA_WITH_AES_256_CCM_8,
                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+    if not ext:
+        ext = None
+
+    conversation = Connect(host, port)
+    node = conversation
+
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
     node = node.add_child(ExpectServerHello())
     node = node.add_child(ExpectCertificate())
@@ -141,9 +217,9 @@ def main():
     conversations["sanity"] = conversation
 
     # reject ciphers in TLS1.1
-    conversation = Connect(host, port)
-    node = conversation
     ext = {}
+    if ems:
+        ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
     if dhe:
         groups = [GroupName.secp256r1,
                   GroupName.ffdhe2048]
@@ -163,12 +239,17 @@ def main():
                    CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8,
                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
     else:
-        ext = None
         ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
                    CipherSuite.TLS_RSA_WITH_AES_256_CCM,
                    CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
                    CipherSuite.TLS_RSA_WITH_AES_256_CCM_8,
                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+    if not ext:
+        ext = None
+
+    conversation = Connect(host, port)
+    node = conversation
+
     node = node.add_child(ClientHelloGenerator(ciphers, version=(3, 2)))
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       AlertDescription.handshake_failure))
@@ -176,24 +257,11 @@ def main():
     conversations["AES-CCM in TLS1.1"] = conversation
 
     # empty application data message acceptance
+    (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=False)
+
+    conversation = Connect(host, port)
     node = conversation
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
     node = node.add_child(ExpectServerHello())
     node = node.add_child(ExpectCertificate())
@@ -217,24 +285,11 @@ def main():
     conversations["empty app data"] = conversation
 
     # empty application data message acceptance with _8 ciphers
+    (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=True)
+
+    conversation = Connect(host, port)
     node = conversation
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
     node = node.add_child(ExpectServerHello())
     node = node.add_child(ExpectCertificate())
@@ -258,25 +313,11 @@ def main():
     conversations["empty app data with _8 ciphers"] = conversation
 
     # 1/n-1 message splitting
+    (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=False)
+
     conversation = Connect(host, port)
     node = conversation
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
     node = node.add_child(ExpectServerHello())
     node = node.add_child(ExpectCertificate())
@@ -300,42 +341,10 @@ def main():
     conversations["1/n-1 record splitting"] = conversation
 
     # plaintext just under the maximum permissible
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 - 28) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14
-    node = node.add_child(ApplicationDataGenerator(data))
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=False,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14))
+
     node = node.add_child(ExpectApplicationData())
     node = node.add_child(AlertGenerator(AlertLevel.warning,
                                          AlertDescription.close_notify))
@@ -349,45 +358,14 @@ def main():
     conversations["max size plaintext"] = conversation
 
     # plaintext over the maximum permissible
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 - 28) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14
-    node = node.add_child(ApplicationDataGenerator(data))
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=True,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14))
+
     node = node.add_child(ExpectApplicationData())
     node = node.add_child(AlertGenerator(AlertLevel.warning,
                                          AlertDescription.close_notify))
+
     # allow for multiple application data records in response
     node = node.add_child(ExpectApplicationData())
     loop = node
@@ -397,251 +375,65 @@ def main():
     node.next_sibling = ExpectClose()
     conversations["max size plaintext with _8 ciphers"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 - 28 + 1) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=False,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       [AlertDescription.decompression_failure,
                                        AlertDescription.record_overflow]))
     node.add_child(ExpectClose())
     conversations["too big plaintext"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 - 28 + 1) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext with _8 ciphers
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=True,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       [AlertDescription.decompression_failure,
                                        AlertDescription.record_overflow]))
     node.add_child(ExpectClose())
     conversations["too big plaintext with _8 ciphers"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 + 1024 - 28) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1024
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext - max compress
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=False,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1024))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       [AlertDescription.decompression_failure,
                                        AlertDescription.record_overflow]))
     node.add_child(ExpectClose())
     conversations["too big plaintext - max compress"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 + 1024 - 28) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1024
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext - max compress with _8 ciphers
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=True,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1024))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       [AlertDescription.decompression_failure,
                                        AlertDescription.record_overflow]))
     node.add_child(ExpectClose())
     conversations["too big plaintext - max compress with _8 ciphers"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 + 1024 - 28 + 1) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1024 + 1
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext - above TLSCompressed max
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=False,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1024 + 1))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       AlertDescription.record_overflow))
     node.add_child(ExpectClose())
     conversations["too big plaintext - above TLSCompressed max"] = conversation
 
-    conversation = Connect(host, port)
-    node = conversation
-    node = node.add_child(SetMaxRecordSize(2**16-1))
-    ext = {}
-    if dhe:
-        groups = [GroupName.secp256r1,
-                  GroupName.ffdhe2048]
-        ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-            .create(groups)
-        ext[ExtensionType.signature_algorithms] = \
-            SignatureAlgorithmsExtension().create(SIG_ALL)
-        ext[ExtensionType.signature_algorithms_cert] = \
-            SignatureAlgorithmsCertExtension().create(SIG_ALL)
-        ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    else:
-        ext = None
-        ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                   CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-    node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello())
-    node = node.add_child(ExpectCertificate())
-    if dhe:
-        node = node.add_child(ExpectServerKeyExchange())
-    node = node.add_child(ExpectServerHelloDone())
-    node = node.add_child(ClientKeyExchangeGenerator())
-    node = node.add_child(ChangeCipherSpecGenerator())
-    node = node.add_child(FinishedGenerator())
-    node = node.add_child(ExpectChangeCipherSpec())
-    node = node.add_child(ExpectFinished())
-    data = bytearray(b"GET / HTTP/1.0\r\n" +
-                     b"X-test: " + b"A" * (2**14 + 1024 - 28 + 1) +
-                     b"\r\n\r\n")
-    assert len(data) == 2**14 + 1024 + 1
-    node = node.add_child(ApplicationDataGenerator(data))
+    # too big plaintext - above TLSCompressed max with _8 ciphers
+    (conversation, node) = build_conn_graph(host, port, ccm_type_8=True,
+                                            dhe=dhe, ems=ems,
+                                            application_data_length=(2**14 + 1024 + 1))
+
     node = node.add_child(ExpectAlert(AlertLevel.fatal,
                                       AlertDescription.record_overflow))
     node.add_child(ExpectClose())
@@ -654,6 +446,8 @@ def main():
                 conversation = Connect(host, port)
                 node = conversation
                 ext = {}
+                if ems:
+                    ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
                 if dhe:
                     groups = [GroupName.secp256r1,
                               GroupName.ffdhe2048]
@@ -670,11 +464,12 @@ def main():
                         ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8,
                                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8]
                 else:
-                    ext = None
                     if n == 17:
                         ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM]
                     else:
                         ciphers = [CipherSuite.TLS_RSA_WITH_AES_256_CCM_8]
+                if not ext:
+                    ext = None
                 node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
                 node = node.add_child(ExpectServerHello())
                 node = node.add_child(ExpectCertificate())
@@ -697,25 +492,11 @@ def main():
 
     # too small message handling
     for val in range(16):
+        (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=False)
+
         conversation = Connect(host, port)
         node = conversation
-        ext = {}
-        if dhe:
-            groups = [GroupName.secp256r1,
-                      GroupName.ffdhe2048]
-            ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-                .create(groups)
-            ext[ExtensionType.signature_algorithms] = \
-                SignatureAlgorithmsExtension().create(SIG_ALL)
-            ext[ExtensionType.signature_algorithms_cert] = \
-                SignatureAlgorithmsCertExtension().create(SIG_ALL)
-            ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
-                       CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM,
-                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-        else:
-            ext = None
-            ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM,
-                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+
         node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
         node = node.add_child(ExpectServerHello())
         node = node.add_child(ExpectCertificate())
@@ -741,23 +522,9 @@ def main():
     for val in range(8):
         conversation = Connect(host, port)
         node = conversation
-        ext = {}
-        if dhe:
-            groups = [GroupName.secp256r1,
-                      GroupName.ffdhe2048]
-            ext[ExtensionType.supported_groups] = SupportedGroupsExtension()\
-                .create(groups)
-            ext[ExtensionType.signature_algorithms] = \
-                SignatureAlgorithmsExtension().create(SIG_ALL)
-            ext[ExtensionType.signature_algorithms_cert] = \
-                SignatureAlgorithmsCertExtension().create(SIG_ALL)
-            ciphers = [CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-                       CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8,
-                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
-        else:
-            ext = None
-            ciphers = [CipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
-                       CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+
+        (ext, ciphers) = build_ext_aes128_ccm(dhe, ems, type_8=True)
+
         node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
         node = node.add_child(ExpectServerHello())
         node = node.add_child(ExpectCertificate())

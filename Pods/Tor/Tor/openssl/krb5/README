@@ -1,4 +1,4 @@
-                   Kerberos Version 5, Release 1.20
+                   Kerberos Version 5, Release 1.22
 
                             Release Notes
                         The MIT Kerberos Team
@@ -6,7 +6,7 @@
 Copyright and Other Notices
 ---------------------------
 
-Copyright (C) 1985-2021 by the Massachusetts Institute of Technology
+Copyright (C) 1985-2024 by the Massachusetts Institute of Technology
 and its contributors.  All rights reserved.
 
 Please see the file named NOTICE for additional notices.
@@ -64,16 +64,43 @@ and using the "Guest Login" button.  Please note that the web
 interface to our bug database is read-only for guests, and the primary
 way to interact with our bug database is via email.
 
-DES no longer supported
------------------------
+PAC transitions
+---------------
 
-Beginning with the krb5-1.18 release, single-DES encryption types are
-no longer supported.
+Beginning with release 1.20, the KDC will include minimal PACs in
+tickets instead of AD-SIGNEDPATH authdata.  S4U requests (protocol
+transition and constrained delegation) must now contain valid PACs in
+the incoming tickets.  Beginning with release 1.21, service ticket
+PACs will contain a new KDC checksum buffer, to mitigate a hash
+collision attack against the old KDC checksum.  If only some KDCs in a
+realm have been upgraded across versions 1.20 or 1.21, the upgraded
+KDCs will reject S4U requests containing tickets from non-upgraded
+KDCs and vice versa.
 
-Major changes in 1.20
+Triple-DES and RC4 transitions
+------------------------------
+
+Beginning with the krb5-1.21 release, the KDC will not issue tickets
+with triple-DES or RC4 session keys unless explicitly configured using
+the new allow_des3 and allow_rc4 variables in [libdefaults].  To
+facilitate the negotiation of session keys, the KDC will assume that
+all services can handle aes256-sha1 session keys unless the service
+principal has a session_enctypes string attribute.
+
+Beginning with the krb5-1.19 release, a warning will be issued if
+initial credentials are acquired using the des3-cbc-sha1 encryption
+type.  Beginning with the krb5-1.21 release, a warning will also be
+issued for the arcfour-hmac encryption type.  In future releases,
+these encryption types will be disabled by default and eventually
+removed.
+
+Beginning with the krb5-1.18 release, all support for single-DES
+encryption types has been removed.
+
+Major changes in 1.22
 ---------------------
 
-krb5-1.20 changes by ticket ID
+krb5-1.22 changes by ticket ID
 ------------------------------
 
 Acknowledgements
@@ -195,6 +222,8 @@ reports, suggestions, and valuable resources:
     Sumit Bose
     Emmanuel Bouillon
     Isaac Boukris
+    Ulf Bremer
+    Pavel Březina
     Philip Brown
     Samuel Cabrero
     Michael Calmer
@@ -226,6 +255,7 @@ reports, suggestions, and valuable resources:
     John Devitofranceschi
     Marc Dionne
     Roland Dowdeswell
+    Ken Dreyer
     Dorian Ducournau
     Viktor Dukhovni
     Jason Edgecombe
@@ -235,6 +265,7 @@ reports, suggestions, and valuable resources:
     Peter Eriksson
     Juha Erkkilä
     Gilles Espinasse
+    Sergey Fedorov
     Ronni Feldt
     Bill Fellows
     JC Ferguson
@@ -244,6 +275,7 @@ reports, suggestions, and valuable resources:
     Frank Filz
     William Fiveash
     Jacques Florent
+    Oliver Freyermuth
     Ákos Frohner
     Sebastian Galiano
     Marcus Granado
@@ -261,6 +293,7 @@ reports, suggestions, and valuable resources:
     Matthieu Hautreux
     Jochen Hein
     Paul B. Henson
+    Kihong Heo
     Jeff Hodges
     Christopher Hogan
     Love Hörnquist Åstrand
@@ -275,10 +308,12 @@ reports, suggestions, and valuable resources:
     Holger Isenberg
     Spencer Jackson
     Diogenes S. Jesus
+    Mike Jetzer
     Pavel Jindra
     Brian Johannesmeyer
     Joel Johnson
     Lutz Justen
+    Ganesh Kamath
     Alexander Karaivanov
     Anders Kaseorg
     Bar Katz
@@ -288,6 +323,7 @@ reports, suggestions, and valuable resources:
     Patrik Kis
     Martin Kittel
     Thomas Klausner
+    Tomasz Kłoczko
     Matthew Krupcale
     Mikkel Kruse
     Reinhard Kugler
@@ -316,7 +352,9 @@ reports, suggestions, and valuable resources:
     Nathaniel McCallum
     Greg McClement
     Cameron Meadors
+    Vipul Mehta
     Alexey Melnikov
+    Ivan A. Melnikov
     Franklyn Mendez
     Mantas Mikulėnas
     Markus Moeller
@@ -324,6 +362,7 @@ reports, suggestions, and valuable resources:
     Paul Moore
     Keiichi Mori
     Michael Morony
+    Sam Morris
     Zbysek Mraz
     Edward Murrell
     Joshua Neuheisel
@@ -351,6 +390,7 @@ reports, suggestions, and valuable resources:
     Tony Reix
     Martin Rex
     Pat Riehecky
+    Julien Rische
     Jason Rogers
     Matt Rogers
     Nate Rosenblum
@@ -360,6 +400,7 @@ reports, suggestions, and valuable resources:
     Joshua Schaeffer
     Alexander Scheel
     Jens Schleusener
+    Ryan Schmidt
     Andreas Schneider
     Paul Seyfert
     Tom Shaw
@@ -373,12 +414,15 @@ reports, suggestions, and valuable resources:
     Michael Ströder
     Bjørn Tore Sund
     Ondřej Surý
+    Joseph Sutton
     Joe Travaglini
     Sergei Trofimovich
     Greg Troxel
+    Fraser Tweedale
     Tim Uglow
     Rathor Vipin
     Denis Vlasenko
+    Thomas Wagner
     Jorgen Wahlsten
     Stef Walter
     Max (Weijun) Wang
@@ -400,12 +444,12 @@ reports, suggestions, and valuable resources:
     Xu Qiang
     Neng Xue
     Zhaomo Yang
+    Tianjiao Yin
     Nickolai Zeldovich
     Bean Zhang
+    ChenChen Zhou
     Hanz van Zijst
     Gertjan Zwartjes
 
 The above is not an exhaustive list; many others have contributed in
 various ways to the MIT Kerberos development effort over the years.
-Other acknowledgments (for bug reports and patches) are in the
-doc/CHANGES file.

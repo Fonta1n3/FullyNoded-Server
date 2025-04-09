@@ -103,7 +103,8 @@ typedef struct _pkinit_cert_matching_data {
 /*
  * Functions to initialize and cleanup crypto contexts
  */
-krb5_error_code pkinit_init_plg_crypto(pkinit_plg_crypto_context *);
+krb5_error_code pkinit_init_plg_crypto(krb5_context,
+				       pkinit_plg_crypto_context *);
 void pkinit_fini_plg_crypto(pkinit_plg_crypto_context);
 
 krb5_error_code pkinit_init_req_crypto(pkinit_req_crypto_context *);
@@ -132,9 +133,6 @@ krb5_error_code cms_signeddata_create
 	int cms_msg_type,				/* IN
 		    specifies CMS_SIGN_CLIENT for client-side CMS message
 		    and CMS_SIGN_SERVER for kdc-side */
-	int include_certchain,				/* IN
-		    specifies where certificates field in SignedData
-		    should contain certificate path */
 	unsigned char *auth_pack,			/* IN
 		    contains DER encoded AuthPack (CMS_SIGN_CLIENT)
 		    or DER encoded DHRepInfo (CMS_SIGN_SERVER) */
@@ -182,48 +180,6 @@ krb5_error_code cms_signeddata_verify
 		    receives length of authz_data */
 	int *is_signed);                                /* OUT
 		    receives whether message is signed */
-
-/*
- * this function creates a CMS message where eContentType is EnvelopedData
- */
-krb5_error_code cms_envelopeddata_create
-	(krb5_context context,				/* IN */
-	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
-	pkinit_req_crypto_context req_cryptoctx,	/* IN */
-	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	krb5_preauthtype pa_type,			/* IN */
-	int include_certchain,				/* IN
-		    specifies whether the certificates field in
-		    SignedData should contain certificate path */
-	unsigned char *key_pack,			/* IN
-		    contains DER encoded ReplyKeyPack */
-	unsigned int key_pack_len,			/* IN
-		    contains length of key_pack */
-	unsigned char **envel_data,			/* OUT
-		    receives DER encoded encKeyPack */
-	unsigned int *envel_data_len);			/* OUT
-		    receives length of envel_data */
-
-/*
- * this function creates a CMS message where eContentType is EnvelopedData
- */
-krb5_error_code cms_envelopeddata_verify
-	(krb5_context context,				/* IN */
-	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
-	pkinit_req_crypto_context req_cryptoctx,	/* IN */
-	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	krb5_preauthtype pa_type,			/* IN */
-	int require_crl_checking,			/* IN
-		    specifies whether CRL checking should be
-		    strictly enforced */
-	unsigned char *envel_data,			/* IN
-		    contains DER encoded encKeyPack */
-	unsigned int envel_data_len,			/* IN
-		    contains length of envel_data */
-	unsigned char **signed_data,			/* OUT
-		    receives ReplyKeyPack */
-	unsigned int *signed_data_len);			/* OUT
-		    receives length of signed_data */
 
 /*
  * This function retrieves the signer's identity, in a form that could
@@ -289,22 +245,6 @@ krb5_error_code crypto_check_cert_eku
 		    receives non-zero if an acceptable EKU was found */
 
 /*
- * this functions takes in generated DH secret key and converts
- * it in to a kerberos session key. it takes into the account the
- * enc type and then follows the procedure specified in the RFC p 22.
- */
-krb5_error_code pkinit_octetstring2key
-	(krb5_context context,				/* IN */
-	krb5_enctype etype,				/* IN
-		    specifies the enc type */
-	unsigned char *key,				/* IN
-		    contains the DH secret key */
-	unsigned int key_len,				/* IN
-		    contains length of key */
-	krb5_keyblock * krb5key);			/* OUT
-		    receives kerberos session key */
-
-/*
  * this function implements clients first part of the DH protocol.
  * client selects its DH parameters and pub key
  */
@@ -315,14 +255,8 @@ krb5_error_code client_create_dh
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
 	int dh_size,					/* IN
 		    specifies the DH modulous, eg 1024, 2048, or 4096 */
-	unsigned char **dh_params_out,			/* OUT
-		    contains DER encoded DH params */
-	unsigned int *dh_params_len_out,		/* OUT
-		    contains length of encoded DH params */
-	unsigned char **dh_pubkey_out,			/* OUT
-		    receives DER encoded DH pub key */
-	unsigned int *dh_pubkey_len_out);			/* OUT
-		    receives length of DH pub key */
+	krb5_data *spki_out);				/* OUT
+		    receives SubjectPublicKeyInfo encoding */
 
 /*
  * this function completes client's the DH protocol. client
@@ -353,8 +287,8 @@ krb5_error_code server_check_dh
 	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
 	pkinit_req_crypto_context req_cryptoctx,	/* IN */
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	krb5_data *dh_params,				/* IN
-		    ???? */
+	const krb5_data *client_spki,			/* IN
+		    SubjectPublicKeyInfo encoding from client */
 	int minbits);					/* IN
 		    the minimum number of key bits acceptable */
 
@@ -367,10 +301,6 @@ krb5_error_code server_process_dh
 	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
 	pkinit_req_crypto_context req_cryptoctx,	/* IN */
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	unsigned char *received_pubkey,			/* IN
-		    contains client's DER encoded DH pub key */
-	unsigned int received_pub_len,			/* IN
-		    contains length of received_pubkey */
 	unsigned char **dh_pubkey_out,			/* OUT
 		    receives KDC's DER encoded DH pub key */
 	unsigned int *dh_pubkey_len_out,		/* OUT
@@ -606,28 +536,34 @@ krb5_error_code pkinit_identity_set_prompter
 	void *prompter_data);				/* IN */
 
 krb5_error_code
-pkinit_alg_agility_kdf(krb5_context context,
-                       krb5_data *secret,
-                       krb5_data *alg_oid,
-                       krb5_const_principal party_u_info,
-                       krb5_const_principal party_v_info,
-                       krb5_enctype enctype,
-                       krb5_data *as_req,
-                       krb5_data *pk_as_rep,
-                       krb5_keyblock *key_block);
+pkinit_kdf(krb5_context context, krb5_data *secret, const krb5_data *alg_oid,
+	   krb5_const_principal party_u_info,
+	   krb5_const_principal party_v_info, krb5_enctype enctype,
+	   const krb5_data *as_req, const krb5_data *pk_as_rep,
+	   krb5_keyblock *key_block);
 
-extern const krb5_octet krb5_pkinit_sha1_oid[];
-extern const size_t krb5_pkinit_sha1_oid_len;
-extern const krb5_octet krb5_pkinit_sha256_oid[];
-extern const size_t krb5_pkinit_sha256_oid_len;
-extern const krb5_octet krb5_pkinit_sha512_oid[];
-extern const size_t  krb5_pkinit_sha512_oid_len;
+extern const krb5_data sha1_id;
+extern const krb5_data sha256_id;
+extern const krb5_data sha512_id;
+extern const krb5_data oakley_1024;
+extern const krb5_data oakley_2048;
+extern const krb5_data oakley_4096;
+extern const krb5_data ec_p256;
+extern const krb5_data ec_p384;
+extern const krb5_data ec_p521;
+extern const krb5_data dh_oid;
+extern const krb5_data ec_oid;
+
 /**
  * An ordered set of OIDs, stored as krb5_data, of KDF algorithms
  * supported by this implementation. The order of this array controls
  * the order in which the server will pick.
  */
 extern krb5_data const * const supported_kdf_alg_ids[];
+
+/* CMS signature algorithms supported by this implementation, in order of
+ * decreasing preference. */
+extern krb5_data const * const supported_cms_algs[];
 
 krb5_error_code
 crypto_encode_der_cert(krb5_context context, pkinit_req_crypto_context reqctx,
@@ -638,5 +574,7 @@ crypto_req_cert_matching_data(krb5_context context,
 			      pkinit_plg_crypto_context plgctx,
 			      pkinit_req_crypto_context reqctx,
 			      pkinit_cert_matching_data **md_out);
+
+int parse_dh_min_bits(krb5_context context, const char *str);
 
 #endif	/* _PKINIT_CRYPTO_H */

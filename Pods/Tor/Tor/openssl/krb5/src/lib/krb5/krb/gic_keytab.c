@@ -45,7 +45,6 @@ get_as_key_keytab(krb5_context context,
     krb5_keytab keytab = (krb5_keytab) gak_data;
     krb5_error_code ret;
     krb5_keytab_entry kt_ent;
-    krb5_keyblock *kt_key;
 
     /* We don't need the password from the responder to create the AS key. */
     if (as_key == NULL)
@@ -71,16 +70,13 @@ get_as_key_keytab(krb5_context context,
                                  etype, &kt_ent)))
         return(ret);
 
-    ret = krb5_copy_keyblock(context, &kt_ent.key, &kt_key);
-
-    /* again, krb5's memory management is lame... */
-
-    *as_key = *kt_key;
-    free(kt_key);
+    /* Steal the keyblock from kt_ent for the caller. */
+    *as_key = kt_ent.key;
+    memset(&kt_ent.key, 0, sizeof(kt_ent.key));
 
     (void) krb5_kt_free_entry(context, &kt_ent);
 
-    return(ret);
+    return 0;
 }
 
 /* Return the list of etypes available for client in keytab. */
@@ -182,7 +178,7 @@ krb5_init_creds_set_keytab(krb5_context context,
                            krb5_init_creds_context ctx,
                            krb5_keytab keytab)
 {
-    krb5_enctype *etype_list;
+    krb5_enctype *etype_list = NULL;
     krb5_error_code ret;
     struct canonprinc iter = { ctx->request->client, .subst_defrealm = TRUE };
     krb5_const_principal canonprinc;
@@ -212,6 +208,7 @@ krb5_init_creds_set_keytab(krb5_context context,
     free_canonprinc(&iter);
     if (ret) {
         TRACE_INIT_CREDS_KEYTAB_LOOKUP_FAILED(context, ret);
+        free(etype_list);
         return 0;
     }
     TRACE_INIT_CREDS_KEYTAB_LOOKUP(context, ctx->request->client, etype_list);
@@ -238,7 +235,8 @@ static krb5_error_code
 get_init_creds_keytab(krb5_context context, krb5_creds *creds,
                       krb5_principal client, krb5_keytab keytab,
                       krb5_deltat start_time, const char *in_tkt_service,
-                      krb5_get_init_creds_opt *options, int *use_primary)
+                      krb5_get_init_creds_opt *options,
+                      krb5_boolean use_primary, struct kdclist *kdcs)
 {
     krb5_error_code ret;
     krb5_init_creds_context ctx = NULL;
@@ -258,7 +256,7 @@ get_init_creds_keytab(krb5_context context, krb5_creds *creds,
     if (ret != 0)
         goto cleanup;
 
-    ret = k5_init_creds_get(context, ctx, use_primary);
+    ret = k5_init_creds_get(context, ctx, use_primary, kdcs);
     if (ret != 0)
         goto cleanup;
 
@@ -282,9 +280,9 @@ krb5_get_init_creds_keytab(krb5_context context,
                            krb5_get_init_creds_opt *options)
 {
     krb5_error_code ret;
-    int use_primary;
     krb5_keytab keytab;
     struct errinfo errsave = EMPTY_ERRINFO;
+    struct kdclist *kdcs = NULL;
 
     if (arg_keytab == NULL) {
         if ((ret = krb5_kt_default(context, &keytab)))
@@ -293,12 +291,14 @@ krb5_get_init_creds_keytab(krb5_context context,
         keytab = arg_keytab;
     }
 
-    use_primary = 0;
+    ret = k5_kdclist_create(&kdcs);
+    if (ret)
+        goto cleanup;
 
     /* first try: get the requested tkt from any kdc */
 
     ret = get_init_creds_keytab(context, creds, client, keytab, start_time,
-                                in_tkt_service, options, &use_primary);
+                                in_tkt_service, options, FALSE, kdcs);
 
     /* check for success */
 
@@ -313,13 +313,11 @@ krb5_get_init_creds_keytab(krb5_context context,
     /* If the reply did not come from the primary kdc, try again with
      * the primary kdc. */
 
-    if (!use_primary) {
-        use_primary = 1;
-
+    if (!k5_kdclist_any_replicas(context, kdcs)) {
         k5_save_ctx_error(context, ret, &errsave);
         ret = get_init_creds_keytab(context, creds, client, keytab,
                                     start_time, in_tkt_service, options,
-                                    &use_primary);
+                                    TRUE, NULL);
         if (ret == 0)
             goto cleanup;
 
@@ -336,6 +334,7 @@ krb5_get_init_creds_keytab(krb5_context context,
 cleanup:
     if (arg_keytab == NULL)
         krb5_kt_close(context, keytab);
+    k5_kdclist_free(kdcs);
     k5_clear_error(&errsave);
 
     return(ret);
@@ -352,7 +351,6 @@ krb5_get_in_tkt_with_keytab(krb5_context context, krb5_flags options,
     char * server = NULL;
     krb5_keytab keytab;
     krb5_principal client_princ, server_princ;
-    int use_primary = 0;
 
     retval = k5_populate_gic_opt(context, &opts, options, addrs, ktypes,
                                  pre_auth_types, creds);
@@ -373,7 +371,7 @@ krb5_get_in_tkt_with_keytab(krb5_context context, krb5_flags options,
     client_princ = creds->client;
     retval = k5_get_init_creds(context, creds, creds->client,
                                krb5_prompter_posix,  NULL, 0, server, opts,
-                               get_as_key_keytab, (void *)keytab, &use_primary,
+                               get_as_key_keytab, (void *)keytab,
                                ret_as_reply);
     krb5_free_unparsed_name( context, server);
     if (retval) {

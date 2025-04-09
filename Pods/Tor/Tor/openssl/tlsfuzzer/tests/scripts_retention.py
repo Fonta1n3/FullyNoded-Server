@@ -34,17 +34,25 @@ xpass_lock = threading.Lock()
 
 
 def process_stdout(name, proc):
-    for line in iter(proc.stdout.readline, b''):
-        line = line.decode()
-        line = line.rstrip()
-        out.put("{0}:stdout:{1}".format(name, line))
+    try:
+        for line in iter(proc.stdout.readline, b''):
+            line = line.decode()
+            line = line.rstrip()
+            out.put("{0}:stdout:{1}".format(name, line))
+    except Exception as e:
+        out.put("{0}:Exception:stdout:{1}".format(name, e))
+        raise e
 
 
 def process_stderr(name, proc):
-    for line in iter(proc.stderr.readline, b''):
-        line = line.decode()
-        line = line.rstrip()
-        out.put("{0}:stderr:{1}".format(name, line))
+    try:
+        for line in iter(proc.stderr.readline, b''):
+            line = line.decode()
+            line = line.rstrip()
+            out.put("{0}:stderr:{1}".format(name, line))
+    except Exception as e:
+        out.put("{0}:Exception:stderr:{1}".format(name, e))
+        raise e
 
 
 def wait_till_open(host, port):
@@ -139,13 +147,21 @@ def flush_queue(exp_pass = True):
             break
 
 
-def run_clients(tests, common_args, srv, expected_size):
+def run_clients(tests, common_args, srv, expected_size, run_only=None):
+    skipped = 0
     good = 0
     bad = 0
     failed = []
     print_all_from_queue()
     for params in tests:
         script = params["name"]
+
+        if run_only is not None and script != run_only:
+            # If the test name doesn't match, count it as skipped 
+            logger.info("{0}:skipped".format(script))
+            skipped += 1
+            continue
+
         logger.info("{0}:started".format(script))
         start_time = time.time()
         proc_args = [sys.executable, '-u',
@@ -167,15 +183,21 @@ def run_clients(tests, common_args, srv, expected_size):
         thr_stderr.join()
         proc.wait()
         ret = proc.returncode
+        srv.poll()
         if srv.returncode is not None:
             logger.critical("Server process not active")
+            print_all_from_queue(params.get("exp_pass", True))
         end_time = time.time()
         if ret == 0 and params.get("exp_pass", True) or \
                 ret != 0 and not params.get("exp_pass", True):
             good += 1
             logger.info("{0}:finished:{1:.2f}s".format(script,
                                                    end_time - start_time))
-            flush_queue(params.get("exp_pass", True))
+            srv.poll()
+            if srv.returncode is not None:
+                print_all_from_queue(params.get("exp_pass", True))
+            else:
+                flush_queue(params.get("exp_pass", True))
         else:
             bad += 1
             print_all_from_queue(params.get("exp_pass", True))
@@ -183,14 +205,23 @@ def run_clients(tests, common_args, srv, expected_size):
                                                        end_time - start_time,
                                                        ret))
             failed.append(proc_args)
+        srv.poll()
+        if srv.returncode is not None:
+            break
 
-    return good, bad, failed
+    return good, bad, failed, skipped
 
 
-def run_with_json(config_file, srv_path, expected_size):
+def run_with_json(config_file, srv_path, expected_size, run_only=None):
+    """
+    Load a provided config_file, srv_path, expected_size and an optional
+      run_only (which will instruct it what to run and skip the rest)
+      and run each available test with the provided json configuration file
+    """
     with open(config_file) as f:
         config = json.load(f)
 
+    skipped = 0
     good = 0
     bad = 0
     failed = []
@@ -215,8 +246,9 @@ def run_with_json(config_file, srv_path, expected_size):
         logger.info("Server process started")
         common_args = srv_conf.get("common_arguments", [])
         try:
-            n_good, n_bad, f_cmds = run_clients(srv_conf["tests"], common_args, srv,
-                                                expected_size)
+            n_good, n_bad, f_cmds, n_skipped = run_clients(srv_conf["tests"], common_args, srv,
+                                                expected_size, run_only)
+            skipped += n_skipped
             good += n_good
             bad += n_bad
             failed.extend(f_cmds)
@@ -226,21 +258,28 @@ def run_with_json(config_file, srv_path, expected_size):
                 logging.debug("Killing server process")
                 srv.send_signal(15)  # SIGTERM
                 srv.wait()
-                logging.debug("Server process killed: {0}".format(srv.returncode))
+                logging.info("Server process killed: {0}".format(srv.returncode))
             except OSError:
-                logging.debug("Can't kill server process")
+                logging.error("Can't kill server process, retcode: {0}"
+                    .format(srv.returncode))
         srv_err.join()
         srv_out.join()
 
-    return good, bad, failed
-
+    return good, bad, failed, skipped
 
 def main():
-    if len(sys.argv) != 4:
-        print("provide path to config file, server executable and expected reply size")
+    if len(sys.argv) not in [4, 5]:
+        print("Provide path to `config file`, `server executable` and expected `reply size`")
+        print("You can provide an optional 4th arg that will limit the test to just one of the scripts")
         sys.exit(2)
 
-    good, bad, failed = run_with_json(sys.argv[1], sys.argv[2], sys.argv[3])
+    # This parameter allows us to pick one test - and only run it
+    #  while skipping the rest of the tests, they will not be considered skipped
+    run_only = None
+    if len(sys.argv) == 5:
+        run_only = sys.argv[4]
+
+    good, bad, failed, skipped = run_with_json(sys.argv[1], sys.argv[2], sys.argv[3], run_only)
 
     logging.shutdown()
     print(20 * '=')
@@ -253,6 +292,7 @@ def main():
     print(20 * '=')
 
     print("Ran {0} scripts".format(good + bad))
+    print("SKIP: {0}".format(skipped))
     print("PASS: {0}".format(good))
     print("FAIL: {0}".format(bad))
     print(20 * '=')
@@ -262,7 +302,8 @@ def main():
         for i in failed:
             print(" {0!r}".format(i))
 
-    if bad > 0:
+    # Report if something 'bad' happened, or that no 'good' occured
+    if bad > 0 or good == 0:
         sys.exit(1)
 
 if __name__ == "__main__":

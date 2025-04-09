@@ -8,13 +8,13 @@ jobs:
     strategy:
       fail-fast: false
     container:
-      image: openquantumsafe/ci-ubuntu-jammy:latest
+      image: openquantumsafe/ci-ubuntu-latest:latest
     steps:
       - name: Install dependencies
         run: apt-get update && apt-get install -y clang-format
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
 
       - name: Check coding style using clang-format
-        run: find . -type f -and '(' -name '*.h' -or -name '*.c' -or -name '*.inc' ')' | xargs clang-format --dry-run --Werror
+        run: ./scripts/do_code_format.sh

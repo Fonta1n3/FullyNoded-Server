@@ -83,7 +83,7 @@ def printUsage(s=None):
     [-c CERT] [-k KEY] [-t TACK] [-v VERIFIERDB] [-d DIR] [-l LABEL] [-L LENGTH]
     [--reqcert] [--param DHFILE] [--psk PSK] [--psk-ident IDENTITY]
     [--psk-sha384] [--ssl3] [--max-ver VER] [--tickets COUNT] [--cipherlist]
-    [--request-pha] [--require-pha]
+    [--request-pha] [--require-pha] [--echo]
     HOST:PORT
 
   client
@@ -110,6 +110,7 @@ def printUsage(s=None):
   --request-pha - ask client for post-handshake authentication
   --require-pha - abort connection if client didn't provide certificate in
                   post-handshake authentication
+  --echo - function as an echo server
   CERT, KEY - the file with key and certificates that will be used by client or
         server. The server can accept multiple pairs of `-c` and `-k` options
         to configure different certificates (like RSA and ECDSA)
@@ -169,6 +170,7 @@ def handleArgs(argv, argString, flagsList=[]):
     ciphers = []
     request_pha = False
     require_pha = False
+    echo = False
 
     for opt, arg in opts:
         if opt == "-k":
@@ -246,6 +248,8 @@ def handleArgs(argv, argString, flagsList=[]):
             request_pha = True
         elif opt == "--require-pha":
             require_pha = True
+        elif opt == "--echo":
+            echo = True
         else:
             assert(False)
 
@@ -312,25 +316,27 @@ def handleArgs(argv, argString, flagsList=[]):
         retList.append(request_pha)
     if "require-pha" in flagsList:
         retList.append(require_pha)
+    if "echo" in flagsList:
+        retList.append(echo)
     return retList
 
 
 def printGoodConnection(connection, seconds):
     print("  Handshake time: %.3f seconds" % seconds)
     print("  Version: %s" % connection.getVersionName())
-    print("  Cipher: %s %s" % (connection.getCipherName(), 
+    print("  Cipher: %s %s" % (connection.getCipherName(),
         connection.getCipherImplementation()))
     print("  Ciphersuite: {0}".\
             format(CipherSuite.ietfNames[connection.session.cipherSuite]))
     if connection.session.srpUsername:
         print("  Client SRP username: %s" % connection.session.srpUsername)
     if connection.session.clientCertChain:
-        print("  Client X.509 SHA1 fingerprint: %s" % 
+        print("  Client X.509 SHA1 fingerprint: %s" %
             connection.session.clientCertChain.getFingerprint())
     else:
         print("  No client certificate provided by peer")
     if connection.session.serverCertChain:
-        print("  Server X.509 SHA1 fingerprint: %s" % 
+        print("  Server X.509 SHA1 fingerprint: %s" %
             connection.session.serverCertChain.getFingerprint())
     if connection.version >= (3, 3) and connection.serverSigAlg is not None:
         scheme = SignatureScheme.toRepr(connection.serverSigAlg)
@@ -346,20 +352,21 @@ def printGoodConnection(connection, seconds):
         print("  DH group size: {0} bits".format(connection.dhGroupSize))
     if connection.session.serverName:
         print("  SNI: %s" % connection.session.serverName)
-    if connection.session.tackExt:   
+    if connection.session.tackExt:
         if connection.session.tackInHelloExt:
             emptyStr = "\n  (via TLS Extension)"
         else:
-            emptyStr = "\n  (via TACK Certificate)" 
+            emptyStr = "\n  (via TACK Certificate)"
         print("  TACK: %s" % emptyStr)
         print(str(connection.session.tackExt))
     if connection.session.appProto:
         print("  Application Layer Protocol negotiated: {0}".format(
             connection.session.appProto.decode('utf-8')))
-    print("  Next-Protocol Negotiated: %s" % connection.next_proto) 
+    print("  Next-Protocol Negotiated: %s" % connection.next_proto)
     print("  Encrypt-then-MAC: {0}".format(connection.encryptThenMAC))
     print("  Extended Master Secret: {0}".format(
                                                connection.extendedMasterSecret))
+    print("  Session Resumed: {0}".format(connection.resumed))
 
 def printExporter(connection, expLabel, expLength):
     if expLabel is None:
@@ -458,11 +465,8 @@ def clientCmd(argv):
     # unreasumable, override it
     session.resumable = True
 
-    print("Received {0} ticket[s]".format(len(connection.tickets)))
+    print("Received {0} ticket[s]".format(len(connection.tickets) + len(connection.tls_1_0_tickets)))
     assert connection.tickets is session.tickets
-
-    if not session.tickets:
-        return
 
     if not resumption:
         return
@@ -474,11 +478,10 @@ def clientCmd(argv):
     sock.connect(address)
     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     connection = TLSConnection(sock)
-
     try:
         start = time_stamp()
         connection.handshakeClientCert(serverName=address[0], alpn=alpn,
-            session=session)
+            session=session, settings=settings)
         stop = time_stamp()
         print("Handshake success")
     except TLSLocalAlert as a:
@@ -512,24 +515,27 @@ def serverCmd(argv):
     (address, privateKey, cert_chain, virtual_hosts, tacks, verifierDB,
             directory, reqCert,
             expLabel, expLength, dhparam, psk, psk_ident, psk_hash, ssl3,
-            max_ver, tickets, cipherlist, request_pha, require_pha) = \
+            max_ver, tickets, cipherlist, request_pha, require_pha, echo) = \
         handleArgs(argv, "kctbvdlL",
                    ["reqcert", "param=", "psk=",
                     "psk-ident=", "psk-sha384", "ssl3", "max-ver=",
-                    "tickets=", "cipherlist=", "request-pha", "require-pha"])
+                    "tickets=", "cipherlist=", "request-pha", "require-pha",
+                    "echo"])
 
 
     if (cert_chain and not privateKey) or (not cert_chain and privateKey):
         raise SyntaxError("Must specify CERT and KEY together")
     if tacks and not cert_chain:
         raise SyntaxError("Must specify CERT with Tacks")
-    
-    print("I am an HTTPS test server, I will listen on %s:%d" % 
-            (address[0], address[1]))    
+
+    print("I am an {2} test server, I will listen on {0}:{1}".format(
+        address[0], address[1], "echo" if echo else "HTTP"))
+
     if directory:
         os.chdir(directory)
-    print("Serving files from %s" % os.getcwd())
-    
+    if not echo:
+        print("Serving files from %s" % os.getcwd())
+
     if cert_chain and privateKey:
         print("Using certificate and private key...")
     if verifierDB:
@@ -561,6 +567,14 @@ def serverCmd(argv):
     if cipherlist:
         settings.cipherNames = [item for cipher in cipherlist
                                 for item in cipher.split(',')]
+
+    class MySimpleEchoHandler(BaseRequestHandler):
+        def handle(self):
+            while True:
+                data = self.request.recv(2**14)  # max TLS ApplicationData
+                if not data:
+                    break
+                self.request.send(data)
 
     class MySimpleHTTPHandler(SimpleHTTPRequestHandler, object):
         """Buffer the header and body of HTTP message."""
@@ -600,7 +614,14 @@ def serverCmd(argv):
                     return
             return super(MySimpleHTTPHandler, self).do_GET()
 
-    class MyHTTPServer(ThreadingMixIn, TLSSocketServerMixIn, HTTPServer):
+    if echo:
+        mixin = TCPServer
+        handler = MySimpleEchoHandler
+    else:
+        mixin = HTTPServer
+        handler = MySimpleHTTPHandler
+
+    class MyServer(ThreadingMixIn, TLSSocketServerMixIn, mixin):
         def handshake(self, connection):
             print("About to handshake...")
             activationFlags = 0
@@ -668,8 +689,8 @@ def serverCmd(argv):
             printExporter(connection, expLabel, expLength)
             return True
 
-    httpd = MyHTTPServer(address, MySimpleHTTPHandler)
-    httpd.serve_forever()
+    server = MyServer(address, handler)
+    server.serve_forever()
 
 
 if __name__ == '__main__':

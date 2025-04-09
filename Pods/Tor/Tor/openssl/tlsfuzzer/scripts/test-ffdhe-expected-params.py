@@ -25,10 +25,10 @@ from tlsfuzzer.expect import ExpectServerHello, ExpectCertificate, \
         ExpectAlert, ExpectClose, ExpectServerKeyExchange, \
         ExpectApplicationData
 from tlsfuzzer.utils.lists import natural_sort_keys
-from tlsfuzzer.helpers import RSA_SIG_ALL
+from tlsfuzzer.helpers import RSA_SIG_ALL, AutoEmptyExtension
 
 
-version = 2
+version = 3
 
 
 def help_msg():
@@ -54,6 +54,9 @@ def help_msg():
     print(" --dhparam      File with the expected DH parameters that the server should use")
     print("                can be used together with --named-ffdh to specify multiple")
     print("                acceptable parameters")
+    print(" -t timeout     how long to wait before assuming the server won't")
+    print("                send a message")
+    print(" -M | --ems     Enable support for Extended Master Secret")
     print(" --help         this message")
 
 
@@ -67,10 +70,13 @@ def main():
     last_exp_tmp = None
     group_names = []
     dh_file = None
+    timeout = 5.0
+    ems = False
 
     argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, "h:p:e:x:X:n:", ["help", "named-ffdh=",
-                                                      "dhparam="])
+    opts, args = getopt.getopt(argv, "h:p:e:x:X:t:n:M",
+                               ["help", "named-ffdh=", "ems",
+                                "dhparam="])
     for opt, arg in opts:
         if opt == '-h':
             host = arg
@@ -94,6 +100,10 @@ def main():
             group_names.append(arg)
         elif opt == '--dhparam':
             dh_file = arg
+        elif opt == '-M' or opt == '--ems':
+            ems = True
+        elif opt == '-t':
+            timeout = float(arg)
         else:
             raise ValueError("Unknown option: {0}".format(opt))
 
@@ -121,9 +131,11 @@ def main():
 
     conversations = {}
 
-    conversation = Connect(host, port)
+    conversation = Connect(host, port, timeout=timeout)
     node = conversation
     ext = {ExtensionType.renegotiation_info: None}
+    if ems:
+        ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
     ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
                CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
                CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -133,8 +145,10 @@ def main():
     ext[ExtensionType.signature_algorithms_cert] = \
         SignatureAlgorithmsCertExtension().create(RSA_SIG_ALL)
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello(extensions={ExtensionType.
-                                                        renegotiation_info:None}))
+    srv_ext = {ExtensionType.renegotiation_info:None}
+    if ems:
+        srv_ext[ExtensionType.extended_master_secret] = None
+    node = node.add_child(ExpectServerHello(extensions=srv_ext))
     node = node.add_child(ExpectCertificate())
     node = node.add_child(ExpectServerKeyExchange())
     node = node.add_child(ExpectServerHelloDone())
@@ -155,9 +169,11 @@ def main():
 
     conversations["sanity"] = conversation
 
-    conversation = Connect(host, port)
+    conversation = Connect(host, port, timeout=timeout)
     node = conversation
     ext = {ExtensionType.renegotiation_info: None}
+    if ems:
+        ext[ExtensionType.extended_master_secret] = AutoEmptyExtension()
     ciphers = [CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
                CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
                CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -167,8 +183,10 @@ def main():
     ext[ExtensionType.signature_algorithms_cert] = \
         SignatureAlgorithmsCertExtension().create(RSA_SIG_ALL)
     node = node.add_child(ClientHelloGenerator(ciphers, extensions=ext))
-    node = node.add_child(ExpectServerHello(extensions={ExtensionType.
-                                                        renegotiation_info:None}))
+    srv_ext = {ExtensionType.renegotiation_info:None}
+    if ems:
+        srv_ext[ExtensionType.extended_master_secret] = None
+    node = node.add_child(ExpectServerHello(extensions=srv_ext))
     node = node.add_child(ExpectCertificate())
     node = node.add_child(ExpectServerKeyExchange(valid_params=valid_params))
     node = node.add_child(ExpectServerHelloDone())

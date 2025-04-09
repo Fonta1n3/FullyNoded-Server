@@ -732,6 +732,12 @@ int EVP_PKEY_CTX_get_params(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
             return
                 ctx->op.encap.kem->get_ctx_params(ctx->op.encap.algctx,
                                                   params);
+        if (EVP_PKEY_CTX_IS_GEN_OP(ctx)
+            && ctx->keymgmt != NULL
+            && ctx->keymgmt->gen_get_params != NULL)
+            return
+                evp_keymgmt_gen_get_params(ctx->keymgmt, ctx->op.keymgmt.genctx,
+                                           params);
         break;
 #ifndef FIPS_MODULE
     case EVP_PKEY_STATE_UNKNOWN:
@@ -776,6 +782,13 @@ const OSSL_PARAM *EVP_PKEY_CTX_gettable_params(const EVP_PKEY_CTX *ctx)
         provctx = ossl_provider_ctx(EVP_KEM_get0_provider(ctx->op.encap.kem));
         return ctx->op.encap.kem->gettable_ctx_params(ctx->op.encap.algctx,
                                                       provctx);
+    }
+    if (EVP_PKEY_CTX_IS_GEN_OP(ctx)
+            && ctx->keymgmt != NULL
+            && ctx->keymgmt->gen_gettable_params != NULL) {
+        provctx = ossl_provider_ctx(EVP_KEYMGMT_get0_provider(ctx->keymgmt));
+        return ctx->keymgmt->gen_gettable_params(ctx->op.keymgmt.genctx,
+                                                 provctx);
     }
     return NULL;
 }
@@ -1008,6 +1021,7 @@ static int evp_pkey_ctx_add1_octet_string(EVP_PKEY_CTX *ctx, int fallback,
                                           int datalen)
 {
     OSSL_PARAM os_params[2];
+    const OSSL_PARAM *gettables;
     unsigned char *info = NULL;
     size_t info_len = 0;
     size_t info_alloc = 0;
@@ -1031,6 +1045,12 @@ static int evp_pkey_ctx_add1_octet_string(EVP_PKEY_CTX *ctx, int fallback,
         return 1;
     }
 
+    /* Check for older provider that doesn't support getting this parameter */
+    gettables = EVP_PKEY_CTX_gettable_params(ctx);
+    if (gettables == NULL || OSSL_PARAM_locate_const(gettables, param) == NULL)
+        return evp_pkey_ctx_set1_octet_string(ctx, fallback, param, op, ctrl,
+                                              data, datalen);
+
     /* Get the original value length */
     os_params[0] = OSSL_PARAM_construct_octet_string(param, NULL, 0);
     os_params[1] = OSSL_PARAM_construct_end();
@@ -1038,9 +1058,9 @@ static int evp_pkey_ctx_add1_octet_string(EVP_PKEY_CTX *ctx, int fallback,
     if (!EVP_PKEY_CTX_get_params(ctx, os_params))
         return 0;
 
-    /* Older provider that doesn't support getting this parameter */
+    /* This should not happen but check to be sure. */
     if (os_params[0].return_size == OSSL_PARAM_UNMODIFIED)
-        return evp_pkey_ctx_set1_octet_string(ctx, fallback, param, op, ctrl, data, datalen);
+        return 0;
 
     info_alloc = os_params[0].return_size + datalen;
     if (info_alloc == 0)

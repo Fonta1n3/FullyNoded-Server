@@ -252,10 +252,8 @@ The following options are supported by the krb5 mechanism:
 
 * **ccache**: For acquiring initiator credentials, the name of the
   :ref:`credential cache <ccache_definition>` to which the handle will
-  refer.  For storing credentials, the name of the cache where the
-  credentials should be stored.  If a collection name is given, the
-  primary cache of the collection will be used; this behavior may
-  change in future releases to select a cache from the collection.
+  refer.  For storing credentials, the name of the cache or collection
+  where the credentials will be stored (see below).
 
 * **client_keytab**: For acquiring initiator credentials, the name of
   the :ref:`keytab <keytab_definition>` which will be used, if
@@ -284,6 +282,15 @@ The following options are supported by the krb5 mechanism:
   keytab.  The value may be the name of a principal in the keytab, or
   the empty string.  If the empty string is given, any ``host``
   service principal in the keytab may be used.  (New in release 1.19.)
+
+In release 1.20 or later, if a collection name is specified for
+**cache** in a call to gss_store_cred_into(), an existing cache for
+the client principal within the collection will be selected, or a new
+cache will be created within the collection.  If *overwrite_cred* is
+false and the selected credential cache already exists, a
+**GSS_S_DUPLICATE_ELEMENT** error will be returned.  If *default_cred*
+is true, the primary cache of the collection will be switched to the
+selected cache.
 
 
 Importing and exporting credentials
@@ -415,6 +422,42 @@ unparsed principal name of the intermediate service.  If *cred_handle*
 is not a proxy credential, *data_set* will be set to an empty buffer
 set.  If the library does not support the query,
 gss_inquire_cred_by_oid will return **GSS_S_UNAVAILABLE**.
+
+
+Channel binding behavior and GSS_C_CHANNEL_BOUND_FLAG
+-----------------------------------------------------
+
+GSSAPI channel bindings can be used to limit the scope of a context
+establishment token to a particular protected channel or endpoint,
+such as a TLS channel or server certificate.  Channel bindings can be
+supplied via the *input_chan_bindings* parameter to either
+gss_init_sec_context() or gss_accept_sec_context().
+
+If both the initiator and acceptor of a GSSAPI exchange supply
+matching channel bindings, **GSS_C_CHANNEL_BOUND_FLAG** will be
+included in the gss_accept_sec_context() *ret_flags* result.  If
+either the initiator or acceptor (or both) do not supply channel
+bindings, the exchange will succeed, but **GSS_C_CHANNEL_BOUND_FLAG**
+will not be included in the return flags.  If the acceptor and
+initiator both inlude channel bindings but they do not match, the
+exchange will fail.
+
+If **GSS_C_CHANNEL_BOUND_FLAG** is included in the *req_flags*
+parameter of gss_init_sec_context(), the initiator will add the
+Microsoft KERB_AP_OPTIONS_CBT extension to the Kerberos authenticator.
+This extension requests that the acceptor strictly enforce channel
+bindings, causing the exchange to fail if the acceptor supplies
+channel bindings and the initiator does not.  The KERB_AP_OPTIONS_CBT
+extension will also be included if the
+**client_aware_channel_bindings** variable is set to ``true`` in
+:ref:`libdefaults`.
+
+Prior to release 1.19, **GSS_C_CHANNEL_BOUND_FLAG** is not
+implemented, and the exchange will fail if the acceptor supply channel
+bindings and the initiator does not (but not vice versa).  Between
+releases 1.19 and 1.21, **GSS_C_CHANNEL_BOUND_FLAG** is not recognized
+as an initiator flag, so **client_aware_channel_bindings** is the only
+way to cause KERB_AP_OPTIONS_CBT to be included.
 
 
 AEAD message wrapping

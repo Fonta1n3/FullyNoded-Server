@@ -392,7 +392,7 @@ txt_lookup_name(const char *prefix, const char *name)
             k5_buf_add(&buf, ".");
     }
 
-    return buf.data;
+    return k5_buf_cstring(&buf);
 }
 
 /*
@@ -439,7 +439,7 @@ cleanup:
 }
 
 char *
-k5_primary_domain()
+k5_primary_domain(void)
 {
     return NULL;
 }
@@ -497,7 +497,7 @@ errout:
 }
 
 char *
-k5_primary_domain()
+k5_primary_domain(void)
 {
     char *domain;
     DECLARE_HANDLE(h);

@@ -54,9 +54,8 @@ static void ktest_free_reply_key_pack(krb5_context context,
 static void ktest_free_kkdcp_message(krb5_context context,
                                      krb5_kkdcp_message *val);
 
-int main(argc, argv)
-    int argc;
-    char **argv;
+int
+main(int argc, char **argv)
 {
     krb5_data code;
     krb5_error_code retval;
@@ -999,18 +998,10 @@ int main(argc, argv)
     }
 
     /****************************************************************/
-    /* decode_ad_signedpath */
-    {
-        setup(krb5_ad_signedpath,ktest_make_sample_ad_signedpath);
-        decode_run("ad_signedpath","","30 3E A0 03 02 01 01 A1 0F 30 0D A0 03 02 01 01 A1 06 04 04 31 32 33 34 A3 26 30 24 30 10 A1 03 02 01 0D A2 09 04 07 70 61 2D 64 61 74 61 30 10 A1 03 02 01 0D A2 09 04 07 70 61 2D 64 61 74 61",decode_krb5_ad_signedpath,ktest_equal_ad_signedpath,krb5_free_ad_signedpath);
-        ktest_empty_ad_signedpath(&ref);
-    }
-
-    /****************************************************************/
     /* decode_iakerb_header */
     {
         setup(krb5_iakerb_header,ktest_make_sample_iakerb_header);
-        decode_run("iakerb_header","","30 18 A1 0A 04 08 6B 72 62 35 64 61 74 61 A2 0A 04 08 6B 72 62 35 64 61 74 61",decode_krb5_iakerb_header,ktest_equal_iakerb_header,krb5_free_iakerb_header);
+        decode_run("iakerb_header","","30 18 A1 0A 0C 08 6B 72 62 35 64 61 74 61 A2 0A 04 08 6B 72 62 35 64 61 74 61",decode_krb5_iakerb_header,ktest_equal_iakerb_header,krb5_free_iakerb_header);
         ktest_empty_iakerb_header(&ref);
     }
 
@@ -1183,7 +1174,7 @@ int main(argc, argv)
     /* decode_krb5_auth_pack */
     {
         setup(krb5_auth_pack,ktest_make_sample_auth_pack);
-        decode_run("krb5_auth_pack","","30 81 93 A0 29 30 27 A0 05 02 03 01 E2 40 A1 11 18 0F 31 39 39 34 30 36 31 30 30 36 30 33 31 37 5A A2 03 02 01 2A A3 06 04 04 31 32 33 34 A1 22 30 20 30 13 06 09 2A 86 48 86 F7 12 01 02 02 04 06 70 61 72 61 6D 73 03 09 00 6B 72 62 35 64 61 74 61 A2 24 30 22 30 13 06 09 2A 86 48 86 F7 12 01 02 02 04 06 70 61 72 61 6D 73 30 0B 06 09 2A 86 48 86 F7 12 01 02 02 A3 0A 04 08 6B 72 62 35 64 61 74 61 A4 10 30 0E 30 0C A0 0A 06 08 6B 72 62 35 64 61 74 61",
+        decode_run("krb5_auth_pack","","30 81 85 A0 35 30 33 A0 05 02 03 01 E2 40 A1 11 18 0F 31 39 39 34 30 36 31 30 30 36 30 33 31 37 5A A2 03 02 01 2A A3 06 04 04 31 32 33 34 A4 0A 04 08 6B 72 62 35 64 61 74 61 A1 08 04 06 70 76 61 6C 75 65 A2 24 30 22 30 13 06 09 2A 86 48 86 F7 12 01 02 02 04 06 70 61 72 61 6D 73 30 0B 06 09 2A 86 48 86 F7 12 01 02 02 A3 0A 04 08 6B 72 62 35 64 61 74 61 A4 10 30 0E 30 0C A0 0A 06 08 6B 72 62 35 64 61 74 61",
                    acc.decode_krb5_auth_pack,
                    ktest_equal_auth_pack,ktest_free_auth_pack);
         ktest_empty_auth_pack(&ref);

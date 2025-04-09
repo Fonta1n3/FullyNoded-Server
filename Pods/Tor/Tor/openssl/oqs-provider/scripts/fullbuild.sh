@@ -3,6 +3,7 @@
 # The following variables influence the operation of this build script:
 # Argument -f: Soft clean, ensuring re-build of oqs-provider binary
 # Argument -F: Hard clean, ensuring checkout and build of all dependencies
+# EnvVar CMAKE_PARAMS: passed to cmake
 # EnvVar MAKE_PARAMS: passed to invocations of make; sample value: "-j"
 # EnvVar OQSPROV_CMAKE_PARAMS: passed to invocations of oqsprovider cmake
 # EnvVar LIBOQS_BRANCH: Defines branch/release of liboqs; default value "main"
@@ -38,6 +39,12 @@ else
    export DOQS_ALGS_ENABLED="-DOQS_ALGS_ENABLED=$OQS_ALGS_ENABLED"
 fi
 
+if [ -z "$OQS_LIBJADE_BUILD"]; then
+   export DOQS_LIBJADE_BUILD="-DOQS_LIBJADE_BUILD=ON"
+else
+   export DOQS_LIBJADE_BUILD="-DOQS_LIBJADE_BUILD=$OQS_LIBJADE_BUILD"
+fi
+
 if [ -z "$OPENSSL_INSTALL" ]; then
  openssl version | grep "OpenSSL 3" > /dev/null 2>&1
  #if [ \($? -ne 0 \) -o \( ! -z "$OPENSSL_BRANCH" \) ]; then
@@ -51,7 +58,7 @@ if [ -z "$OPENSSL_INSTALL" ]; then
    if [ ! -d "openssl" ]; then
       echo "openssl not specified and doesn't reside where expected: Cloning and building..."
       # for full debug build add: enable-trace enable-fips --debug
-      export OSSL_PREFIX=`pwd`/.local && git clone --depth 1 --branch $OPENSSL_BRANCH git://git.openssl.org/openssl.git && cd openssl && LDFLAGS="-Wl,-rpath -Wl,${OSSL_PREFIX}/lib64" ./config --prefix=$OSSL_PREFIX && make $MAKE_PARAMS && make install_sw install_ssldirs && cd ..
+      export OSSL_PREFIX=`pwd`/.local && git clone --depth 1 --branch $OPENSSL_BRANCH https://github.com/openssl/openssl.git && cd openssl && LDFLAGS="-Wl,-rpath -Wl,${OSSL_PREFIX}/lib64" ./config --prefix=$OSSL_PREFIX && make $MAKE_PARAMS && make install_sw install_ssldirs && cd ..
       if [ $? -ne 0 ]; then
         echo "openssl build failed. Exiting."
         exit -1
@@ -100,14 +107,15 @@ if [ -z $liboqs_DIR ]; then
   if [ ! -z $OPENSSL_INSTALL ]; then
     export CMAKE_OPENSSL_LOCATION="-DOPENSSL_ROOT_DIR=$OPENSSL_INSTALL"
   else
-    export CMAKE_OPENSSL_LOCATION=""
+    # work around for cmake 3.23.3 regression not finding OpenSSL:
+    export CMAKE_OPENSSL_LOCATION="-DOPENSSL_ROOT_DIR="
   fi
   # for full debug build add: -DCMAKE_BUILD_TYPE=Debug
   # to optimize for size add -DOQS_ALGS_ENABLED= suitably to one of these values:
   #    STD: only include NIST standardized algorithms
   #    NIST_R4: only include algorithms in round 4 of the NIST competition
   #    All: include all algorithms supported by liboqs (default)
-  cd liboqs && cmake -GNinja $DOQS_ALGS_ENABLED $CMAKE_OPENSSL_LOCATION -DCMAKE_INSTALL_PREFIX=$(pwd)/../.local -S . -B _build && cd _build && ninja && ninja install && cd ../..
+  cd liboqs && cmake -GNinja $CMAKE_PARAMS $DOQS_ALGS_ENABLED $CMAKE_OPENSSL_LOCATION $DOQS_LIBJADE_BUILD -DCMAKE_INSTALL_PREFIX=$(pwd)/../.local -S . -B _build && cd _build && ninja && ninja install && cd ../..
   if [ $? -ne 0 ]; then
       echo "liboqs build failed. Exiting."
       exit -1
@@ -124,9 +132,9 @@ if [ ! -f "_build/lib/oqsprovider.$SHLIBEXT" ]; then
    BUILD_TYPE=""
    # for omitting public key in private keys add -DNOPUBKEY_IN_PRIVKEY=ON
    if [ -z "$OPENSSL_INSTALL" ]; then
-       cmake -DOPENSSL_ROOT_DIR=$(pwd)/.local $BUILD_TYPE $OQSPROV_CMAKE_PARAMS -S . -B _build && cmake --build _build
+       cmake $CMAKE_PARAMS $CMAKE_OPENSSL_LOCATION $BUILD_TYPE $OQSPROV_CMAKE_PARAMS -S . -B _build && cmake --build _build
    else
-       cmake -DOPENSSL_ROOT_DIR=$OPENSSL_INSTALL $BUILD_TYPE $OQSPROV_CMAKE_PARAMS -S . -B _build && cmake --build _build
+       cmake $CMAKE_PARAMS -DOPENSSL_ROOT_DIR=$OPENSSL_INSTALL $BUILD_TYPE $OQSPROV_CMAKE_PARAMS -S . -B _build && cmake --build _build
    fi
    if [ $? -ne 0 ]; then
      echo "provider build failed. Exiting."

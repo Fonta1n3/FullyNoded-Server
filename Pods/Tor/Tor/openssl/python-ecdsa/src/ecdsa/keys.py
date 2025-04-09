@@ -1,80 +1,13 @@
 """
 Primary classes for performing signing and verification operations.
-
-.. glossary::
-
-    raw encoding
-        Conversion of public, private keys and signatures (which in
-        mathematical sense are integers or pairs of integers) to strings of
-        bytes that does not use any special tags or encoding rules.
-        For any given curve, all keys of the same type or signatures will be
-        encoded to byte strings of the same length. In more formal sense,
-        the integers are encoded as big-endian, constant length byte strings,
-        where the string length is determined by the curve order (e.g.
-        for NIST256p the order is 256 bits long, so the private key will be 32
-        bytes long while public key will be 64 bytes long). The encoding of a
-        single integer is zero-padded on the left if the numerical value is
-        low. In case of public keys and signatures, which are comprised of two
-        integers, the integers are simply concatenated.
-
-    uncompressed
-        The most common formatting specified in PKIX standards. Specified in
-        X9.62 and SEC1 standards. The only difference between it and
-        :term:`raw encoding` is the prepending of a 0x04 byte. Thus an
-        uncompressed NIST256p public key encoding will be 65 bytes long.
-
-    compressed
-        The public point representation that uses half of bytes of the
-        :term:`uncompressed` encoding (rounded up). It uses the first byte of
-        the encoding to specify the sign of the y coordinate and encodes the
-        x coordinate as-is. The first byte of the encoding is equal to
-        0x02 or 0x03. Compressed encoding of NIST256p public key will be 33
-        bytes long.
-
-    hybrid
-        A combination of :term:`uncompressed` and :term:`compressed` encodings.
-        Both x and y coordinates are stored just as in :term:`compressed`
-        encoding, but the first byte reflects the sign of the y coordinate. The
-        first byte of the encoding will be equal to 0x06 or 0x7. Hybrid
-        encoding of NIST256p public key will be 65 bytes long.
-
-    PEM
-        The acronym stands for Privacy Enhanced Email, but currently it is used
-        primarily as the way to encode :term:`DER` objects into text that can
-        be either easily copy-pasted or transferred over email.
-        It uses headers like ``-----BEGIN <type of contents>-----`` and footers
-        like ``-----END <type of contents>-----`` to separate multiple
-        types of objects in the same file or the object from the surrounding
-        comments. The actual object stored is base64 encoded.
-
-    DER
-        Distinguished Encoding Rules, the way to encode :term:`ASN.1` objects
-        deterministically and uniquely into byte strings.
-
-    ASN.1
-        Abstract Syntax Notation 1 is a standard description language for
-        specifying serialisation and deserialisation of data structures in a
-        portable and cross-platform way.
-
-    bytes-like object
-        All the types that implement the buffer protocol. That includes ``str``
-        (only on python2), ``bytes``, ``bytesarray``, ``array.array` and
-        ``memoryview`` of those objects.  Please note that ``array.array`
-        serialisation (converting it to byte string) is endianness dependent!
-        Signature computed over ``array.array`` of integers on a big-endian
-        system will not be verified on a little-endian system and vice-versa.
-
-    set-like object
-        All the types that support the ``in`` operator, like ``list``,
-        ``tuple``, ``set``, ``frozenset``, etc.
 """
 
 import binascii
 from hashlib import sha1
 import os
-from six import PY2, b
+from six import PY2
 from . import ecdsa, eddsa
-from . import der
+from . import der, ssh
 from . import rfc6979
 from . import ellipticcurve
 from .curves import NIST192p, Curve, Ed25519, Ed448
@@ -159,13 +92,13 @@ class VerifyingKey(object):
     """
     Class for handling keys that can verify signatures (public keys).
 
-    :ivar ecdsa.curves.Curve curve: The Curve over which all the cryptographic
-        operations will take place
+    :ivar `~ecdsa.curves.Curve` ~.curve: The Curve over which all the
+        cryptographic operations will take place
     :ivar default_hashfunc: the function that will be used for hashing the
         data. Should implement the same API as hashlib.sha1
     :vartype default_hashfunc: callable
     :ivar pubkey: the actual public key
-    :vartype pubkey: ecdsa.ecdsa.Public_key
+    :vartype pubkey: ~ecdsa.ecdsa.Public_key
     """
 
     def __init__(self, _error__please_use_generate=None):
@@ -208,13 +141,13 @@ class VerifyingKey(object):
         This is a low-level method, generally you will not want to use it.
 
         :param point: The point to wrap around, the actual public key
-        :type point: ecdsa.ellipticcurve.Point
+        :type point: ~ecdsa.ellipticcurve.AbstractPoint
         :param curve: The curve on which the point needs to reside, defaults
             to NIST192p
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface
-            as hashlib.sha1
+            as :py:class:`hashlib.sha1`
         :type hashfunc: callable
         :type bool validate_point: whether to check if the point lays on curve
             should always be used if the public point is not a result
@@ -308,7 +241,7 @@ class VerifyingKey(object):
         :param string: single point encoding of the public key
         :type string: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as
             hashlib.sha1. Ignored for EdDSA.
@@ -372,7 +305,7 @@ class VerifyingKey(object):
             By default :term:`uncompressed`, :term:`compressed`, and
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
-        :type valid_encodings: :term:`set-like object
+        :type valid_encodings: :term:`set-like object`
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
@@ -425,7 +358,7 @@ class VerifyingKey(object):
             By default :term:`uncompressed`, :term:`compressed`, and
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
-        :type valid_encodings: :term:`set-like object
+        :type valid_encodings: :term:`set-like object`
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
@@ -499,7 +432,7 @@ class VerifyingKey(object):
         :param data: the data to be hashed for signature verification
         :type data: bytes-like object
         :param curve: the curve over which the signature was performed
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
@@ -551,7 +484,7 @@ class VerifyingKey(object):
         :param digest: the hash value of the message signed by the signature
         :type digest: bytes-like object
         :param curve: the curve over which the signature was performed
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
@@ -629,7 +562,7 @@ class VerifyingKey(object):
             implementations, it is as big as "uncompressed".
         :param str curve_parameters_encoding: the encoding for curve parameters
             to use, by default tries to use ``named_curve`` encoding,
-            if that is not possible, falls back to ``named_curve`` encoding.
+            if that is not possible, falls back to ``explicit`` encoding.
 
         :return: portable encoding of the public key
         :rtype: bytes
@@ -658,7 +591,7 @@ class VerifyingKey(object):
             implementations, it is as big as "uncompressed".
         :param str curve_parameters_encoding: the encoding for curve parameters
             to use, by default tries to use ``named_curve`` encoding,
-            if that is not possible, falls back to ``named_curve`` encoding.
+            if that is not possible, falls back to ``explicit`` encoding.
 
         :return: DER encoding of the public key
         :rtype: bytes
@@ -674,11 +607,23 @@ class VerifyingKey(object):
         return der.encode_sequence(
             der.encode_sequence(
                 encoded_oid_ecPublicKey,
-                self.curve.to_der(curve_parameters_encoding),
+                self.curve.to_der(curve_parameters_encoding, point_encoding),
             ),
             # 0 is the number of unused bits in the
             # bit string
             der.encode_bitstring(point_str, 0),
+        )
+
+    def to_ssh(self):
+        """
+        Convert the public key to the SSH format.
+
+        :return: SSH encoding of the public key
+        :rtype: bytes
+        """
+        return ssh.serialize_public(
+            self.curve.name,
+            self.to_string(),
         )
 
     def verify(
@@ -703,7 +648,7 @@ class VerifyingKey(object):
         :type signature: sigdecode method dependent
         :param data: data signed by the `signature`, will be hashed using
             `hashfunc`, if specified, or default hash function
-        :type data: bytes like object
+        :type data: :term:`bytes-like object`
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
@@ -757,7 +702,7 @@ class VerifyingKey(object):
         :param signature: encoding of the signature
         :type signature: sigdecode method dependent
         :param digest: raw hash value that the signature authenticates.
-        :type digest: bytes like object
+        :type digest: :term:`bytes-like object`
         :param sigdecode: Callable to define the way the signature needs to
             be decoded to an object, needs to handle `signature` as the
             first parameter, the curve order (an int) as the second and return
@@ -781,7 +726,9 @@ class VerifyingKey(object):
         # it, the decoders will do that
         digest = normalise_bytes(digest)
         number = _truncate_and_convert_digest(
-            digest, self.curve, allow_truncate,
+            digest,
+            self.curve,
+            allow_truncate,
         )
 
         try:
@@ -798,14 +745,14 @@ class SigningKey(object):
     """
     Class for handling keys that can create signatures (private keys).
 
-    :ivar ecdsa.curves.Curve curve: The Curve over which all the cryptographic
-        operations will take place
+    :ivar `~ecdsa.curves.Curve` curve: The Curve over which all the
+        cryptographic operations will take place
     :ivar default_hashfunc: the function that will be used for hashing the
-        data. Should implement the same API as hashlib.sha1
+        data. Should implement the same API as :py:class:`hashlib.sha1`
     :ivar int baselen: the length of a :term:`raw encoding` of private key
-    :ivar ecdsa.keys.VerifyingKey verifying_key: the public key
+    :ivar `~ecdsa.keys.VerifyingKey` verifying_key: the public key
         associated with this private key
-    :ivar ecdsa.ecdsa.Private_key privkey: the actual private key
+    :ivar `~ecdsa.ecdsa.Private_key` privkey: the actual private key
     """
 
     def __init__(self, _error__please_use_generate=None):
@@ -866,7 +813,7 @@ class SigningKey(object):
 
         :param curve: The curve on which the point needs to reside, defaults
             to NIST192p
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param entropy: Source of randomness for generating the private keys,
             should provide cryptographically secure random numbers if the keys
             need to be secure. Uses os.urandom() by default.
@@ -894,7 +841,7 @@ class SigningKey(object):
         :param int secexp: secret multiplier (the actual private key in ECDSA).
             Needs to be an integer between 1 and the curve order.
         :param curve: The curve on which the point needs to reside
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             signing, needs to implement the same interface
             as hashlib.sha1
@@ -944,9 +891,9 @@ class SigningKey(object):
         In Python 3, the expected type is `bytes`.
 
         :param string: the raw encoding of the private key
-        :type string: bytes like object
+        :type string: :term:`bytes-like object`
         :param curve: The curve on which the point needs to reside
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             signing, needs to implement the same interface
             as hashlib.sha1
@@ -1061,7 +1008,7 @@ class SigningKey(object):
         is part of the PrivateKeyAlgorithmIdentifier.
 
         The PKCS #8 format includes an ECPrivateKey object as the `privateKey`
-        field within a larger structure:
+        field within a larger structure::
 
             OneAsymmetricKey ::= SEQUENCE {
                 version                   Version,
@@ -1077,7 +1024,7 @@ class SigningKey(object):
         in them will not be detected.
 
         :param string: binary string with DER-encoded private ECDSA key
-        :type string: bytes like object
+        :type string: :term:`bytes-like object`
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
@@ -1097,7 +1044,7 @@ class SigningKey(object):
         curve = None
 
         s, empty = der.remove_sequence(s)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER(
                 "trailing junk after DER privkey: %s" % binascii.hexlify(empty)
             )
@@ -1124,10 +1071,16 @@ class SigningKey(object):
                         "Non NULL parameters for a EdDSA key"
                     )
                 key_str_der, s = der.remove_octet_string(s)
-                if s:
-                    raise der.UnexpectedDER(
-                        "trailing junk inside the privateKey"
-                    )
+
+                # As RFC5958 describe, there are may be optional Attributes
+                # and Publickey. Don't raise error if something after
+                # Privatekey
+
+                # TODO parse attributes or validate publickey
+                # if s:
+                #     raise der.UnexpectedDER(
+                #         "trailing junk inside the privateKey"
+                #     )
                 key_str, s = der.remove_octet_string(key_str_der)
                 if s:
                     raise der.UnexpectedDER(
@@ -1149,12 +1102,6 @@ class SigningKey(object):
 
             curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
 
-            if empty != b"":
-                raise der.UnexpectedDER(
-                    "unexpected data after algorithm identifier: %s"
-                    % binascii.hexlify(empty)
-                )
-
             # Up next is an octet string containing an ECPrivateKey. Ignore
             # the optional "attributes" and "publicKey" fields that come after.
             s, _ = der.remove_octet_string(s)
@@ -1162,7 +1109,7 @@ class SigningKey(object):
             # Unpack the ECPrivateKey to get to the key data octet string,
             # and rejoin the ssleay parsing path.
             s, empty = der.remove_sequence(s)
-            if empty != b(""):
+            if empty != b"":
                 raise der.UnexpectedDER(
                     "trailing junk after DER privkey: %s"
                     % binascii.hexlify(empty)
@@ -1202,7 +1149,7 @@ class SigningKey(object):
         # our from_string method likes fixed-length privkey strings
         if len(privkey_str) < curve.baselen:
             privkey_str = (
-                b("\x00") * (curve.baselen - len(privkey_str)) + privkey_str
+                b"\x00" * (curve.baselen - len(privkey_str)) + privkey_str
             )
         return cls.from_string(privkey_str, curve, hashfunc)
 
@@ -1340,6 +1287,19 @@ class SigningKey(object):
                 der.encode_octet_string(ec_private_key),
             )
 
+    def to_ssh(self):
+        """
+        Convert the private key to the SSH format.
+
+        :return: SSH encoded private key
+        :rtype: bytes
+        """
+        return ssh.serialize_private(
+            self.curve.name,
+            self.verifying_key.to_string(),
+            self.to_string(),
+        )
+
     def get_verifying_key(self):
         """
         Return the VerifyingKey associated with this private key.
@@ -1374,7 +1334,7 @@ class SigningKey(object):
         of data is necessary.
 
         :param data: data to be hashed and computed signature over
-        :type data: bytes like object
+        :type data: :term:`bytes-like object`
         :param hashfunc: hash function to use for computing the signature,
             if unspecified, the default hash function selected during
             object initialisation will be used (see
@@ -1393,7 +1353,7 @@ class SigningKey(object):
         :param extra_entropy: additional data that will be fed into the random
             number generator used in the RFC6979 process. Entirely optional.
             Ignored with EdDSA.
-        :type extra_entropy: bytes like object
+        :type extra_entropy: :term:`bytes-like object`
 
         :return: encoded signature over `data`
         :rtype: bytes or sigencode function dependent type
@@ -1433,24 +1393,26 @@ class SigningKey(object):
         hashing of data is necessary.
 
         :param digest: hash of data that will be signed
-        :type digest: bytes like object
+        :type digest: :term:`bytes-like object`
         :param hashfunc: hash function to use for computing the random "k"
             value from RFC6979 process,
             if unspecified, the default hash function selected during
             object initialisation will be used (see
-            `VerifyingKey.default_hashfunc`). The object needs to implement
-            the same interface as hashlib.sha1.
+            :attr:`.VerifyingKey.default_hashfunc`). The object needs to
+            implement
+            the same interface as :func:`~hashlib.sha1` from :py:mod:`hashlib`.
         :type hashfunc: callable
         :param sigencode: function used to encode the signature.
             The function needs to accept three parameters: the two integers
             that are the signature and the order of the curve over which the
             signature was computed. It needs to return an encoded signature.
-            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            See :func:`~ecdsa.util.sigencode_string` and
+            :func:`~ecdsa.util.sigencode_der`
             as examples of such functions.
         :type sigencode: callable
         :param extra_entropy: additional data that will be fed into the random
             number generator used in the RFC6979 process. Entirely optional.
-        :type extra_entropy: bytes like object
+        :type extra_entropy: :term:`bytes-like object`
         :param bool allow_truncate: if True, the provided digest can have
             bigger bit-size than the order of the curve, the extra bits (at
             the end of the digest) will be truncated. Use it when signing
@@ -1515,28 +1477,35 @@ class SigningKey(object):
         method instead of this one.
 
         :param data: data that will be hashed for signing
-        :type data: bytes like object
-        :param callable entropy: randomness source, os.urandom by default.
-            Ignored with EdDSA.
-        :param hashfunc: hash function to use for hashing the provided `data`.
+        :type data: :term:`bytes-like object`
+        :param callable entropy: randomness source, :func:`os.urandom` by
+            default. Ignored with EdDSA.
+        :param hashfunc: hash function to use for hashing the provided
+            ``data``.
             If unspecified the default hash function selected during
             object initialisation will be used (see
-            `VerifyingKey.default_hashfunc`).
-            Should behave like hashlib.sha1. The output length of the
+            :attr:`.VerifyingKey.default_hashfunc`).
+            Should behave like :func:`~hashlib.sha1` from :py:mod:`hashlib`.
+            The output length of the
             hash (in bytes) must not be longer than the length of the curve
             order (rounded up to the nearest byte), so using SHA256 with
             NIST256p is ok, but SHA256 with NIST192p is not. (In the 2**-96ish
             unlikely event of a hash output larger than the curve order, the
             hash will effectively be wrapped mod n).
-            Use hashfunc=hashlib.sha1 to match openssl's -ecdsa-with-SHA1 mode,
-            or hashfunc=hashlib.sha256 for openssl-1.0.0's -ecdsa-with-SHA256.
+            If you want to explicitly allow use of large hashes with small
+            curves set the ``allow_truncate`` to ``True``.
+            Use ``hashfunc=hashlib.sha1`` to match openssl's
+            ``-ecdsa-with-SHA1`` mode,
+            or ``hashfunc=hashlib.sha256`` for openssl-1.0.0's
+            ``-ecdsa-with-SHA256``.
             Ignored for EdDSA
         :type hashfunc: callable
         :param sigencode: function used to encode the signature.
             The function needs to accept three parameters: the two integers
             that are the signature and the order of the curve over which the
             signature was computed. It needs to return an encoded signature.
-            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            See :func:`~ecdsa.util.sigencode_string` and
+            :func:`~ecdsa.util.sigencode_der`
             as examples of such functions.
             Ignored for EdDSA
         :type sigencode: callable
@@ -1544,17 +1513,17 @@ class SigningKey(object):
             In typical use cases, it should be set to None (the default) to
             allow its generation from an entropy source.
             Ignored for EdDSA.
-        :param bool allow_truncate: if True, the provided digest can have
+        :param bool allow_truncate: if ``True``, the provided digest can have
             bigger bit-size than the order of the curve, the extra bits (at
             the end of the digest) will be truncated. Use it when signing
             SHA-384 output using NIST256p or in similar situations. True by
             default.
             Ignored for EdDSA.
 
-        :raises RSZeroError: in the unlikely event when "r" parameter or
-            "s" parameter of the created signature is equal 0, as that would
+        :raises RSZeroError: in the unlikely event when *r* parameter or
+            *s* parameter of the created signature is equal 0, as that would
             leak the key. Caller should try a better entropy source, retry with
-            different 'k', or use the
+            different ``k``, or use the
             :func:`~SigningKey.sign_deterministic` in such case.
 
         :return: encoded signature of the hash of `data`
@@ -1588,7 +1557,7 @@ class SigningKey(object):
         instead of this one.
 
         :param digest: hash value that will be signed
-        :type digest: bytes like object
+        :type digest: :term:`bytes-like object`
         :param callable entropy: randomness source, os.urandom by default
         :param sigencode: function used to encode the signature.
             The function needs to accept three parameters: the two integers
@@ -1618,7 +1587,9 @@ class SigningKey(object):
             raise ValueError("Method unsupported for Edwards curves")
         digest = normalise_bytes(digest)
         number = _truncate_and_convert_digest(
-            digest, self.curve, allow_truncate,
+            digest,
+            self.curve,
+            allow_truncate,
         )
         r, s = self.sign_number(number, entropy, k)
         return sigencode(r, s, self.privkey.order)

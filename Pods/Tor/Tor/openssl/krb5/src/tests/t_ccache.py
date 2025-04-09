@@ -21,11 +21,18 @@
 # or implied warranty.
 
 from k5test import *
+import tempfile
 
-kcm_socket_path = os.path.join(os.getcwd(), 'testdir', 'kcm')
+socketdir = tempfile.TemporaryDirectory()
+kcm_socket_path = os.path.join(socketdir.name, 'kcm')
 conf = {'libdefaults': {'kcm_socket': kcm_socket_path,
                         'kcm_mach_service': '-'}}
 realm = K5Realm(krb5_conf=conf)
+
+realm.addprinc('contest')
+realm.extract_keytab('contest', realm.keytab)
+realm.run(['./conccache', realm.ccache + '.contest', 'contest',
+           realm.host_princ])
 
 keyctl = which('keyctl')
 out = realm.run([klist, '-c', 'KEYRING:process:abcd'], expected_code=1)
@@ -49,7 +56,7 @@ mark('klist -s single ccache')
 realm.run([klist, '-s'], expected_code=1)
 realm.kinit(realm.user_princ, password('user'))
 realm.run([klist, '-s'])
-realm.kinit(realm.user_princ, password('user'), ['-l', '-1s'])
+realm.kinit(realm.user_princ, password('user'), ['-l', '-10s'])
 realm.run([klist, '-s'], expected_code=1)
 realm.kinit(realm.user_princ, password('user'), ['-S', 'kadmin/admin'])
 realm.run([klist, '-s'])

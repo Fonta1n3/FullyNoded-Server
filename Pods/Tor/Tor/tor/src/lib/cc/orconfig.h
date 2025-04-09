@@ -7,12 +7,12 @@
 /* All assert failures are fatal */
 /* #undef ALL_BUGS_ARE_FATAL */
 
-/* # for 0.4.8.12 Approximate date when this software was released. (Updated
+/* # for 0.4.8.14 Approximate date when this software was released. (Updated
    when the version changes.) */
-#define APPROX_RELEASE_DATE "2024-06-06"
+#define APPROX_RELEASE_DATE "2025-02-05"
 
 /* tor's build directory */
-#define BUILDDIR "/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/tor"
+#define BUILDDIR "/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/tor"
 
 /* Compiler name */
 #define COMPILER /**/
@@ -21,13 +21,13 @@
 #define COMPILER_VENDOR "clang"
 
 /* Compiler version */
-#define COMPILER_VERSION "15.0.0"
+#define COMPILER_VERSION "16.0.0"
 
 /* tor's configuration directory */
-#define CONFDIR "/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/IntermediateBuildFilesPath/Pods.build/Release/tor-x86_64/etc/tor"
+#define CONFDIR "/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Intermediates.noindex/Pods.build/Debug/tor-arm64/etc/tor"
 
 /* Flags passed to configure */
-#define CONFIG_FLAGS "--enable-silent-rules --enable-pic --disable-module-relay --disable-module-dirauth --disable-tool-name-check --disable-unittests --enable-static-openssl --enable-static-libevent --disable-asciidoc --disable-system-torrc --disable-linker-hardening --disable-dependency-tracking --disable-manpage --disable-html-manual --disable-gcc-warnings-advisory --prefix=/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/IntermediateBuildFilesPath/Pods.build/Release/tor-x86_64 --with-libevent-dir=/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/BuildProductsPath/Release/Tor --with-openssl-dir=/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/BuildProductsPath/Release/Tor --enable-lzma=yes --enable-zstd=no CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch x86_64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk CPP=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -E -arch x86_64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk CPPFLAGS= -fembed-bitcode -I/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/tor/src/core -I/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/include -I/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/openssl/include -I/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/BuildProductsPath/Release/Tor/openssl-x86_64 -I/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/libevent/include -I/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/BuildProductsPath/Release/Tor/libevent-x86_64 -I/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/BuildProductsPath/Release/Tor/liblzma-x86_64 -I/Users/fontaine/Library/Developer/Xcode/DerivedData/FullyNoded-Server-fyumwjjhmzxroydiebjwcfgqyiph/Build/Intermediates.noindex/ArchiveIntermediates/FullyNoded-Server/IntermediateBuildFilesPath/Pods.build/Release/tor-sys -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -DOPENSSL_NO_ENGINE cross_compiling=yes ac_cv_func__NSGetEnviron=no ac_cv_func_clock_gettime=no ac_cv_func_getentropy=no LDFLAGS=-lz -fembed-bitcode"
+#define CONFIG_FLAGS "--enable-silent-rules --enable-pic --disable-module-relay --disable-module-dirauth --disable-tool-name-check --disable-unittests --enable-static-openssl --enable-static-libevent --disable-asciidoc --disable-system-torrc --disable-linker-hardening --disable-dependency-tracking --disable-manpage --disable-html-manual --disable-gcc-warnings-advisory --prefix=/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Intermediates.noindex/Pods.build/Debug/tor-arm64 --with-libevent-dir=/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Products/Debug/Tor --with-openssl-dir=/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Products/Debug/Tor --enable-lzma=yes --enable-zstd=no CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk CPP=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -E -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk CPPFLAGS=-g -O0  -I/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/tor/src/core -I/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/include -I/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/openssl/include -I/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Products/Debug/Tor/openssl-arm64 -I/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/libevent/include -I/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Products/Debug/Tor/libevent-arm64 -I/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Products/Debug/Tor/liblzma-arm64 -I/Users/peterdenton/Library/Developer/Xcode/DerivedData/FullyNoded-Server-aiemrqvmbpsavwhfrmzuekzybvww/Build/Intermediates.noindex/Pods.build/Debug/tor-sys -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -DOPENSSL_NO_ENGINE cross_compiling=yes ac_cv_func__NSGetEnviron=no ac_cv_func_clock_gettime=no ac_cv_func_getentropy=no LDFLAGS=-lz "
 
 /* Enable smartlist debugging */
 /* #undef DEBUG_SMARTLIST */
@@ -714,7 +714,7 @@
 #define PACKAGE_NAME "tor"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "tor 0.4.8.12"
+#define PACKAGE_STRING "tor 0.4.8.14"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "tor"
@@ -723,10 +723,10 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.4.8.12"
+#define PACKAGE_VERSION "0.4.8.14"
 
 /* How to access the PC from a struct ucontext */
-#define PC_FROM_UCONTEXT uc_mcontext->__ss.__rip
+/* #undef PC_FROM_UCONTEXT */
 
 /* Define to 1 iff right-shifting a negative value performs sign-extension */
 #define RSHIFT_DOES_SIGN_EXTEND 1
@@ -774,7 +774,7 @@
 #define SIZEOF___INT64 0
 
 /* tor's sourcedir directory */
-#define SRCDIR "/Users/fontaine/Projects/FullyNoded-Server/Pods/Tor/Tor/tor"
+#define SRCDIR "/Users/peterdenton/Projects/FullyNoded-Server/Pods/Tor/Tor/tor"
 
 /* Set to 1 if we can compile a simple stdatomic example. */
 #define STDATOMIC_WORKS 1
@@ -902,7 +902,7 @@
 #define USING_TWOS_COMPLEMENT 1
 
 /* Version number of package */
-#define VERSION "0.4.8.12"
+#define VERSION "0.4.8.14"
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

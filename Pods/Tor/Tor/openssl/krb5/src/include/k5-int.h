@@ -180,6 +180,8 @@ typedef unsigned char   u_char;
  * matches the variable name.  Keep these alphabetized. */
 #define KRB5_CONF_ACL_FILE                     "acl_file"
 #define KRB5_CONF_ADMIN_SERVER                 "admin_server"
+#define KRB5_CONF_ALLOW_DES3                   "allow_des3"
+#define KRB5_CONF_ALLOW_RC4                    "allow_rc4"
 #define KRB5_CONF_ALLOW_WEAK_CRYPTO            "allow_weak_crypto"
 #define KRB5_CONF_AUTH_TO_LOCAL                "auth_to_local"
 #define KRB5_CONF_AUTH_TO_LOCAL_NAMES          "auth_to_local_names"
@@ -205,6 +207,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_DISABLE_ENCRYPTED_TIMESTAMP  "disable_encrypted_timestamp"
 #define KRB5_CONF_DISABLE_LAST_SUCCESS         "disable_last_success"
 #define KRB5_CONF_DISABLE_LOCKOUT              "disable_lockout"
+#define KRB5_CONF_DISABLE_PAC                  "disable_pac"
 #define KRB5_CONF_DNS_CANONICALIZE_HOSTNAME    "dns_canonicalize_hostname"
 #define KRB5_CONF_DNS_FALLBACK                 "dns_fallback"
 #define KRB5_CONF_DNS_LOOKUP_KDC               "dns_lookup_kdc"
@@ -290,10 +293,12 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_REJECT_BAD_TRANSIT           "reject_bad_transit"
 #define KRB5_CONF_RENEW_LIFETIME               "renew_lifetime"
 #define KRB5_CONF_RESTRICT_ANONYMOUS_TO_TGT    "restrict_anonymous_to_tgt"
+#define KRB5_CONF_SITENAME                     "sitename"
 #define KRB5_CONF_SUPPORTED_ENCTYPES           "supported_enctypes"
 #define KRB5_CONF_SPAKE_PREAUTH_INDICATOR      "spake_preauth_indicator"
 #define KRB5_CONF_SPAKE_PREAUTH_KDC_CHALLENGE  "spake_preauth_kdc_challenge"
 #define KRB5_CONF_SPAKE_PREAUTH_GROUPS         "spake_preauth_groups"
+#define KRB5_CONF_REQUEST_TIMEOUT              "request_timeout"
 #define KRB5_CONF_TICKET_LIFETIME              "ticket_lifetime"
 #define KRB5_CONF_UDP_PREFERENCE_LIMIT         "udp_preference_limit"
 #define KRB5_CONF_UNLOCKITER                   "unlockiter"
@@ -816,21 +821,6 @@ typedef struct _krb5_ad_kdcissued {
     krb5_authdata **elements;
 } krb5_ad_kdcissued;
 
-typedef struct _krb5_ad_signedpath_data {
-    krb5_principal client;
-    krb5_timestamp authtime;
-    krb5_principal *delegated;
-    krb5_pa_data **method_data;
-    krb5_authdata **authorization_data;
-} krb5_ad_signedpath_data;
-
-typedef struct _krb5_ad_signedpath {
-    krb5_enctype enctype;
-    krb5_checksum checksum;
-    krb5_principal *delegated;
-    krb5_pa_data **method_data;
-} krb5_ad_signedpath;
-
 typedef struct _krb5_iakerb_header {
     krb5_data target_realm;
     krb5_data *cookie;
@@ -949,7 +939,6 @@ void KRB5_CALLCONV krb5_free_fast_req(krb5_context, krb5_fast_req *);
 void KRB5_CALLCONV krb5_free_fast_finished(krb5_context, krb5_fast_finished *);
 void KRB5_CALLCONV krb5_free_fast_response(krb5_context, krb5_fast_response *);
 void KRB5_CALLCONV krb5_free_ad_kdcissued(krb5_context, krb5_ad_kdcissued *);
-void KRB5_CALLCONV krb5_free_ad_signedpath(krb5_context, krb5_ad_signedpath *);
 void KRB5_CALLCONV krb5_free_iakerb_header(krb5_context, krb5_iakerb_header *);
 void KRB5_CALLCONV krb5_free_iakerb_finished(krb5_context,
                                              krb5_iakerb_finished *);
@@ -1214,6 +1203,7 @@ struct _krb5_context {
     kdb5_dal_handle *dal_handle;
     /* allowable clock skew */
     krb5_deltat     clockskew;
+    krb5_deltat     req_timeout;
     krb5_flags      kdc_default_options;
     krb5_flags      library_options;
     krb5_boolean    profile_secure;
@@ -1253,6 +1243,8 @@ struct _krb5_context {
     struct _kdb_log_context *kdblog_context;
 
     krb5_boolean allow_weak_crypto;
+    krb5_boolean allow_des3;
+    krb5_boolean allow_rc4;
     krb5_boolean ignore_acceptor_hostname;
     krb5_boolean enforce_ok_as_delegate;
     enum dns_canonhost dns_canonicalize_hostname;
@@ -1514,12 +1506,6 @@ krb5_error_code
 encode_krb5_ad_kdcissued(const krb5_ad_kdcissued *, krb5_data **);
 
 krb5_error_code
-encode_krb5_ad_signedpath(const krb5_ad_signedpath *, krb5_data **);
-
-krb5_error_code
-encode_krb5_ad_signedpath_data(const krb5_ad_signedpath_data *, krb5_data **);
-
-krb5_error_code
 encode_krb5_otp_tokeninfo(const krb5_otp_tokeninfo *, krb5_data **);
 
 krb5_error_code
@@ -1694,9 +1680,6 @@ decode_krb5_fast_response(const krb5_data *, krb5_fast_response **);
 
 krb5_error_code
 decode_krb5_ad_kdcissued(const krb5_data *, krb5_ad_kdcissued **);
-
-krb5_error_code
-decode_krb5_ad_signedpath(const krb5_data *, krb5_ad_signedpath **);
 
 krb5_error_code
 decode_krb5_iakerb_header(const krb5_data *, krb5_iakerb_header **);
@@ -2160,10 +2143,6 @@ void KRB5_CALLCONV krb5_free_tkt_authent(krb5_context, krb5_tkt_authent *);
 void KRB5_CALLCONV krb5_free_enc_data(krb5_context, krb5_enc_data *);
 krb5_error_code krb5_set_config_files(krb5_context, const char **);
 
-krb5_error_code KRB5_CALLCONV krb5_get_default_config_files(char ***filenames);
-
-void KRB5_CALLCONV krb5_free_config_files(char **filenames);
-
 krb5_error_code krb5_rd_req_decoded(krb5_context, krb5_auth_context *,
                                     const krb5_ap_req *, krb5_const_principal,
                                     krb5_keytab, krb5_flags *, krb5_ticket **);
@@ -2259,7 +2238,7 @@ make_data(void *data, unsigned int len)
 }
 
 static inline krb5_data
-empty_data()
+empty_data(void)
 {
     return make_data(NULL, 0);
 }
@@ -2346,6 +2325,15 @@ static inline krb5_deltat
 ts_delta(krb5_timestamp a, krb5_timestamp b)
 {
     return (krb5_deltat)((uint32_t)a - (uint32_t)b);
+}
+
+/* Return (end - start) as an unsigned 32-bit value, or 0 if start > end. */
+static inline uint32_t
+ts_interval(krb5_timestamp start, krb5_timestamp end)
+{
+    if ((uint32_t)start > (uint32_t)end)
+        return 0;
+    return (uint32_t)end - (uint32_t)start;
 }
 
 /* Increment a timestamp by a signed 32-bit interval, without relying on

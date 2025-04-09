@@ -10,7 +10,7 @@ on the Home page.
 
 Download the latest release files, verify the signatures and hash match, then open the dmg.
 ```
-gpg --import D3AC0FCA.asc
+gpg --import 147538F5.asc
 gpg --verify FullyNoded-Server.dmg.asc FullyNoded-Server.dmg
 gpg --verify SHA256SUMS.asc SHA256SUMS
 shasum -a 256 FullyNoded-Server.dmg
@@ -18,6 +18,7 @@ shasum -a 256 FullyNoded-Server.dmg
 `shasum -a 256 FullyNoded-Server.dmg` should output the same hash found in the SHA256SUMS file, if not ALL STOP!
 
 ## What does it do?
+- It first checks for xcode command line tools and brew, if either do not exist you will be prompted to install them.
 - Install any version of Bitcoin Core, Join Market and Tor, allowing you to very easily manage and connect to your servers remotely 
 or locally to power Bitcoin wallets.
 - GPG verifies the Bitcoin Core download files and verifies hashes of the binary during the installation process (it automates a 
@@ -72,16 +73,18 @@ and does not do anything at all unless you click one of the menu bar app options
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
 ## Security
-The idea is to automate the right way to do things for newbs and devs alike.
+If connecting to a remote wallet usage of Tor is recommended, Fully Noded apps allow you to generate Tor authentication keys which
+make your remote connection more secure.
 
-Initially a random string is created which we use as a namespace for a dedicated random encryption key which is stored on your 
-Mac's secure enclave/keychain. The random encryption key is created with the devices Cryptographically Secure Random Number Generator.
+#### RPC Credentials
+Initially a random string is created which is used as a namespace for a dedicated random encryption key stored on the device 
+secure enclave/keychain which stores it data encrypted. The random encryption key is created with the devices Cryptographically Secure Random Number Generator.
 When running FNS the first time you will be prompted to store this item on your keychain, the random letters you see are not the 
 encryption key itself but its namespace. FNS uses the randomly created namespace to fetch the encryption key from your secure enclave 
-to encrypt your RPC credentials which are stored encrypted on your device via "core data". Each time FNS fetches your own RPC credentials 
-we first must decrypt them using this key.
+to encrypt your RPC credentials which are stored encrypted locally using Apples Core Data API. FNS fetches your RPC credentials 
+and decrypts/encrypts them using this key.
 
-FNS does not make any remote calls using RPC credentials, they are striclty used locally.
+FNS does not make any remote calls using RPC credentials, they are used locally.
 
 Join Market RPC credentials are stored as a cookie in the FNS data directory, this is only done if you click "Configure JM", if you have 
 an existing config do not use this button.

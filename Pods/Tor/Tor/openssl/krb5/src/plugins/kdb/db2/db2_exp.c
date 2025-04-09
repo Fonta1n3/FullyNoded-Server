@@ -68,7 +68,7 @@ k5_mutex_t *krb5_db2_mutex;
         return result;                                  \
     }                                                   \
     /* hack: decl to allow a following ";" */           \
-    static TYPE wrap_##NAME ()
+    static TYPE wrap_##NAME ARGLIST
 
 /* Two special cases: void (can't assign result), and krb5_error_code
    (return error from locking code).  */
@@ -81,7 +81,7 @@ k5_mutex_t *krb5_db2_mutex;
         k5_mutex_unlock (krb5_db2_mutex);               \
     }                                                   \
     /* hack: decl to allow a following ";" */           \
-    static void wrap_##NAME ()
+    static void wrap_##NAME ARGLIST
 
 #define WRAP_K(NAME,ARGLIST,ARGNAMES)                   \
     WRAP(NAME,krb5_error_code,ARGLIST,ARGNAMES)
@@ -220,11 +220,16 @@ kdb_vftabl PLUGIN_SYMBOL_NAME(krb5_db2, kdb_function_table) = {
     /* put_policy */                    wrap_krb5_db2_put_policy,
     /* iter_policy */                   wrap_krb5_db2_iter_policy,
     /* delete_policy */                 wrap_krb5_db2_delete_policy,
-    /* blah blah blah */ 0,0,0,0,0,
+    /* fetch_master_key */              NULL,
+    /* fetch_master_key_list */         NULL,
+    /* store_master_key_list */         NULL,
+    /* dbe_search_enctype */            NULL,
+    /* change_pwd */                    NULL,
     /* promote_db */                    wrap_krb5_db2_promote_db,
-    0, 0, 0, 0,
+    /* decrypt_key_data */              NULL,
+    /* encrypt_key_data */              NULL,
+    /* check_transited_realms */        NULL,
     /* check_policy_as */               wrap_krb5_db2_check_policy_as,
-    0,
+    /* check_policy_tgs */              NULL,
     /* audit_as_req */                  wrap_krb5_db2_audit_as_req,
-    0, 0
 };

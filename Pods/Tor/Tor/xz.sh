@@ -39,13 +39,11 @@ fi
 
 if [[ "${BITCODE_GENERATION_MODE}" = "bitcode" ]]; then
     BITCODE_CFLAGS="-fembed-bitcode"
-elif [[ "${BITCODE_GENERATION_MODE}" = "marker" ]]; then
-    BITCODE_CFLAGS="-fembed-bitcode-marker"
 fi
 
 if [[ "${CONFIGURATION}" = "Debug" ]]; then
     DEBUG_CFLAGS="-g -O0"
-    DEBUG_FLAGS="--enable-verbose-debug"
+    DEBUG_FLAGS="--enable-debug"
 else
     DEBUG_FLAGS=""
 fi

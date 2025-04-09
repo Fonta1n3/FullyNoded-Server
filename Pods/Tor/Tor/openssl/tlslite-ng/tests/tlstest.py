@@ -728,6 +728,38 @@ def clientTestCmd(argv):
     connection.handshakeClientCert(settings=settings)
     assert connection.session.serverCertChain is None
     assert connection.ecdhCurve is not None
+    assert connection.session.cipherSuite in \
+            constants.CipherSuite.sha384PrfSuites
+    testConnClient(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - good PSK SHA-256 PRF".format(test_no))
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'test', b'\x00secret', 'sha256')]
+    connection.handshakeClientCert(settings=settings)
+    assert connection.session.serverCertChain is None
+    assert connection.ecdhCurve is not None
+    assert connection.session.cipherSuite in \
+            constants.CipherSuite.sha256PrfSuites
+    testConnClient(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - good PSK default PRF".format(test_no))
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'test', b'\x00secret', 'sha256')]
+    connection.handshakeClientCert(settings=settings)
+    assert connection.session.serverCertChain is None
+    assert connection.ecdhCurve is not None
+    assert connection.session.cipherSuite in \
+            constants.CipherSuite.sha256PrfSuites
     testConnClient(connection)
     connection.close()
 
@@ -756,6 +788,21 @@ def clientTestCmd(argv):
     connection.handshakeClientCert(settings=settings)
     assert connection.session.serverCertChain is None
     assert connection.ecdhCurve is None
+    testConnClient(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - bad PSK X.509 fallback".format(test_no))
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'bad identity', b'\x00secret', 'sha256')]
+    connection.handshakeClientCert(settings=settings)
+    assert connection.session.serverCertChain
+    assert connection.ecdhCurve is not None
+    assert connection.session.cipherSuite in \
+            constants.CipherSuite.sha384PrfSuites
     testConnClient(connection)
     connection.close()
 
@@ -948,6 +995,29 @@ def clientTestCmd(argv):
     assert connection.session.cipherSuite in\
             constants.CipherSuite.dheDsaSuites
     assert isinstance(connection.session.serverCertChain, X509CertChain)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - good mutual X.509 DSA, TLSv1.2".format(test_no))
+    with open(os.path.join(dir, "clientDSACert.pem")) as f:
+        x509DSACert = X509().parse(f.read())
+    x509DSAChain = X509CertChain([x509DSACert])
+    with open(os.path.join(dir, "clientDSAKey.pem")) as f:
+        x509DSAKey = parsePEMKey(f.read(), private=True)
+
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.minVersion = (3, 3)
+    settings.maxVersion = (3, 3)
+    connection.handshakeClientCert(x509DSAChain, x509DSAKey, settings=settings)
+    testConnClient(connection)
+    assert connection.session.cipherSuite in\
+            constants.CipherSuite.dheDsaSuites
+    assert isinstance(connection.session.serverCertChain, X509CertChain)
+    assert connection.session.serverCertChain.getEndEntityPublicKey().key_type\
+            == "dsa"
     connection.close()
 
     test_no += 1
@@ -1446,8 +1516,10 @@ def clientTestCmd(argv):
     testConnClient(connection)
     assert(isinstance(connection.session.serverCertChain, X509CertChain))
     assert(connection.session.serverName == address[0])
+    assert(connection.version == (3, 3))
     assert(not connection.resumed)
     assert(connection.encryptThenMAC)
+    assert(connection.session.tls_1_0_tickets)
     connection.close()
     session = connection.session
 
@@ -1455,6 +1527,7 @@ def clientTestCmd(argv):
     synchro.recv(1)
     connection = connect()
     settings = HandshakeSettings()
+    settings.macNames.remove("aead")
     settings.maxVersion = (3, 3)
     connection.handshakeClientCert(serverName=address[0], session=session,
                                    settings=settings)
@@ -1462,6 +1535,7 @@ def clientTestCmd(argv):
     assert(isinstance(connection.session.serverCertChain, X509CertChain))
     assert(connection.session.serverName == address[0])
     assert(connection.resumed)
+    assert(connection.session.encryptThenMAC)
     assert(connection.encryptThenMAC)
     connection.close()
 
@@ -1497,6 +1571,53 @@ def clientTestCmd(argv):
         assert(str(e) == "illegal_parameter")
     else:
         raise AssertionError("No exception raised")
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - session_ticket resumption in TLSv1.2".format(test_no))
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    connection.handshakeClientCert(serverName=address[0], settings=settings)
+    testConnClient(connection)
+    assert isinstance(connection.session.serverCertChain, X509CertChain)
+    assert connection.session.serverName == address[0]
+    assert not connection.resumed
+    session = connection.session
+    connection.close()
+
+    # resume
+    synchro.recv(1)
+    settings = HandshakeSettings()
+    connection = connect()
+    connection.handshakeClientCert(serverName=address[0], settings=settings, session=session)
+    testConnClient(connection)
+    assert connection.resumed
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - session_ticket resumption in TLSv1.2 "
+          "with expired ticket".format(test_no))
+    synchro.recv(1)
+    connection = connect()
+    settings = HandshakeSettings()
+    connection.handshakeClientCert(serverName=address[0], settings=settings)
+    testConnClient(connection)
+    assert isinstance(connection.session.serverCertChain, X509CertChain)
+    assert connection.session.serverName == address[0]
+    assert not connection.resumed
+    session = connection.session
+    connection.close()
+
+    # resume
+    synchro.recv(1)
+    settings = HandshakeSettings()
+    connection = connect()
+    connection.handshakeClientCert(serverName=address[0], settings=settings, session=session)
+    testConnClient(connection)
+    assert not connection.resumed
     connection.close()
 
     test_no += 1
@@ -2353,6 +2474,30 @@ def serverTestCmd(argv):
 
     test_no += 1
 
+    print("Test {0} - good PSK SHA-256 PRF".format(test_no))
+    synchro.send(b'R')
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'test', b'\x00secret', 'sha256')]
+    connection = connect()
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - good PSK default PRF".format(test_no))
+    synchro.send(b'R')
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'test', b'\x00secret')]
+    connection = connect()
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    test_no += 1
+
     print("Test {0} - good PSK, no DH".format(test_no))
     synchro.send(b'R')
     settings = HandshakeSettings()
@@ -2373,6 +2518,18 @@ def serverTestCmd(argv):
     settings.pskConfigs = [(b'test', b'\x00secret', 'sha384')]
     connection = connect()
     connection.handshakeServer(settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - bad PSK X.509 fallback".format(test_no))
+    synchro.send(b'R')
+    settings = HandshakeSettings()
+    settings.pskConfigs = [(b'test', b'\x00secret', 'sha256')]
+    connection = connect()
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
     testConnServer(connection)
     connection.close()
 
@@ -2544,6 +2701,22 @@ def serverTestCmd(argv):
     settings.maxVersion = (3, 3)
     connection.handshakeServer(certChain=x509ChainDSA,
                                privateKey=x509KeyDSA, settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - good mutual X.509 DSA, TLSv1.2".format(test_no))
+    synchro.send(b'R')
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.minVersion = (3, 3)
+    settings.maxVersion = (3, 3)
+    connection.handshakeServer(certChain=x509ChainDSA, reqCert=True,
+                               privateKey=x509KeyDSA, settings=settings)
+    assert(isinstance(connection.session.clientCertChain, X509CertChain))
+    assert connection.session.clientCertChain.getEndEntityPublicKey().key_type\
+            == "dsa"
     testConnServer(connection)
     connection.close()
 
@@ -2986,6 +3159,7 @@ def serverTestCmd(argv):
     connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
                                settings=settings)
     testConnServer(connection)
+    assert(not connection.encryptThenMAC)
     connection.close()
 
     test_no += 1
@@ -2995,6 +3169,7 @@ def serverTestCmd(argv):
     connection = connect()
     connection.handshakeServer(certChain=x509Chain, privateKey=x509Key)
     testConnServer(connection)
+    assert(not connection.encryptThenMAC)
     connection.close()
 
     test_no += 1
@@ -3002,17 +3177,20 @@ def serverTestCmd(argv):
     print("Test {0} - resumption with EtM".format(test_no))
     synchro.send(b'R')
     sessionCache = SessionCache()
+    settings = HandshakeSettings()
+    settings.ticketKeys = [getRandomBytes(32)]
     connection = connect()
     connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
-                               sessionCache=sessionCache)
+                               sessionCache=sessionCache, settings=settings)
     testConnServer(connection)
+    assert(connection.encryptThenMAC)
     connection.close()
 
     # resume
     synchro.send(b'R')
     connection = connect()
     connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
-                               sessionCache=sessionCache)
+                               sessionCache=sessionCache, settings=settings)
     testConnServer(connection)
     connection.close()
 
@@ -3038,6 +3216,52 @@ def serverTestCmd(argv):
         assert(str(e) == "illegal_parameter")
     else:
         raise AssertionError("no exception raised")
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - session_ticket resumption in TLSv1.2".format(test_no))
+    synchro.send(b'R')
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.maxVersion = (3, 3)
+    settings.ticketKeys = [getRandomBytes(32)]
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    # resume
+    synchro.send(b'R')
+    connection = connect()
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    test_no += 1
+
+    print("Test {0} - session_ticket resumption in TLSv1.2 "
+          "with expired ticket".format(test_no))
+    synchro.send(b'R')
+    connection = connect()
+    settings = HandshakeSettings()
+    settings.ticketLifetime = 1
+    settings.maxVersion = (3, 3)
+    settings.ticketKeys = [getRandomBytes(32)]
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
+    connection.close()
+
+    time.sleep(2)
+
+    # resume
+    synchro.send(b'R')
+    connection = connect()
+    connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
+                               settings=settings)
+    testConnServer(connection)
     connection.close()
 
     test_no += 1
@@ -3072,6 +3296,7 @@ def serverTestCmd(argv):
     connection.handshakeServer(certChain=x509Chain, privateKey=x509Key,
                                reqCert=True, settings=settings)
     testConnServer(connection)
+    assert connection.session.clientCertChain
     connection.close()
 
     # resume

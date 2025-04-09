@@ -13,6 +13,7 @@ except ImportError:
     import unittest.mock as mock
     from unittest.mock import call
 
+import sys
 from tlsfuzzer.runner import ConnectionState, Runner, guess_response
 from tlsfuzzer.expect import ExpectClose, ExpectNoMessage
 from tlsfuzzer.messages import ClientHelloGenerator
@@ -21,6 +22,13 @@ import tlslite.constants as constants
 from tlslite.x509certchain import X509CertChain
 from tlslite.errors import TLSAbruptCloseError
 import socket
+
+
+if sys.version_info < (3, 0):
+    BUILTIN_PRINT = "__builtin__.print"
+else:
+    BUILTIN_PRINT = "builtins.print"
+
 
 class TestConnectionState(unittest.TestCase):
     def test___init__(self):
@@ -106,7 +114,8 @@ class TestRunner(unittest.TestCase):
 
         self.assertIsNotNone(runner.state)
 
-    def test_run_with_unknown_type(self):
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_unknown_type(self, mock_print):
         node = mock.MagicMock()
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=False)
@@ -117,6 +126,10 @@ class TestRunner(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             runner.run()
+
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
 
     def test_run_with_command_node(self):
         node = mock.MagicMock()
@@ -136,6 +149,7 @@ class TestRunner(unittest.TestCase):
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=False)
         node.is_generator = mock.Mock(return_value=True)
+        node.queue = False
         node.child = None
         msg = mock.MagicMock()
         msg.write = mock.Mock(return_value=bytearray(b'\x01\x00'))
@@ -190,10 +204,11 @@ class TestRunner(unittest.TestCase):
 
         runner.run()
 
-        internal_message = messages.Message(msg[0].type, msg[1].bytes)
-
-        node.is_match.called_once_with(internal_message)
-        node.process.called_once_with(runner.state, internal_message)
+        # as the message they're called with is generated inside the runner
+        # it will be a different object every time, so just assert that
+        # the methods were called
+        node.is_match.assert_called_once()
+        node.process.assert_called_once()
 
     def test_run_with_expect_and_closed_socket(self):
         node = ExpectClose()
@@ -205,7 +220,8 @@ class TestRunner(unittest.TestCase):
 
         runner.run()
 
-    def test_run_with_expect_and_unexpected_closed_socket(self):
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_expect_and_unexpected_closed_socket(self, mock_print):
         node = mock.MagicMock()
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=True)
@@ -222,7 +238,12 @@ class TestRunner(unittest.TestCase):
 
         self.assertIn("Unexpected closure from peer", str(e.exception))
 
-    def test_run_with_expect_and_read_timeout(self):
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
+
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_expect_and_read_timeout(self, mock_print):
         node = mock.MagicMock()
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=True)
@@ -239,6 +260,10 @@ class TestRunner(unittest.TestCase):
 
         self.assertIn("Timeout when waiting", str(e.exception))
 
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
+
     def test_run_with_expect_and_no_message(self):
         node = ExpectNoMessage()
 
@@ -249,7 +274,8 @@ class TestRunner(unittest.TestCase):
 
         runner.run()
 
-    def test_run_with_expect_no_message_and_message_received(self):
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_expect_no_message_and_message_received(self, mock_print):
         node = ExpectNoMessage()
 
         runner = Runner(node)
@@ -261,7 +287,13 @@ class TestRunner(unittest.TestCase):
         with self.assertRaises(AssertionError):
             runner.run()
 
-    def test_run_with_expect_node_and_unexpected_message(self):
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
+        self.assertIn("ExpectNoMessage", mock_print.call_args[0][0])
+
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_expect_node_and_unexpected_message(self, mock_print):
         node = mock.MagicMock()
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=True)
@@ -279,13 +311,19 @@ class TestRunner(unittest.TestCase):
         with self.assertRaises(AssertionError):
             runner.run()
 
-        runner.state.msg_sock.sock.close.called_once_with()
+        runner.state.msg_sock.sock.close.assert_called_once_with()
 
-    def test_run_with_generate_and_unexpected_closed_socket(self):
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
+
+    @mock.patch(BUILTIN_PRINT)
+    def test_run_with_generate_and_unexpected_closed_socket(self, mock_print):
         node = mock.MagicMock()
         node.is_command = mock.Mock(return_value=False)
         node.is_expect = mock.Mock(return_value=False)
         node.is_generator = mock.Mock(return_value=True)
+        node.queue = False
         node.child = None
 
         runner = Runner(node)
@@ -295,6 +333,10 @@ class TestRunner(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             runner.run()
+
+        mock_print.assert_called_once()
+        self.assertIn("Error encountered while processing node",
+                      mock_print.call_args[0][0])
 
     def test_run_with_generate_and_expected_closed_socket(self):
         node = ClientHelloGenerator()
@@ -353,6 +395,17 @@ class TestGuessResponse(unittest.TestCase):
 
         self.assertEqual("Handshake(client_hello)",
                          guess_response(content_type, data))
+
+    def test_guess_response_with_hello_retry_request(self):
+        content_type = constants.ContentType.handshake
+        data = bytearray([constants.HandshakeType.server_hello,
+                          0, 0, 34,  # length
+                          3, 3]  # version number
+                          ) + constants.TLS_1_3_HRR
+
+        self.assertEqual("Handshake(server_hello, hello_retry_request)",
+                         guess_response(content_type, data))
+
     def test_guess_response_with_invalid_handshake(self):
         content_type = constants.ContentType.handshake
         data = bytearray()

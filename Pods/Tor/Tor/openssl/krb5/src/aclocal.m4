@@ -409,8 +409,8 @@ else
       [[struct sockaddr_in6 in;
         AF_INET6;
         IN6_IS_ADDR_LINKLOCAL(&in.sin6_addr);]])],
-    [krb5_cv_inet6=yes], [krb5_cv_inet6=no])])
-fi
+    [krb5_cv_inet6=yes], [krb5_cv_inet6=no])
+fi])
 AC_MSG_RESULT($krb5_cv_inet6)
 if test "$krb5_cv_inet6" = no && test "$ac_cv_func_inet_ntop" = yes; then
 AC_MSG_CHECKING(for IPv6 compile-time support with -DINET6)
@@ -545,7 +545,7 @@ if test "$GCC" = yes ; then
     TRY_WARN_CC_FLAG(-Wno-format-zero-length)
     # Other flags here may not be supported on some versions of
     # gcc that people want to use.
-    for flag in overflow strict-overflow missing-format-attribute missing-prototypes return-type missing-braces parentheses switch unused-function unused-label unused-variable unused-value unknown-pragmas sign-compare newline-eof error=uninitialized no-maybe-uninitialized error=pointer-arith error=int-conversion error=incompatible-pointer-types error=discarded-qualifiers error=implicit-int ; do
+    for flag in overflow strict-overflow missing-format-attribute missing-prototypes return-type missing-braces parentheses switch unused-function unused-label unused-variable unused-value unknown-pragmas sign-compare newline-eof error=uninitialized no-maybe-uninitialized error=pointer-arith error=int-conversion error=incompatible-pointer-types error=discarded-qualifiers error=implicit-int error=strict-prototypes; do
       TRY_WARN_CC_FLAG(-W$flag)
     done
     #  old-style-definition? generates many, many warnings
@@ -594,10 +594,6 @@ if test "$GCC" = yes ; then
       AC_MSG_NOTICE(disabling the use of common storage on Darwin)
       CFLAGS="$CFLAGS -fno-common"
       ;;
-    esac
-    case "$LD $LDFLAGS" in
-    *-Wl,-search_paths_first*) ;;
-    *) LDFLAGS="${LDFLAGS} -Wl,-search_paths_first" ;;
     esac
   fi
 else

@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import subprocess
 import pytest
@@ -16,6 +17,8 @@ from .curves import (
     NIST384p,
     NIST521p,
     BRAINPOOLP160r1,
+    SECP112r2,
+    SECP128r1,
 )
 from .curves import curves
 from .ecdh import (
@@ -29,8 +32,14 @@ from .keys import SigningKey, VerifyingKey
 from .ellipticcurve import CurveEdTw
 
 
+if "--fast" in sys.argv:  # pragma: no cover
+    curves = [SECP112r2, SECP128r1]
+
+
 @pytest.mark.parametrize(
-    "vcurve", curves, ids=[curve.name for curve in curves],
+    "vcurve",
+    curves,
+    ids=[curve.name for curve in curves],
 )
 def test_ecdh_each(vcurve):
     if isinstance(vcurve.curve, CurveEdTw):
@@ -364,8 +373,11 @@ OPENSSL_SUPPORTED_CURVES = set(
 )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
-    "vcurve", curves, ids=[curve.name for curve in curves],
+    "vcurve",
+    curves,
+    ids=[curve.name for curve in curves],
 )
 def test_ecdh_with_openssl(vcurve):
     if isinstance(vcurve.curve, CurveEdTw):

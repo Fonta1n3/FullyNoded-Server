@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -192,21 +192,26 @@ int tls_parse_ctos_maxfragmentlen(SSL_CONNECTION *s, PACKET *pkt,
     }
 
     /*
-     * RFC 6066:  The negotiated length applies for the duration of the session
+     * When doing a full handshake or a renegotiation max_fragment_len_mode will
+     * be TLSEXT_max_fragment_length_UNSPECIFIED
+     *
+     * In case of a resumption max_fragment_len_mode will be one of
+     *      TLSEXT_max_fragment_length_DISABLED, TLSEXT_max_fragment_length_512,
+     *      TLSEXT_max_fragment_length_1024, TLSEXT_max_fragment_length_2048.
+     *      TLSEXT_max_fragment_length_4096
+     *
+     * RFC 6066: The negotiated length applies for the duration of the session
      * including session resumptions.
-     * We should receive the same code as in resumed session !
+     *
+     * So we only set the value in case it is unspecified.
      */
-    if (s->hit && s->session->ext.max_fragment_len_mode != value) {
-        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
-                 SSL_R_SSL3_EXT_INVALID_MAX_FRAGMENT_LENGTH);
-        return 0;
-    }
+    if (s->session->ext.max_fragment_len_mode == TLSEXT_max_fragment_length_UNSPECIFIED)
+        /*
+         * Store it in session, so it'll become binding for us
+         * and we'll include it in a next Server Hello.
+         */
+        s->session->ext.max_fragment_len_mode = value;
 
-    /*
-     * Store it in session, so it'll become binding for us
-     * and we'll include it in a next Server Hello.
-     */
-    s->session->ext.max_fragment_len_mode = value;
     return 1;
 }
 
@@ -260,7 +265,7 @@ int tls_parse_ctos_session_ticket(SSL_CONNECTION *s, PACKET *pkt,
                                   X509 *x, size_t chainidx)
 {
     if (s->ext.session_ticket_cb &&
-            !s->ext.session_ticket_cb(SSL_CONNECTION_GET_SSL(s),
+            !s->ext.session_ticket_cb(SSL_CONNECTION_GET_USER_SSL(s),
                                       PACKET_data(pkt), PACKET_remaining(pkt),
                                       s->ext.session_ticket_cb_arg)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
@@ -847,7 +852,7 @@ int tls_parse_ctos_cookie(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
     }
 
     /* Verify the app cookie */
-    if (sctx->verify_stateless_cookie_cb(ssl,
+    if (sctx->verify_stateless_cookie_cb(SSL_CONNECTION_GET_USER_SSL(s),
                                          PACKET_data(&appcookie),
                                          PACKET_remaining(&appcookie)) == 0) {
         SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_COOKIE_MISMATCH);
@@ -1020,12 +1025,13 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
                        X509 *x, size_t chainidx)
 {
     PACKET identities, binders, binder;
-    size_t binderoffset, hashsize;
+    size_t binderoffset;
+    int hashsize;
     SSL_SESSION *sess = NULL;
     unsigned int id, i, ext = 0;
     const EVP_MD *md = NULL;
     SSL_CTX *sctx = SSL_CONNECTION_GET_CTX(s);
-    SSL *ssl = SSL_CONNECTION_GET_SSL(s);
+    SSL *ussl = SSL_CONNECTION_GET_USER_SSL(s);
 
     /*
      * If we have no PSK kex mode that we recognise then we can't resume so
@@ -1054,7 +1060,7 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
 
         idlen = PACKET_remaining(&identity);
         if (s->psk_find_session_cb != NULL
-                && !s->psk_find_session_cb(ssl, PACKET_data(&identity), idlen,
+                && !s->psk_find_session_cb(ussl, PACKET_data(&identity), idlen,
                                            &sess)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_BAD_EXTENSION);
             return 0;
@@ -1072,7 +1078,7 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
                 return 0;
             }
-            pskdatalen = s->psk_server_callback(ssl, pskid, pskdata,
+            pskdatalen = s->psk_server_callback(ussl, pskid, pskdata,
                                                 sizeof(pskdata));
             OPENSSL_free(pskid);
             if (pskdatalen > PSK_MAX_PSK_LEN) {
@@ -1086,7 +1092,8 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
                  * We found a PSK using an old style callback. We don't know
                  * the digest so we default to SHA256 as per the TLSv1.3 spec
                  */
-                cipher = SSL_CIPHER_find(ssl, tls13_aes128gcmsha256_id);
+                cipher = SSL_CIPHER_find(SSL_CONNECTION_GET_SSL(s),
+                                         tls13_aes128gcmsha256_id);
                 if (cipher == NULL) {
                     OPENSSL_cleanse(pskdata, pskdatalen);
                     SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
@@ -1115,7 +1122,7 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
 
             if (sesstmp == NULL) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-                return 0;
+                goto err;
             }
             SSL_SESSION_free(sess);
             sess = sesstmp;
@@ -1221,6 +1228,8 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
 
     binderoffset = PACKET_data(pkt) - (const unsigned char *)s->init_buf->data;
     hashsize = EVP_MD_get_size(md);
+    if (hashsize <= 0)
+        goto err;
 
     if (!PACKET_get_length_prefixed_2(pkt, &binders)) {
         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
@@ -1234,7 +1243,7 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
         }
     }
 
-    if (PACKET_remaining(&binder) != hashsize) {
+    if (PACKET_remaining(&binder) != (size_t)hashsize) {
         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
         goto err;
     }
@@ -1502,8 +1511,8 @@ EXT_RETURN tls_construct_stoc_next_proto_neg(SSL_CONNECTION *s, WPACKET *pkt,
     if (!npn_seen || sctx->ext.npn_advertised_cb == NULL)
         return EXT_RETURN_NOT_SENT;
 
-    ret = sctx->ext.npn_advertised_cb(SSL_CONNECTION_GET_SSL(s), &npa, &npalen,
-                                      sctx->ext.npn_advertised_cb_arg);
+    ret = sctx->ext.npn_advertised_cb(SSL_CONNECTION_GET_USER_SSL(s), &npa,
+                                      &npalen, sctx->ext.npn_advertised_cb_arg);
     if (ret == SSL_TLSEXT_ERR_OK) {
         if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_next_proto_neg)
                 || !WPACKET_sub_memcpy_u16(pkt, npa, npalen)) {
@@ -1511,9 +1520,10 @@ EXT_RETURN tls_construct_stoc_next_proto_neg(SSL_CONNECTION *s, WPACKET *pkt,
             return EXT_RETURN_FAIL;
         }
         s->s3.npn_seen = 1;
+        return EXT_RETURN_SENT;
     }
 
-    return EXT_RETURN_SENT;
+    return EXT_RETURN_NOT_SENT;
 }
 #endif
 
@@ -1775,6 +1785,7 @@ EXT_RETURN tls_construct_stoc_cookie(SSL_CONNECTION *s, WPACKET *pkt,
     int ret = EXT_RETURN_FAIL;
     SSL_CTX *sctx = SSL_CONNECTION_GET_CTX(s);
     SSL *ssl = SSL_CONNECTION_GET_SSL(s);
+    SSL *ussl = SSL_CONNECTION_GET_USER_SSL(s);
 
     if ((s->s3.flags & TLS1_FLAGS_STATELESS) == 0)
         return EXT_RETURN_NOT_SENT;
@@ -1824,7 +1835,7 @@ EXT_RETURN tls_construct_stoc_cookie(SSL_CONNECTION *s, WPACKET *pkt,
     }
 
     /* Generate the application cookie */
-    if (sctx->gen_stateless_cookie_cb(ssl, appcookie1,
+    if (sctx->gen_stateless_cookie_cb(ussl, appcookie1,
                                       &appcookielen) == 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
         return EXT_RETURN_FAIL;

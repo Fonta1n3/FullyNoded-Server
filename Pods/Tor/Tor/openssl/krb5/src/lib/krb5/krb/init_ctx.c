@@ -66,7 +66,7 @@ static krb5_enctype default_enctype_list[] = {
 };
 
 #if (defined(_WIN32))
-extern krb5_error_code krb5_vercheck();
+extern krb5_error_code krb5_vercheck(void);
 extern void krb5_win_ccdll_load(krb5_context context);
 #endif
 
@@ -157,14 +157,8 @@ krb5_init_context_profile(profile_t profile, krb5_flags flags,
 {
     krb5_context ctx = 0;
     krb5_error_code retval;
-    struct {
-        krb5_timestamp now;
-        krb5_int32 now_usec;
-        long pid;
-    } seed_data;
-    krb5_data seed;
     int tmp;
-    char *plugin_dir = NULL;
+    char *plugin_dir = NULL, *timeout_str = NULL;
 
     /* Verify some assumptions.  If the assumptions hold and the
        compiler is optimizing, this should result in no code being
@@ -227,6 +221,16 @@ krb5_init_context_profile(profile_t profile, krb5_flags flags,
         goto cleanup;
     ctx->allow_weak_crypto = tmp;
 
+    retval = get_boolean(ctx, KRB5_CONF_ALLOW_DES3, 0, &tmp);
+    if (retval)
+        goto cleanup;
+    ctx->allow_des3 = tmp;
+
+    retval = get_boolean(ctx, KRB5_CONF_ALLOW_RC4, 0, &tmp);
+    if (retval)
+        goto cleanup;
+    ctx->allow_rc4 = tmp;
+
     retval = get_boolean(ctx, KRB5_CONF_IGNORE_ACCEPTOR_HOSTNAME, 0, &tmp);
     if (retval)
         goto cleanup;
@@ -243,20 +247,20 @@ krb5_init_context_profile(profile_t profile, krb5_flags flags,
         goto cleanup;
     ctx->dns_canonicalize_hostname = tmp;
 
-    /* initialize the prng (not well, but passable) */
-    if ((retval = krb5_c_random_os_entropy( ctx, 0, NULL)) !=0)
-        goto cleanup;
-    if ((retval = krb5_crypto_us_timeofday(&seed_data.now, &seed_data.now_usec)))
-        goto cleanup;
-    seed_data.pid = getpid ();
-    seed.length = sizeof(seed_data);
-    seed.data = (char *) &seed_data;
-    if ((retval = krb5_c_random_add_entropy(ctx, KRB5_C_RANDSOURCE_TIMING, &seed)))
-        goto cleanup;
-
     ctx->default_realm = 0;
     get_integer(ctx, KRB5_CONF_CLOCKSKEW, DEFAULT_CLOCKSKEW, &tmp);
     ctx->clockskew = tmp;
+
+    retval = profile_get_string(ctx->profile, KRB5_CONF_LIBDEFAULTS,
+                                KRB5_CONF_REQUEST_TIMEOUT, NULL, NULL,
+                                &timeout_str);
+    if (retval)
+        goto cleanup;
+    if (timeout_str != NULL) {
+        retval = krb5_string_to_deltat(timeout_str, &ctx->req_timeout);
+        if (retval)
+            goto cleanup;
+    }
 
     get_integer(ctx, KRB5_CONF_KDC_DEFAULT_OPTIONS, KDC_OPT_RENEWABLE_OK,
                 &tmp);
@@ -299,6 +303,7 @@ krb5_init_context_profile(profile_t profile, krb5_flags flags,
 
 cleanup:
     profile_release_string(plugin_dir);
+    profile_release_string(timeout_str);
     krb5_free_context(ctx);
     return retval;
 }

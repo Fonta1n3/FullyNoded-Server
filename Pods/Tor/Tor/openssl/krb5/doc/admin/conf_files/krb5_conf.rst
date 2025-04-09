@@ -35,12 +35,6 @@ or::
         baz = quux
     }
 
-Placing a '\*' after the closing bracket of a section name indicates
-that the section is *final*, meaning that if the same section appears
-within a later file specified in **KRB5_CONFIG**, it will be ignored.
-A subsection can be marked as final by placing a '\*' after either the
-tag name or the closing brace.
-
 The krb5.conf file can include other files using either of the
 following directives at the beginning of a line::
 
@@ -57,6 +51,16 @@ independent of their parents, so each included file must begin with a
 section header.  Starting in release 1.17, files are read in
 alphanumeric order; in previous releases, they may be read in any
 order.
+
+Placing a '\*' after the closing bracket of a section name indicates
+that the section is *final*, meaning that if the same section appears
+again later, it will be ignored.  A subsection can be marked as final
+by placing a '\*' after either the tag name or the closing brace.  A
+relation can be marked as final by placing a '\*' after the tag name.
+Prior to release 1.22, only sections and subsections can be marked as
+final, and the flag only causes values to be ignored if they appear in
+later files specified in **KRB5_CONFIG**, not if they appear later
+within the same file or an included file.
 
 The krb5.conf file can specify that configuration should be obtained
 from a loadable module, rather than the file itself, using the
@@ -94,6 +98,18 @@ Additionally, krb5.conf may include any of the relations described in
 ~~~~~~~~~~~~~
 
 The libdefaults section may contain any of the following relations:
+
+**allow_des3**
+    Permit the KDC to issue tickets with des3-cbc-sha1 session keys.
+    In future releases, this flag will allow des3-cbc-sha1 to be used
+    at all.  The default value for this tag is false.  (Added in
+    release 1.21.)
+
+**allow_rc4**
+    Permit the KDC to issue tickets with arcfour-hmac session keys.
+    In future releases, this flag will allow arcfour-hmac to be used
+    at all.  The default value for this tag is false.  (Added in
+    release 1.21.)
 
 **allow_weak_crypto**
     If this flag is set to false, then weak encryption types (as noted
@@ -350,6 +366,15 @@ The libdefaults section may contain any of the following relations:
     (:ref:`duration` string.)  Sets the default renewable lifetime
     for initial ticket requests.  The default value is 0.
 
+**request_timeout**
+    (:ref:`duration` string.)  Sets the maximum total time for KDC and
+    password change requests.  This timeout does not affect the
+    intervals between requests, so setting a low timeout may result in
+    fewer requests being attempted and/or some servers not being
+    contacted.  A value of 0 indicates no specific maximum, in which
+    case requests will time out if no server responds after several
+    tries.  The default value is 0.  (New in release 1.22.)
+
 **spake_preauth_groups**
     A whitespace or comma-separated list of words which specifies the
     groups allowed for SPAKE preauthentication.  The possible values
@@ -525,6 +550,10 @@ following tags may be specified in the realm's subsection:
     primary KDC, in case the user's password has just been changed, and
     the updated database has not been propagated to the replica
     servers yet.  New in release 1.19.
+
+**sitename**
+    Specifies the name of the host's site for the purpose of DNS-based
+    KDC discovery for this realm.  New in release 1.22.
 
 **v4_instance_convert**
     This subsection allows the administrator to configure exceptions
@@ -1011,7 +1040,7 @@ information for PKINIT is as follows:
     All keyword/values are optional.  *modname* specifies the location
     of a library implementing PKCS #11.  If a value is encountered
     with no keyword, it is assumed to be the *modname*.  If no
-    module-name is specified, the default is ``opensc-pkcs11.so``.
+    module-name is specified, the default is |pkcs11_modname|.
     ``slotid=`` and/or ``token=`` may be specified to force the use of
     a particular smard card reader or token if there is more than one
     available.  ``certid=`` and/or ``certlabel=`` may be specified to
@@ -1116,9 +1145,10 @@ PKINIT krb5.conf options
         option is not recommended.
 
 **pkinit_dh_min_bits**
-    Specifies the size of the Diffie-Hellman key the client will
-    attempt to use.  The acceptable values are 1024, 2048, and 4096.
-    The default is 2048.
+    Specifies the group of the Diffie-Hellman key the client will
+    attempt to use.  The acceptable values are 1024, 2048, P-256,
+    4096, P-384, and P-521.  The default is 2048.  (P-256, P-384, and
+    P-521 are new in release 1.22.)
 
 **pkinit_identities**
     Specifies the location(s) to be used to find the user's X.509

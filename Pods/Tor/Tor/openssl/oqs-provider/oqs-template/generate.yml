@@ -1,5 +1,5 @@
 # This is the master document for ID interoperability for KEM IDs, p-hybrid KEM IDs, SIG (O)IDs
-# Next free plain KEM ID: 0x024A, p-hybrid: 0x2F4B, X-hybrid: 0x2FB6
+# Next free plain KEM ID: 0x024D, p-hybrid: 0x2F4F, X-hybrid: 0x2FB9
 kems:
   -
     family: 'FrodoKEM'
@@ -143,40 +143,63 @@ kems:
           hybrid_group: secp521_r1
           nid: '0x2F11'
     oqs_alg: 'OQS_KEM_alg_kyber_1024'
+# end of IBM support section
+# NIST OIDs see https://csrc.nist.gov/projects/computer-security-objects-register/algorithm-registration
+# KEM prefix 2.16.840.1.101.3.4.4.
   -
     family: 'ML-KEM'
+    fips_standard: 1
     name_group: 'mlkem512'
-    nid: '0x0247'
-    oid: '1.3.6.1.4.1.22554.5.6.1'
-    nid_hybrid: '0x2F47'
+# code point not standardized: Why? XXX
+    nid: '0x024A'
+# NIST kem 1
+    oid: '2.16.840.1.101.3.4.4.1'
+# code point not standardized: Why? XXX
+    nid_hybrid: '0x2F4B'
+# retain OIDs of the Legion of the BouncyCastle: XXX check if OK
     hybrid_oid: '1.3.6.1.4.1.22554.5.7.1'
     oqs_alg: 'OQS_KEM_alg_ml_kem_512'
     extra_nids:
       current:
         - hybrid_group: "x25519"
+# retain OIDs of the Legion of the BouncyCastle: XXX check if OK
           hybrid_oid: '1.3.6.1.4.1.22554.5.8.1'
-          nid: '0x2FB2'
+# code point not standardized: Why? XXX
+          nid: '0x2FB6'
   -
     family: 'ML-KEM'
+    fips_standard: 1
     name_group: 'mlkem768'
-    nid: '0x0248'
-    oid: '1.3.6.1.4.1.22554.5.6.2'
-    nid_hybrid: '0x2F48'
+# https://www.ietf.org/archive/id/draft-connolly-tls-mlkem-key-agreement-01.html
+    nid: '0x0768'
+# NIST kem 2
+    oid: '2.16.840.1.101.3.4.4.2'
+# code point not standardized: Why? XXX
+    nid_hybrid: '0x2F4C'
     oqs_alg: 'OQS_KEM_alg_ml_kem_768'
     extra_nids:
       current:
         - hybrid_group: "x448"
-          nid: '0x2FB3'
+# code point not standardized: Why? XXX
+          nid: '0x2FB7'
         - hybrid_group: "x25519"
-          nid: '0x2FB4'
+# https://www.ietf.org/archive/id/draft-kwiatkowski-tls-ecdhe-mlkem-02.html#name-x25519mlkem768
+          nid: '0x11ec'
+          standard_name: "X25519MLKEM768"
         - hybrid_group: "p256"
-          nid: '0x2FB5'
+# https://www.ietf.org/archive/id/draft-kwiatkowski-tls-ecdhe-mlkem-02.html#name-secp256r1mlkem768
+          nid: '0x11eb'
+          standard_name: "SecP256r1MLKEM768"
   -
     family: 'ML-KEM'
+    fips_standard: 1
     name_group: 'mlkem1024'
-    nid: '0x0249'
-    oid: '1.3.6.1.4.1.22554.5.6.3'
-    nid_hybrid: '0x2F49'
+# https://www.ietf.org/archive/id/draft-connolly-tls-mlkem-key-agreement-01.html
+    nid: '0x1024'
+# NIST kem 3
+    oid: '2.16.840.1.101.3.4.4.3'
+# code point not standardized: Why? XXX
+    nid_hybrid: '0x2F4D'
     oqs_alg: 'OQS_KEM_alg_ml_kem_1024'
     extra_nids:
       current:
@@ -184,8 +207,10 @@ kems:
         # this oid is proposed by Tresorit
         # if the hybrid combination is standardized, feel free to change it
         - hybrid_group: "p384"
+# does Tresorit want to update?
           hybrid_oid: '1.3.6.1.4.1.42235.6'
-          nid: '0x2F4A'
+# code point not standardized: Why? XXX
+          nid: '0x2F4E'
   -
     family: 'BIKE'
     name_group: 'bike1l1fo'
@@ -399,7 +424,7 @@ kem_nid_end: '0x0250'
 kem_nid_hybrid_end: '0x2FFF'
 # need to edit ssl_local.h macros IS_OQS_KEM_CURVEID and IS_OQS_KEM_HYBRID_CURVEID with the above _end values
 
-# Next free signature ID: 0xfeee
+# Next free signature ID: 0xff06
 sigs:
   # -
     # iso (1)
@@ -429,7 +454,7 @@ sigs:
     #                'oid': '2.16.840.1.114027.80.1.8'}]
   -
     # The Composite OIDs are kept up to date by @feventura (Entrust)
-    # These are prototype OIDs and are in line with draft-ounsworth-pq-composite-sigs-13
+    # These are prototype OIDs and are in line with draft-ietf-lamps-pq-composite-sigs-02
     # OID scheme for composite variants:
     # joint-iso-itu-t (2)
     # country (16)
@@ -1469,5 +1494,174 @@ sigs:
                           'pretty_name': 'ECDSA p521',
                           'oid': '1.3.9999.6.9.8',
                           'code_point': '0xfe95'}]
-
-
+  -
+    family: 'MAYO'
+    variants:
+      -
+        name: 'mayo1'
+        pretty_name: 'MAYO-1'
+        oqs_meth: 'OQS_SIG_alg_mayo_1'
+        oid: '1.3.9999.8.1.1'
+        code_point: '0xfeee'
+        enable: true
+        mix_with: [{'name': 'p256',
+                    'pretty_name': 'ECDSA p256',
+                    'oid': '1.3.9999.8.1.2',
+                    'code_point': '0xfef2'}]
+      -
+        name: 'mayo2'
+        pretty_name: 'MAYO-2'
+        oqs_meth: 'OQS_SIG_alg_mayo_2'
+        oid: '1.3.9999.8.2.1'
+        code_point: '0xfeef'
+        enable: true
+        mix_with: [{'name': 'p256',
+                    'pretty_name': 'ECDSA p256',
+                    'oid': '1.3.9999.8.2.2',
+                    'code_point': '0xfef3'}]
+      -
+        name: 'mayo3'
+        pretty_name: 'MAYO-3'
+        oqs_meth: 'OQS_SIG_alg_mayo_3'
+        oid: '1.3.9999.8.3.1'
+        code_point: '0xfef0'
+        enable: true
+        mix_with: [{'name': 'p384',
+                    'pretty_name': 'ECDSA p384',
+                    'oid': '1.3.9999.8.3.2',
+                    'code_point': '0xfef4'}]
+      -
+        name: 'mayo5'
+        pretty_name: 'MAYO-5'
+        oqs_meth: 'OQS_SIG_alg_mayo_5'
+        oid: '1.3.9999.8.5.1'
+        code_point: '0xfef1'
+        enable: true
+        mix_with: [{'name': 'p521',
+                    'pretty_name': 'ECDSA p521',
+                    'oid': '1.3.9999.8.5.2',
+                    'code_point': '0xfef5'}]
+  -
+    family: 'CROSS'
+    variants:
+      # RSDP 128
+      -
+        name: 'CROSSrsdp128balanced'
+        pretty_name: 'CROSS-rsdp-128-balanced'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_128_balanced'
+        oid: '1.3.6.1.4.1.62245.2.1.1'
+        code_point: '0xfef6'
+        enable: true
+      -
+        name: 'CROSSrsdp128fast'
+        pretty_name: 'CROSS-rsdp-128-fast'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_128_fast'
+        oid: '1.3.6.1.4.1.62245.2.1.2'
+        code_point: '0xfef7'
+        enable: false
+      -
+        name: 'CROSSrsdp128small'
+        pretty_name: 'CROSS-rsdp-128-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_128_small'
+        oid: '1.3.6.1.4.1.62245.2.1.3'
+        code_point: '0xfef8'
+        enable: false
+      # RSDP 192
+      -
+        name: 'CROSSrsdp192balanced'
+        pretty_name: 'CROSS-rsdp-192-balanced'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_192_balanced'
+        oid: '1.3.6.1.4.1.62245.2.1.4'
+        code_point: '0xfef9'
+        enable: false
+      -
+        name: 'CROSSrsdp192fast'
+        pretty_name: 'CROSS-rsdp-192-fast'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_192_fast'
+        oid: '1.3.6.1.4.1.62245.2.1.5'
+        code_point: '0xfefa'
+        enable: false
+      -
+        name: 'CROSSrsdp192small'
+        pretty_name: 'CROSS-rsdp-192-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_192_small'
+        oid: '1.3.6.1.4.1.62245.2.1.6'
+        code_point: '0xfefb'
+        enable: false
+      # RSDP 256
+      # CROSS variants rsdp-256-balanced and rsdp-256-fast are missing because 
+      # they produce certificates that are larger than the maximum size allowed 
+      # by TLS 1.3 (RFC 8446 section B.3.3)
+      -
+        name: 'CROSSrsdp256small'
+        pretty_name: 'CROSS-rsdp-256-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdp_256_small'
+        oid: '1.3.6.1.4.1.62245.2.1.9'
+        code_point: '0xfefc'
+        enable: false
+      # RSDPG 128
+      -
+        name: 'CROSSrsdpg128balanced'
+        pretty_name: 'CROSS-rsdpg-128-balanced'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_128_balanced'
+        oid: '1.3.6.1.4.1.62245.2.1.10'
+        code_point: '0xfefd'
+        enable: false
+      -
+        name: 'CROSSrsdpg128fast'
+        pretty_name: 'CROSS-rsdpg-128-fast'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_128_fast'
+        oid: '1.3.6.1.4.1.62245.2.1.11'
+        code_point: '0xfefe'
+        enable: false
+      -
+        name: 'CROSSrsdpg128small'
+        pretty_name: 'CROSS-rsdpg-128-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_128_small'
+        oid: '1.3.6.1.4.1.62245.2.1.12'
+        code_point: '0xfeff'
+        enable: false
+      # RSDPG 192
+      -
+        name: 'CROSSrsdpg192balanced'
+        pretty_name: 'CROSS-rsdpg-192-balanced'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_192_balanced'
+        oid: '1.3.6.1.4.1.62245.2.1.13'
+        code_point: '0xff00'
+        enable: false
+      -
+        name: 'CROSSrsdpg192fast'
+        pretty_name: 'CROSS-rsdpg-192-fast'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_192_fast'
+        oid: '1.3.6.1.4.1.62245.2.1.14'
+        code_point: '0xff01'
+        enable: false
+      -
+        name: 'CROSSrsdpg192small'
+        pretty_name: 'CROSS-rsdpg-192-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_192_small'
+        oid: '1.3.6.1.4.1.62245.2.1.15'
+        code_point: '0xff02'
+        enable: false
+      # RSDPG 256
+      -
+        name: 'CROSSrsdpg256balanced'
+        pretty_name: 'CROSS-rsdpg-256-balanced'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_256_balanced'
+        oid: '1.3.6.1.4.1.62245.2.1.16'
+        code_point: '0xff03'
+        enable: false
+      -
+        name: 'CROSSrsdpg256fast'
+        pretty_name: 'CROSS-rsdpg-256-fast'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_256_fast'
+        oid: '1.3.6.1.4.1.62245.2.1.17'
+        code_point: '0xff04'
+        enable: false
+      -
+        name: 'CROSSrsdpg256small'
+        pretty_name: 'CROSS-rsdpg-256-small'
+        oqs_meth: 'OQS_SIG_alg_cross_rsdpg_256_small'
+        oid: '1.3.6.1.4.1.62245.2.1.18'
+        code_point: '0xff05'
+        enable: false

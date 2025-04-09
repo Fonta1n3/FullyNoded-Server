@@ -14,6 +14,7 @@
 
 #include <stdarg.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 
 #ifndef _MSC_VER
@@ -124,7 +125,7 @@ version(void)
 static void
 parse_options(int argc, char **argv)
 {
-	static const char short_opts[] = "cdkM:hqQV";
+	static const char short_opts[] = "cdkhqQV";
 	static const struct option long_opts[] = {
 		{ "stdout",       no_argument,         NULL, 'c' },
 		{ "to-stdout",    no_argument,         NULL, 'c' },
@@ -361,6 +362,8 @@ sandbox_enter(int src_fd)
 		// before activating the sandbox.
 		if (syscall(SYS_landlock_restrict_self, ruleset_fd, 0U) != 0)
 			goto error;
+
+		(void)close(ruleset_fd);
 	}
 
 	(void)src_fd;
@@ -391,6 +394,9 @@ error:
 int
 main(int argc, char **argv)
 {
+	// Initialize progname which will be used in error messages.
+	tuklib_progname_init(argv);
+
 #ifdef HAVE_PLEDGE
 	// OpenBSD's pledge(2) sandbox.
 	// Initially enable the sandbox slightly more relaxed so that
@@ -416,8 +422,13 @@ main(int argc, char **argv)
 	(void)prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 #endif
 
-	// Initialize progname which we will be used in error messages.
-	tuklib_progname_init(argv);
+	// We need to set the locale even though we don't have any
+	// translated messages:
+	//
+	//   - This is needed on Windows to make non-ASCII filenames display
+	//     properly when the active code page has been set to UTF-8
+	//     in the application manifest.
+	setlocale(LC_ALL, "");
 
 	// Parse the command line options.
 	parse_options(argc, argv);

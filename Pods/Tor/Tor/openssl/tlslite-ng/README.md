@@ -1,4 +1,4 @@
-tlslite-ng version 0.8.0-alpha42 (2021-08-06)
+tlslite-ng version 0.8.0-beta2 (2024-08-22)
 
 [![Build Status](https://github.com/tlsfuzzer/tlslite-ng/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tlsfuzzer/tlslite-ng/actions?query=workflow%3A%22GitHub+CI%22+branch%3Amaster)
 [![Read the Docs](https://img.shields.io/readthedocs/tlslite-ng)](https://tlslite-ng.readthedocs.io/en/latest/)
@@ -28,7 +28,7 @@ tlslite-ng is an open source python library that implements SSL and
 cryptographic protocols. It can be used either as a standalone wrapper around
 python socket interface or as a backend for multiple other libraries.
 tlslite-ng is pure python, however it can use other libraries for faster crypto
-operations. tlslite-ng integrates with several stdlib neworking libraries.
+operations. tlslite-ng integrates with several stdlib networking libraries.
 
 API documentation is available in the `docs/_build/html` directory of the PyPI
 package
@@ -61,8 +61,8 @@ Implemented TLS features include:
 * Extended master secret
 * padding extension
 * keying material exporter
-* RSA, RSA-PSS, ECDSA, and EdDSA certificates
-* ticket based session resumption in TLSv1.3
+* RSA, RSA-PSS, DSA, ECDSA, and EdDSA certificates
+* ticket based session resumption
 * 1-RTT handshake, Hello Retry Request, middlebox compatibility mode,
   cookie extension, post-handshake authentication and KeyUpdate
   (TLS 1.3)
@@ -95,7 +95,7 @@ Currently it is distributed under Gnu LGPLv2 license.
 Requirements:
 
 * Python 2.6 or higher is required.
-* Python 3.3 or higher is supported.
+* Python 3.6 or higher is supported.
 * python ecdsa >= 0.13.3 library
   ([GitHub](https://github.com/warner/python-ecdsa),
   [PyPI](https://pypi.python.org/pypi/ecdsa))
@@ -568,12 +568,16 @@ handshake() method, doing some sort of server handshake on the connection
 argument.  If the handshake method returns True, the RequestHandler will be
 triggered.  See the tests/httpsserver.py example.
 
-10 Using tlslite-ng with asyncore
+10 Using tlslite-ng with asyncore (or asyncio - Python 3.12+)
 =================================
 
 tlslite-ng can be used with subclasses of asyncore.dispatcher.  See the comments
 in TLSAsyncDispatcherMixIn.py for details.  This is still experimental, and
 may not work with all asyncore.dispatcher subclasses.
+
+as said above, asyncore is deprecated in Python 3.12, and asyncio should be used.
+Implementation is similar to TLSAsyncDispatcherMixIn.py, but instead, use the class
+TLSAsyncioDispatcherMixIn.py.
 
 11 History
 ===========
@@ -585,7 +589,7 @@ may not work with all asyncore.dispatcher subclasses.
   follow this new style and new deprecations will be introduced as time goes
   on. Please run your test suite with `-Wd` to see where the depracated calls
   are being made, the python standard DeprecationWarning will be emited there)
-* Python 3.2 is not supported any more (dropped by python-ecdsa)
+* Python 3.2, 3.3, and 3.4 is not supported any more (dropped by python-ecdsa)
 * fix compatibility issue with 8192 bit SRP group from RFC 5054
 * fix CVE-2018-1000159 - incorrect verification of MAC in MAC then Encrypt
   mode
@@ -676,6 +680,7 @@ may not work with all asyncore.dispatcher subclasses.
   curves and signature algorithms advertised by client (Ivan Nikolchev)
 * basic support for DSA certificates; verification of DSA signatures
   in ServerKeyExchange (Frantisek Krenzelok)
+* support for DSA client certificates
 * small optimisations to PRF methods, speeds to handshake
 * support for MD5 signatures in X.509 certificates (Jean-Romain Garnier)
 * add support for Brainpool curves in TLS 1.2 and earlier (pytz)
@@ -686,11 +691,22 @@ may not work with all asyncore.dispatcher subclasses.
 * handle too short RSA ciphertexts for the key size consistently between
   backends
 * strict handling of CCS in TLS 1.3 (don't allow it post handshake)
+* detect and reject multi-byte CCS messages
 * improved RSA key generation - don't generate biased primes
 * support for both encodings of RSA-PSS algorithm identifier in X.509
 * Support for EdDSA (Ed25519 and Ed448) in TLS 1.2 and TLS 1.3, both
   for server and client certificates
-
+* Support for echo server in the example tls.py script
+* Better handling of HMACs in FIPS mode
+* Generate RSA keys with 65537 as public exponent with m2crypto (as with
+  other backends)
+* Ticket based session resumption in TLS 1.2 and earlier
+* strict size checking of `session_id` field in ClientHello
+* use python-ecdsa code for parsing ECDH key shares, speed up calculation
+  of shared secrets (Ganna Starovoytova)
+* fix sending of session ticket extension from the server without
+  a ticket (George Pantelakis)
+* add Brainpool IDs for TLS 1.3 from RFC 8734
 
 0.7.0 - 2017-07-31
 

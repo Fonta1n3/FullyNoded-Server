@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 
-#include "oqs/oqs.h"
-#include "test_common.h"
 #include <openssl/buffer.h>
 #include <openssl/core_names.h>
 #include <openssl/decoder.h>
@@ -11,6 +9,9 @@
 #include <openssl/provider.h>
 #include <openssl/trace.h>
 #include <string.h>
+
+#include "oqs/oqs.h"
+#include "test_common.h"
 
 static OSSL_LIB_CTX *libctx = NULL;
 static char *modulename = NULL;
@@ -51,8 +52,7 @@ static ENDECODE_PARAMS test_params_list[] = {
 };
 
 static EVP_PKEY *oqstest_make_key(const char *type, EVP_PKEY *template,
-                                  OSSL_PARAM *genparams)
-{
+                                  OSSL_PARAM *genparams) {
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *ctx = NULL;
 
@@ -69,25 +69,24 @@ static EVP_PKEY *oqstest_make_key(const char *type, EVP_PKEY *template,
      * No real need to check the errors other than for the cascade
      * effect.  |pkey| will simply remain NULL if something goes wrong.
      */
-    (void)(ctx != NULL && EVP_PKEY_keygen_init(ctx) > 0
-           && (genparams == NULL || EVP_PKEY_CTX_set_params(ctx, genparams) > 0)
-           && EVP_PKEY_keygen(ctx, &pkey) > 0);
+    (void)(ctx != NULL && EVP_PKEY_keygen_init(ctx) > 0 &&
+           (genparams == NULL || EVP_PKEY_CTX_set_params(ctx, genparams) > 0) &&
+           EVP_PKEY_keygen(ctx, &pkey) > 0);
     EVP_PKEY_CTX_free(ctx);
     return pkey;
 }
 
 static int encode_EVP_PKEY_prov(const EVP_PKEY *pkey, const char *format,
                                 const char *structure, const char *pass,
-                                const int selection, BUF_MEM **encoded)
-{
+                                const int selection, BUF_MEM **encoded) {
     OSSL_ENCODER_CTX *ectx;
     BIO *mem_ser = NULL;
     BUF_MEM *mem_buf = NULL;
     const char *cipher = "AES-256-CBC";
     int ok = 0;
 
-    ectx = OSSL_ENCODER_CTX_new_for_pkey(pkey, selection, format, structure,
-                                         NULL);
+    ectx =
+        OSSL_ENCODER_CTX_new_for_pkey(pkey, selection, format, structure, NULL);
     if (ectx == NULL) {
         printf("No suitable encoder found\n");
         goto end;
@@ -127,8 +126,7 @@ end:
 static int decode_EVP_PKEY_prov(const char *input_type, const char *structure,
                                 const char *pass, const char *keytype,
                                 const int selection, EVP_PKEY **object,
-                                const void *encoded, const long encoded_len)
-{
+                                const void *encoded, const long encoded_len) {
     EVP_PKEY *pkey = NULL;
     OSSL_DECODER_CTX *dctx = NULL;
     BIO *encoded_bio = NULL;
@@ -165,8 +163,7 @@ end:
     return ok;
 }
 
-static int test_oqs_encdec(const char *alg_name)
-{
+static int test_oqs_encdec(const char *alg_name) {
     EVP_PKEY *pkey = NULL;
     EVP_PKEY *decoded_pkey = NULL;
     BUF_MEM *encoded = NULL;
@@ -178,6 +175,11 @@ static int test_oqs_encdec(const char *alg_name)
         if (pkey == NULL)
             goto end;
 
+        if (!OBJ_sn2nid(alg_name)) {
+            printf("No OID registered for %s\n", alg_name);
+            ok = -1;
+            goto end;
+        }
         if (!encode_EVP_PKEY_prov(pkey, test_params_list[i].format,
                                   test_params_list[i].structure,
                                   test_params_list[i].pass,
@@ -213,27 +215,33 @@ end:
     return ok;
 }
 
-static int test_algs(const OSSL_ALGORITHM *algs)
-{
+static int test_algs(const OSSL_ALGORITHM *algs) {
     int errcnt = 0;
     for (; algs->algorithm_names != NULL; algs++) {
-        if (test_oqs_encdec(algs->algorithm_names)) {
+        switch (test_oqs_encdec(algs->algorithm_names)) {
+        case 1:
             fprintf(stderr,
                     cGREEN "  Encoding/Decoding test succeeded: %s" cNORM "\n",
                     algs->algorithm_names);
-        } else {
+            break;
+        case -1:
+            fprintf(stderr,
+                    cBLUE "  Encoding/Decoding test skipped: %s" cNORM "\n",
+                    algs->algorithm_names);
+            break;
+        default:
             fprintf(stderr,
                     cRED "  Encoding/Decoding test failed: %s" cNORM "\n",
                     algs->algorithm_names);
             ERR_print_errors_fp(stderr);
             errcnt++;
+            break;
         }
     }
     return errcnt;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     size_t i;
     int errcnt = 0, test = 0, query_nocache;
     OSSL_PROVIDER *oqsprov = NULL;

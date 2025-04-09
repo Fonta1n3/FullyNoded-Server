@@ -1,22 +1,26 @@
 # Pure-Python ECDSA and ECDH
 
 [![Build Status](https://github.com/tlsfuzzer/python-ecdsa/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tlsfuzzer/python-ecdsa/actions?query=workflow%3A%22GitHub+CI%22+branch%3Amaster)
+[![Documentation Status](https://readthedocs.org/projects/ecdsa/badge/?version=latest)](https://ecdsa.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
-[![condition coverage](https://img.shields.io/badge/condition%20coverage-87%25-yellow)](https://travis-ci.com/github/tlsfuzzer/python-ecdsa/jobs/458951056#L544)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/context:python)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/alerts/)
+![condition coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-condition-coverage.json)
+![mutation score](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-mutation-score.json)
+[![CodeQL](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml/badge.svg)](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat)
 
 
 This is an easy-to-use implementation of ECC (Elliptic Curve Cryptography)
-with support for ECDSA (Elliptic Curve Digital Signature Algorithm) and ECDH
+with support for ECDSA (Elliptic Curve Digital Signature Algorithm),
+EdDSA (Edwards-curve Digital Signature Algorithm) and ECDH
 (Elliptic Curve Diffie-Hellman), implemented purely in Python, released under
 the MIT license. With this library, you can quickly create key pairs (signing
 key and verifying key), sign messages, and verify the signatures. You can
 also agree on a shared secret key based on exchanged public keys.
 The keys and signatures are very short, making them easy to handle and
 incorporate into other protocols.
+
+**NOTE: This library should not be used in production settings, see [Security](#Security) for more details.**
 
 ## Features
 
@@ -33,13 +37,15 @@ regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 `brainpoolP512r1`. Few of the small curves from SEC standard are also
 included (mainly to speed-up testing of the library), those are:
 `secp112r1`, `secp112r2`, `secp128r1`, and `secp160r1`.
+Key generation, siging and verifying is also supported for Ed25519 and
+Ed448 curves.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
 
 ## Dependencies
 
 This library uses only Python and the 'six' package. It is compatible with
-Python 2.6, 2.7, and 3.3+. It also supports execution on alternative
+Python 2.6, 2.7, and 3.6+. It also supports execution on alternative
 implementations like pypy and pypy3.
 
 If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.
@@ -50,7 +56,7 @@ You should prefer `gmpy2` on Python3 for optimal performance.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
-1.0.0a, 1.0.2f and 1.1.1d (among others).
+1.0.0a, 1.0.2f, 1.1.1d and 3.0.1 (among others).
 
 
 ## Installation

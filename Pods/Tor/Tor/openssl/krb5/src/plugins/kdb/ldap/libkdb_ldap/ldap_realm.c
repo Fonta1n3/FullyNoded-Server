@@ -87,7 +87,7 @@ ldap_filter_correct (char *in)
             break;
         k5_buf_add_fmt(&buf, "\\%2x", (unsigned char)*in++);
     }
-    return buf.data;
+    return k5_buf_cstring(&buf);
 }
 
 static int
@@ -271,16 +271,18 @@ krb5_ldap_delete_realm (krb5_context context, char *lrealm)
         for (ent = ldap_first_entry (ld, result); ent != NULL;
              ent = ldap_next_entry (ld, ent)) {
             if ((values = ldap_get_values(ld, ent, "krbPrincipalName")) != NULL) {
-                for (i = 0; values[i] != NULL; ++i) {
+                for (i = 0; values[i] != NULL && !st; ++i) {
                     krb5_parse_name(context, values[i], &principal);
                     if (principal_in_realm_2(principal, lrealm) == 0) {
                         st=krb5_ldap_delete_principal(context, principal);
-                        if (st && st != KRB5_KDB_NOENTRY)
-                            goto cleanup;
+                        if (st == KRB5_KDB_NOENTRY)
+                            st = 0;
                     }
                     krb5_free_principal(context, principal);
                 }
                 ldap_value_free(values);
+                if (st)
+                    goto cleanup;
             }
         }
     }

@@ -134,7 +134,6 @@ struct conn_state {
     krb5_data callback_buffer;
     size_t server_index;
     struct conn_state *next;
-    time_ms endtime;
     krb5_boolean defer;
     struct {
         const char *uri_path;
@@ -344,15 +343,19 @@ cm_select_or_poll(const struct select_state *in, time_ms endtime,
                   struct select_state *out, int *sret)
 {
 #ifndef USE_POLL
-    struct timeval tv;
+    struct timeval tv, *tvp;
 #endif
     krb5_error_code retval;
     time_ms curtime, interval;
 
-    retval = get_curtime_ms(&curtime);
-    if (retval != 0)
-        return retval;
-    interval = (curtime < endtime) ? endtime - curtime : 0;
+    if (endtime != 0) {
+        retval = get_curtime_ms(&curtime);
+        if (retval != 0)
+            return retval;
+        interval = (curtime < endtime) ? endtime - curtime : 0;
+    } else {
+        interval = -1;
+    }
 
     /* We don't need a separate copy of the selstate for poll, but use one for
      * consistency with how we use select. */
@@ -361,9 +364,14 @@ cm_select_or_poll(const struct select_state *in, time_ms endtime,
 #ifdef USE_POLL
     *sret = poll(out->fds, out->nfds, interval);
 #else
-    tv.tv_sec = interval / 1000;
-    tv.tv_usec = interval % 1000 * 1000;
-    *sret = select(out->max, &out->rfds, &out->wfds, &out->xfds, &tv);
+    if (interval != -1) {
+        tv.tv_sec = interval / 1000;
+        tv.tv_usec = interval % 1000 * 1000;
+        tvp = &tv;
+    } else {
+        tvp = NULL;
+    }
+    *sret = select(out->max, &out->rfds, &out->wfds, &out->xfds, tvp);
 #endif
 
     return (*sret < 0) ? SOCKET_ERRNO : 0;
@@ -435,13 +443,13 @@ krb5_set_kdc_recv_hook(krb5_context context, krb5_post_recv_fn recv_hook,
  */
 
 krb5_error_code
-krb5_sendto_kdc(krb5_context context, const krb5_data *message,
-                const krb5_data *realm, krb5_data *reply_out, int *use_primary,
-                int no_udp)
+k5_sendto_kdc(krb5_context context, const krb5_data *message,
+              const krb5_data *realm, krb5_boolean use_primary,
+              krb5_boolean no_udp, krb5_data *reply_out, struct kdclist *kdcs)
 {
     krb5_error_code retval, oldret, err;
     struct serverlist servers;
-    int server_used;
+    int server_used = -1;
     k5_transport_strategy strategy;
     krb5_data reply = empty_data(), *hook_message = NULL, *hook_reply = NULL;
 
@@ -460,7 +468,7 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
      * should probably be returned as well.
      */
 
-    TRACE_SENDTO_KDC(context, message->length, realm, *use_primary, no_udp);
+    TRACE_SENDTO_KDC(context, message->length, realm, use_primary, no_udp);
 
     if (!no_udp && context->udp_pref_limit < 0) {
         int tmp;
@@ -486,7 +494,7 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
     else
         strategy = UDP_LAST;
 
-    retval = k5_locate_kdc(context, realm, &servers, *use_primary, no_udp);
+    retval = k5_locate_kdc(context, realm, &servers, use_primary, no_udp);
     if (retval)
         return retval;
 
@@ -527,13 +535,9 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
                                         retval, realm, message, &reply,
                                         &hook_reply);
         if (oldret && !retval) {
-            /*
-             * The hook must set a reply if it overrides an error from
-             * k5_sendto().  Treat this reply as coming from the primary
-             * KDC.
-             */
+            /* The hook must set a reply if it overrides an error from
+             * k5_sendto(). */
             assert(hook_reply != NULL);
-            *use_primary = 1;
         }
     }
     if (retval)
@@ -542,24 +546,30 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
     if (hook_reply != NULL) {
         *reply_out = *hook_reply;
         free(hook_reply);
-    } else {
-        *reply_out = reply;
-        reply = empty_data();
+        goto cleanup;
     }
 
-    /* Set use_primary to 1 if we ended up talking to a primary when we didn't
-     * explicitly request to. */
-    if (*use_primary == 0) {
-        *use_primary = k5_kdc_is_primary(context, realm,
-                                         &servers.servers[server_used]);
-        TRACE_SENDTO_KDC_PRIMARY(context, *use_primary);
-    }
+    *reply_out = reply;
+    reply = empty_data();
+
+    /* Record which KDC we used if the caller asks. */
+    if (kdcs != NULL && server_used != -1)
+        retval = k5_kdclist_add(kdcs, realm, &servers.servers[server_used]);
 
 cleanup:
     krb5_free_data(context, hook_message);
     krb5_free_data_contents(context, &reply);
     k5_free_serverlist(&servers);
     return retval;
+}
+
+krb5_error_code
+krb5_sendto_kdc(krb5_context context, const krb5_data *message,
+                const krb5_data *realm, krb5_data *reply_out, int *use_primary,
+                int no_udp)
+{
+    return k5_sendto_kdc(context, message, realm, *use_primary, no_udp,
+                         reply_out, NULL);
 }
 
 /*
@@ -722,8 +732,10 @@ add_connection(struct conn_state **conns, k5_transport transport,
 
         if (*udpbufp == NULL) {
             *udpbufp = malloc(MAX_DGRAM_SIZE);
-            if (*udpbufp == 0)
+            if (*udpbufp == NULL) {
+                free(state);
                 return ENOMEM;
+            }
         }
         state->in.buf = *udpbufp;
         state->in.bufsize = MAX_DGRAM_SIZE;
@@ -802,11 +814,14 @@ resolve_server(krb5_context context, const krb5_data *realm,
     int err, result;
     char portbuf[PORT_LENGTH];
 
-    /* Skip UDP entries if we don't want UDP. */
+    /* Skip entries excluded by the strategy. */
     if (strategy == NO_UDP && entry->transport == UDP)
         return 0;
+    if (strategy == ONLY_UDP && entry->transport != UDP &&
+        entry->transport != TCP_OR_UDP)
+        return 0;
 
-    transport = (strategy == UDP_FIRST) ? UDP : TCP;
+    transport = (strategy == UDP_FIRST || strategy == ONLY_UDP) ? UDP : TCP;
     if (entry->hostname == NULL) {
         /* Added by a module, so transport is either TCP or UDP. */
         ai.ai_socktype = socktype_for_transport(entry->transport);
@@ -850,8 +865,9 @@ resolve_server(krb5_context context, const krb5_data *realm,
     }
 
     /* For TCP_OR_UDP entries, add each address again with the non-preferred
-     * transport, unless we are avoiding UDP.  Flag these as deferred. */
-    if (retval == 0 && entry->transport == TCP_OR_UDP && strategy != NO_UDP) {
+     * transport, if there is one.  Flag these as deferred. */
+    if (retval == 0 && entry->transport == TCP_OR_UDP &&
+        (strategy == UDP_FIRST || strategy == UDP_LAST)) {
         transport = (strategy == UDP_FIRST) ? TCP : UDP;
         for (a = addrs; a != 0 && retval == 0; a = a->ai_next) {
             a->ai_socktype = socktype_for_transport(transport);
@@ -1093,11 +1109,6 @@ service_tcp_connect(krb5_context context, const krb5_data *realm,
     }
 
     conn->state = WRITING;
-
-    /* Record this connection's timeout for service_fds. */
-    if (get_curtime_ms(&conn->endtime) == 0)
-        conn->endtime += 10000;
-
     return conn->service_write(context, realm, conn, selstate);
 }
 
@@ -1372,51 +1383,57 @@ kill_conn:
     return FALSE;
 }
 
-/* Return the maximum of endtime and the endtime fields of all currently active
- * TCP connections. */
-static time_ms
-get_endtime(time_ms endtime, struct conn_state *conns)
+/* Return true if conns contains any states with connected TCP sockets. */
+static krb5_boolean
+any_tcp_connections(struct conn_state *conns)
 {
     struct conn_state *state;
 
     for (state = conns; state != NULL; state = state->next) {
-        if ((state->state == READING || state->state == WRITING) &&
-            state->endtime > endtime)
-            endtime = state->endtime;
+        if (state->addr.transport != UDP &&
+            (state->state == READING || state->state == WRITING))
+            return TRUE;
     }
-    return endtime;
+    return FALSE;
 }
 
 static krb5_boolean
 service_fds(krb5_context context, struct select_state *selstate,
-            time_ms interval, struct conn_state *conns,
+            time_ms interval, time_ms timeout, struct conn_state *conns,
             struct select_state *seltemp, const krb5_data *realm,
             int (*msg_handler)(krb5_context, const krb5_data *, void *),
             void *msg_handler_data, struct conn_state **winner_out)
 {
     int e, selret = 0;
-    time_ms endtime;
+    time_ms curtime, interval_end, endtime;
     struct conn_state *state;
 
     *winner_out = NULL;
 
-    e = get_curtime_ms(&endtime);
+    e = get_curtime_ms(&curtime);
     if (e)
         return TRUE;
-    endtime += interval;
+    interval_end = curtime + interval;
 
     e = 0;
     while (selstate->nfds > 0) {
-        e = cm_select_or_poll(selstate, get_endtime(endtime, conns),
-                              seltemp, &selret);
+        endtime = any_tcp_connections(conns) ? 0 : interval_end;
+        /* Don't wait longer than the whole request should last. */
+        if (timeout && (!endtime || endtime > timeout))
+            endtime = timeout;
+        e = cm_select_or_poll(selstate, endtime, seltemp, &selret);
         if (e == EINTR)
             continue;
         if (e != 0)
             break;
 
-        if (selret == 0)
-            /* Timeout, return to caller.  */
+        if (selret == 0) {
+            /* We timed out.  Stop if we hit the overall request timeout. */
+            if (timeout && (get_curtime_ms(&curtime) || curtime >= timeout))
+                return TRUE;
+            /* Otherwise return to the caller to send the next request. */
             return FALSE;
+        }
 
         /* Got something on a socket, process it.  */
         for (state = conns; state != NULL; state = state->next) {
@@ -1434,7 +1451,10 @@ service_fds(krb5_context context, struct select_state *selstate,
                 if (msg_handler != NULL) {
                     krb5_data reply = make_data(state->in.buf, state->in.pos);
 
-                    stop = (msg_handler(context, &reply, msg_handler_data) != 0);
+                    if (!msg_handler(context, &reply, msg_handler_data)) {
+                        kill_conn(context, state, selstate);
+                        stop = 0;
+                    }
                 }
 
                 if (stop) {
@@ -1450,7 +1470,7 @@ service_fds(krb5_context context, struct select_state *selstate,
 }
 
 /*
- * Current worst-case timeout behavior:
+ * Current timeout behavior when no request_timeout is set:
  *
  * First pass, 1s per udp or tcp server, plus 2s at end.
  * Second pass, 1s per udp server, plus 4s.
@@ -1469,9 +1489,9 @@ service_fds(krb5_context context, struct select_state *selstate,
  *
  * Note that if you try to reach two ports on one server, it counts as two.
  *
- * There is one exception to the above rules.  Whenever a TCP connection is
- * established, we wait up to ten seconds for it to finish or fail before
- * moving on.  This reduces network traffic significantly in a TCP environment.
+ * If a TCP connection is established, we wait on it indefinitely (or until
+ * request_timeout has elapsed) and do not attempt to contact additional
+ * servers.
  */
 
 krb5_error_code
@@ -1486,7 +1506,7 @@ k5_sendto(krb5_context context, const krb5_data *message,
           void *msg_handler_data)
 {
     int pass;
-    time_ms delay;
+    time_ms delay, timeout = 0;
     krb5_error_code retval;
     struct conn_state *conns = NULL, *state, **tailptr, *next, *winner;
     size_t s;
@@ -1495,6 +1515,13 @@ k5_sendto(krb5_context context, const krb5_data *message,
     krb5_boolean done = FALSE;
 
     *reply = empty_data();
+
+    if (context->req_timeout) {
+        retval = get_curtime_ms(&timeout);
+        if (retval)
+            return retval;
+        timeout += 1000 * context->req_timeout;
+    }
 
     /* One for use here, listing all our fds in use, and one for
      * temporary use in service_fds, for the fds of interest.  */
@@ -1523,8 +1550,9 @@ k5_sendto(krb5_context context, const krb5_data *message,
             if (maybe_send(context, state, message, sel_state, realm,
                            callback_info))
                 continue;
-            done = service_fds(context, sel_state, 1000, conns, seltemp,
-                               realm, msg_handler, msg_handler_data, &winner);
+            done = service_fds(context, sel_state, 1000, timeout, conns,
+                               seltemp, realm, msg_handler, msg_handler_data,
+                               &winner);
         }
     }
 
@@ -1536,13 +1564,13 @@ k5_sendto(krb5_context context, const krb5_data *message,
         if (maybe_send(context, state, message, sel_state, realm,
                        callback_info))
             continue;
-        done = service_fds(context, sel_state, 1000, conns, seltemp,
+        done = service_fds(context, sel_state, 1000, timeout, conns, seltemp,
                            realm, msg_handler, msg_handler_data, &winner);
     }
 
     /* Wait for two seconds at the end of the first pass. */
     if (!done) {
-        done = service_fds(context, sel_state, 2000, conns, seltemp,
+        done = service_fds(context, sel_state, 2000, timeout, conns, seltemp,
                            realm, msg_handler, msg_handler_data, &winner);
     }
 
@@ -1553,15 +1581,17 @@ k5_sendto(krb5_context context, const krb5_data *message,
             if (maybe_send(context, state, message, sel_state, realm,
                            callback_info))
                 continue;
-            done = service_fds(context, sel_state, 1000, conns, seltemp,
-                               realm, msg_handler, msg_handler_data, &winner);
+            done = service_fds(context, sel_state, 1000, timeout, conns,
+                               seltemp, realm, msg_handler, msg_handler_data,
+                               &winner);
             if (sel_state->nfds == 0)
                 break;
         }
         /* Wait for the delay backoff at the end of this pass. */
         if (!done) {
-            done = service_fds(context, sel_state, delay, conns, seltemp,
-                               realm, msg_handler, msg_handler_data, &winner);
+            done = service_fds(context, sel_state, delay, timeout, conns,
+                               seltemp, realm, msg_handler, msg_handler_data,
+                               &winner);
         }
         if (sel_state->nfds == 0)
             break;

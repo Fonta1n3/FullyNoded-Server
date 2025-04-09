@@ -449,6 +449,8 @@ have_client_keys(krb5_context context, krb5_kdcpreauth_rock rock)
 static const krb5_keyblock *
 client_keyblock(krb5_context context, krb5_kdcpreauth_rock rock)
 {
+    if (rock->client_keyblock->enctype == ENCTYPE_NULL)
+        return NULL;
     return rock->client_keyblock;
 }
 
@@ -489,7 +491,7 @@ match_client(krb5_context context, krb5_kdcpreauth_rock rock,
         krb5_principal_compare(context, princ, client))
         return TRUE;
 
-    if (krb5_db_get_principal(context, princ, 0, &ent))
+    if (krb5_db_get_principal(context, princ, KRB5_KDB_FLAG_CLIENT, &ent))
         return FALSE;
     match = krb5_principal_compare(context, ent->princ, client);
     krb5_db_free_principal(context, ent);
@@ -562,8 +564,23 @@ cleanup:
     return valid ? 0 : KRB5KDC_ERR_PREAUTH_EXPIRED;
 }
 
+static krb5_error_code
+replace_reply_key(krb5_context context, krb5_kdcpreauth_rock rock,
+                  const krb5_keyblock *key, krb5_boolean is_strengthen)
+{
+    krb5_keyblock copy;
+
+    if (krb5_copy_keyblock_contents(context, key, &copy) != 0)
+        return ENOMEM;
+    krb5_free_keyblock_contents(context, rock->client_keyblock);
+    *rock->client_keyblock = copy;
+    if (!is_strengthen)
+        rock->replaced_reply_key = TRUE;
+    return 0;
+}
+
 static struct krb5_kdcpreauth_callbacks_st callbacks = {
-    5,
+    6,
     max_time_skew,
     client_keys,
     free_keys,
@@ -581,7 +598,8 @@ static struct krb5_kdcpreauth_callbacks_st callbacks = {
     match_client,
     client_name,
     send_freshness_token,
-    check_freshness_token
+    check_freshness_token,
+    replace_reply_key
 };
 
 static krb5_error_code
@@ -855,7 +873,7 @@ cleanup:
 struct hint_state {
     kdc_hint_respond_fn respond;
     void *arg;
-    kdc_realm_t *realm;
+    krb5_context context;
 
     krb5_kdcpreauth_rock rock;
     krb5_kdc_req *request;
@@ -870,14 +888,14 @@ struct hint_state {
 static void
 hint_list_finish(struct hint_state *state, krb5_error_code code)
 {
+    krb5_context context = state->context;
     kdc_hint_respond_fn oldrespond = state->respond;
     void *oldarg = state->arg;
-    kdc_realm_t *kdc_active_realm = state->realm;
 
     /* Add a freshness token if a preauth module requested it and the client
      * request indicates support for it. */
     if (!code)
-        code = add_freshness_token(kdc_context, state->rock, &state->pa_data);
+        code = add_freshness_token(context, state->rock, &state->pa_data);
 
     if (!code) {
         if (state->pa_data == NULL) {
@@ -890,7 +908,7 @@ hint_list_finish(struct hint_state *state, krb5_error_code code)
         state->pa_data = NULL;
     }
 
-    krb5_free_pa_data(kdc_context, state->pa_data);
+    krb5_free_pa_data(context, state->pa_data);
     free(state);
     (*oldrespond)(oldarg);
 }
@@ -927,8 +945,8 @@ error:
 static void
 hint_list_next(struct hint_state *state)
 {
+    krb5_context context = state->context;
     preauth_system *ap = state->ap;
-    kdc_realm_t *kdc_active_realm = state->realm;
 
     if (ap->type == -1) {
         hint_list_finish(state, 0);
@@ -942,7 +960,7 @@ hint_list_next(struct hint_state *state)
 
     state->pa_type = ap->type;
     if (ap->get_edata) {
-        ap->get_edata(kdc_context, state->request, &callbacks, state->rock,
+        ap->get_edata(context, state->request, &callbacks, state->rock,
                       ap->moddata, ap->type, finish_get_edata, state);
     } else
         finish_get_edata(state, 0, NULL);
@@ -958,7 +976,7 @@ get_preauth_hint_list(krb5_kdc_req *request, krb5_kdcpreauth_rock rock,
                       krb5_pa_data ***e_data_out, kdc_hint_respond_fn respond,
                       void *arg)
 {
-    kdc_realm_t *kdc_active_realm = rock->rstate->realm_data;
+    krb5_context context = rock->rstate->realm_data->realm_context;
     struct hint_state *state;
 
     *e_data_out = NULL;
@@ -973,7 +991,7 @@ get_preauth_hint_list(krb5_kdc_req *request, krb5_kdcpreauth_rock rock,
     state->arg = arg;
     state->request = request;
     state->rock = rock;
-    state->realm = rock->rstate->realm_data;
+    state->context = context;
     state->e_data_out = e_data_out;
     state->pa_data = NULL;
     state->ap = preauth_systems;
@@ -982,7 +1000,7 @@ get_preauth_hint_list(krb5_kdc_req *request, krb5_kdcpreauth_rock rock,
     if (k5_add_empty_pa_data(&state->pa_data, KRB5_PADATA_FX_FAST) != 0)
         goto error;
 
-    if (add_etype_info(kdc_context, rock, &state->pa_data) != 0)
+    if (add_etype_info(context, rock, &state->pa_data) != 0)
         goto error;
 
     hint_list_next(state);
@@ -990,7 +1008,7 @@ get_preauth_hint_list(krb5_kdc_req *request, krb5_kdcpreauth_rock rock,
 
 error:
     if (state != NULL)
-        krb5_free_pa_data(kdc_context, state->pa_data);
+        krb5_free_pa_data(context, state->pa_data);
     free(state);
     (*respond)(arg);
 }

@@ -35,24 +35,23 @@ static char plain[16], cipher[16], zero[16];
 
 static krb5_keyblock enc_key;
 static krb5_data ivec;
-static void init()
+static void init(void)
 {
     enc_key.contents = (unsigned char *)key;
     enc_key.length = 16;
     ivec.data = zero;
     ivec.length = 16;
 }
-static void enc()
+static void enc(void)
 {
     krb5_key k;
     krb5_crypto_iov iov;
-    krb5_data cdata = make_data(cipher, 16);
 
+    memcpy(cipher, plain, 16);
     iov.flags = KRB5_CRYPTO_TYPE_DATA;
-    iov.data = make_data(plain, 16);
+    iov.data = make_data(cipher, 16);
     krb5_k_create_key(NULL, &enc_key, &k);
-    /* cbc-mac is the same as block encryption for a single block. */
-    krb5int_camellia_cbc_mac(k, &iov, 1, &ivec, &cdata);
+    krb5int_camellia_encrypt(k, &ivec, &iov, 1);
     krb5_k_free_key(NULL, k);
 }
 
@@ -92,7 +91,7 @@ static void vk_test_1(int len)
     }
     printf("\n==========\n");
 }
-static void vk_test()
+static void vk_test(void)
 {
     vk_test_1(16);
     vk_test_1(32);
@@ -118,7 +117,7 @@ static void vt_test_1(int len, krb5_enctype etype)
     }
     printf("\n==========\n");
 }
-static void vt_test()
+static void vt_test(void)
 {
     vt_test_1(16, ENCTYPE_CAMELLIA128_CTS_CMAC);
     vt_test_1(32, ENCTYPE_CAMELLIA256_CTS_CMAC);

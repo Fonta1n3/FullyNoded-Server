@@ -27,6 +27,8 @@
 #include "crypto_int.h"
 #include "aes.h"
 
+#ifdef K5_BUILTIN_AES
+
 /*
  * Private per-key data to cache after first generation.  We don't
  * want to mess with the imported AES implementation too much, so
@@ -67,7 +69,7 @@ void k5_iEnc256_CBC(struct aes_data *data);
 void k5_iDec256_CBC(struct aes_data *data);
 
 static krb5_boolean
-aesni_supported_by_cpu()
+aesni_supported_by_cpu(void)
 {
     unsigned int a, b, c, d;
 
@@ -406,3 +408,5 @@ const struct krb5_enc_provider krb5int_enc_aes256 = {
     krb5int_default_free_state,
     aes_key_cleanup
 };
+
+#endif /* K5_BUILTIN_AES */

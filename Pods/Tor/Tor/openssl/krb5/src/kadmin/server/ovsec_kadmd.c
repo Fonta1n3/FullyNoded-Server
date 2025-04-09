@@ -77,7 +77,7 @@ static krb5_context context;
 static char *progname;
 
 static void
-usage()
+usage(void)
 {
     fprintf(stderr, _("Usage: kadmind [-x db_args]* [-r realm] [-m] [-nofork] "
                       "[-port port-number]\n"
@@ -173,7 +173,7 @@ setup_loop(kadm5_config_params *params, int proponly, verto_ctx **ctx_out)
 
 /* Point GSSAPI at the KDB keytab so we don't need an actual file keytab. */
 static krb5_error_code
-setup_kdb_keytab()
+setup_kdb_keytab(void)
 {
     krb5_error_code ret;
 
@@ -349,7 +349,7 @@ main(int argc, char *argv[])
     const char *pid_file = NULL;
     char **db_args = NULL, **tmpargs;
     const char *acl_file;
-    int ret, i, db_args_size = 0, strong_random = 1, proponly = 0;
+    int ret, i, db_args_size = 0, proponly = 0;
 
     setlocale(LC_ALL, "");
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -408,7 +408,7 @@ main(int argc, char *argv[])
                 usage();
             pid_file = *argv;
         } else if (strcmp(*argv, "-W") == 0) {
-            strong_random = 0;
+            /* Ignore (deprecated weak random option). */
         } else if (strcmp(*argv, "-p") == 0) {
             argc--, argv++;
             if (!argc)
@@ -521,11 +521,6 @@ main(int argc, char *argv[])
                      &global_server_handle);
     if (ret)
         fail_to_start(ret, _("initializing"));
-
-    krb5_klog_syslog(LOG_INFO, _("Seeding random number generator"));
-    ret = krb5_c_random_os_entropy(context, strong_random, NULL);
-    if (ret)
-        fail_to_start(ret, _("getting random seed"));
 
     if (params.iprop_enabled == TRUE) {
         ulog_set_role(context, IPROP_PRIMARY);

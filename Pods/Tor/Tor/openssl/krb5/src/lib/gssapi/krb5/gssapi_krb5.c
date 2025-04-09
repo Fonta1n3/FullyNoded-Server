@@ -188,8 +188,6 @@ const gss_OID_set gss_mech_set_krb5_old         = &kg_oidsets[1];
 const gss_OID_set gss_mech_set_krb5_both        = &kg_oidsets[2];
 const gss_OID_set kg_all_mechs                  = &kg_oidsets[3];
 
-g_set kg_vdb = G_SET_INIT;
-
 /** default credential support */
 
 /*
@@ -197,9 +195,7 @@ g_set kg_vdb = G_SET_INIT;
  * so handling the expiration/invalidation condition here isn't needed.
  */
 OM_uint32
-kg_get_defcred(minor_status, cred)
-    OM_uint32 *minor_status;
-    gss_cred_id_t *cred;
+kg_get_defcred(OM_uint32 *minor_status, gss_cred_id_t *cred)
 {
     OM_uint32 major;
 
@@ -253,46 +249,31 @@ kg_caller_provided_ccache_name (OM_uint32 *minor_status,
 }
 
 OM_uint32
-kg_get_ccache_name (OM_uint32 *minor_status, const char **out_name)
+kg_get_ccache_name(OM_uint32 *minor_status, char **out_name)
 {
-    const char *name = NULL;
-    OM_uint32 err = 0;
     char *kg_ccache_name;
+    const char *def_name;
+    OM_uint32 err;
+    krb5_context context;
+
+    *out_name = NULL;
 
     kg_ccache_name = k5_getspecific(K5_KEY_GSS_KRB5_CCACHE_NAME);
-
     if (kg_ccache_name != NULL) {
-        name = strdup(kg_ccache_name);
-        if (name == NULL)
-            err = ENOMEM;
+        *out_name = strdup(kg_ccache_name);
+        err = (*out_name == NULL) ? ENOMEM : 0;
     } else {
-        krb5_context context = NULL;
-
-        /* Reset the context default ccache (see text above), and then
-           retrieve it.  */
+        /* Use the default ccache name. */
         err = krb5_gss_init_context(&context);
-        if (!err)
-            err = krb5_cc_set_default_name (context, NULL);
-        if (!err) {
-            name = krb5_cc_default_name(context);
-            if (name) {
-                name = strdup(name);
-                if (name == NULL)
-                    err = ENOMEM;
-            }
-        }
-        if (err && context)
-            save_error_info(err, context);
-        if (context)
-            krb5_free_context(context);
+        if (err)
+            goto cleanup;
+        def_name = krb5_cc_default_name(context);
+        *out_name = (def_name != NULL) ? strdup(def_name) : NULL;
+        err = (*out_name == NULL) ? ENOMEM : 0;
+        krb5_free_context(context);
     }
 
-    if (!err) {
-        if (out_name) {
-            *out_name = name;
-        }
-    }
-
+cleanup:
     *minor_status = err;
     return (*minor_status == 0) ? GSS_S_COMPLETE : GSS_S_FAILURE;
 }
@@ -352,7 +333,11 @@ static struct {
     },
     {
         {GSS_KRB5_INQ_SSPI_SESSION_KEY_OID_LENGTH, GSS_KRB5_INQ_SSPI_SESSION_KEY_OID},
-        gss_krb5int_inq_session_key
+        gss_krb5int_inq_sspi_session_key
+    },
+    {
+        {GSS_KRB5_INQ_ODBC_SESSION_KEY_OID_LENGTH, GSS_KRB5_INQ_ODBC_SESSION_KEY_OID},
+        gss_krb5int_inq_odbc_session_key
     },
     {
         {GSS_KRB5_EXPORT_LUCID_SEC_CONTEXT_OID_LENGTH, GSS_KRB5_EXPORT_LUCID_SEC_CONTEXT_OID},
@@ -1086,9 +1071,6 @@ int gss_krb5int_lib_init(void)
     err = k5_mutex_finish_init(&kg_kdc_flag_mutex);
     if (err)
         return err;
-    err = k5_mutex_finish_init(&kg_vdb.mutex);
-    if (err)
-        return err;
 #endif
 #ifdef _GSS_STATIC_LINK
     err = gss_krb5mechglue_init();
@@ -1120,7 +1102,6 @@ void gss_krb5int_lib_fini(void)
     k5_key_delete(K5_KEY_GSS_KRB5_SET_CCACHE_OLD_NAME);
     k5_key_delete(K5_KEY_GSS_KRB5_CCACHE_NAME);
     k5_key_delete(K5_KEY_GSS_KRB5_ERROR_MESSAGE);
-    k5_mutex_destroy(&kg_vdb.mutex);
 #ifndef _WIN32
     k5_mutex_destroy(&kg_kdc_flag_mutex);
 #endif

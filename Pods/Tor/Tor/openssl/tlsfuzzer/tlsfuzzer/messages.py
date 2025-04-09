@@ -3,6 +3,8 @@
 
 """Objects for generating TLS messages to send."""
 
+import random
+import struct
 from tlslite.messages import ClientHello, ClientKeyExchange, ChangeCipherSpec,\
         Finished, Alert, ApplicationData, Message, Certificate, \
         CertificateVerify, CertificateRequest, ClientMasterKey, \
@@ -28,7 +30,7 @@ from tlslite.keyexchange import KeyExchange
 from tlslite.bufferedsocket import BufferedSocket
 from tlslite.recordlayer import ConnectionState
 from .helpers import key_share_gen, AutoEmptyExtension, ECDSA_SIG_ALL, \
-        RSA_PKCS1_ALL, RSA_PSS_PSS_ALL, RSA_PSS_RSAE_ALL, SIG_ALL
+        RSA_PKCS1_ALL, RSA_PSS_PSS_ALL, RSA_PSS_RSAE_ALL, SIG_ALL, DSA_ALL
 from .handshake_helpers import calc_pending_states, curve_name_to_hash_tls13
 from .tree import TreeNode
 import socket
@@ -119,6 +121,22 @@ class Close(Command):
 
     def process(self, state):
         """Close currently open connection."""
+        state.msg_sock.sock.close()
+
+
+class CloseRST(Command):
+    """Object used to close a TCP connection with a RST packet."""
+
+    def __init__(self):
+        """CloseRST connection object."""
+        super(CloseRST, self).__init__()
+
+    def process(self, state):
+        """Close currently open connection by sending a RST packet."""
+        l_onoff = 1
+        l_linger = 0
+        state.msg_sock.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                                       struct.pack('ii', l_onoff, l_linger))
         state.msg_sock.sock.close()
 
 
@@ -337,6 +355,7 @@ class CopyVariables(Command):
     ``master_secret``, ``ServerHello.extensions.key_share.key_exchange``,
     ``server handshake traffic secret``, ``exporter master secret``,
     ``ServerKeyExchange.key_share``, ``ServerKeyExchange.dh_p``,
+    ``ClientKeyExchange.dh_Yc``, ``ClientKeyExchange.ecdh_Yc``,
     ``DH shared secret``, ``PSK secret``, ``client_verify_data``,
     ``server_verify_data``, ``client application traffic secret``,
     ``server application traffic secret``,
@@ -386,20 +405,32 @@ class RawSocketWriteGenerator(Command):
     :ivar bytearray ~.data: data to send
     :ivar str ~.description: identifier to print when processing of the node
         fails
+    :ivar ~.data_file: The :term:`file object` from which to read the data
+        to send. On node re-execution will read subsequent values, does not
+        rewind the file pointer or close the file. The file must be opened in
+        binary mode.
+    :vartype ~.data_file: :term:`file object`
+    :ivar int data_length: The length of data to read from file, in bytes.
     """
 
-    def __init__(self, data, description=None):
+    def __init__(self, data=None, description=None,
+                 data_file=None, data_length=None):
         """Set the record layer type and payload to send."""
         super(RawSocketWriteGenerator, self).__init__()
         self.data = data
         self.description = description
+        self.data_file = data_file
+        self.data_length = data_length
 
     def __repr__(self):
         """Return human readable representation of the object."""
-        return self._repr(["data", "description"])
+        return self._repr(["data", "description", "data_file",
+                           "data_length"])
 
     def process(self, state):
         """Send the message over the socket."""
+        if self.data_file:
+            self.data = self.data_file.read(self.data_length)
         state.msg_sock._recordSocket.sock.send(self.data)
 
 
@@ -451,6 +482,7 @@ class MessageGenerator(TreeNode):
         """Initialize the object."""
         super(MessageGenerator, self).__init__()
         self.msg = None
+        self.queue = False
 
     def is_command(self):
         """Define object as a generator node."""
@@ -630,7 +662,7 @@ class ClientHelloGenerator(HandshakeProtocolMessageGenerator):
             elif ext_id in (ExtensionType.client_hello_padding,
                             ExtensionType.encrypt_then_mac,
                             ExtensionType.extended_master_secret,
-                            35,  # session_ticket
+                            ExtensionType.session_ticket,
                             49,  # post_handshake_auth
                             52):  # transparency_info
                 ext = TLSExtension().create(ext_id, bytearray())
@@ -727,6 +759,14 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
        will create the RSA ciphertext once and reuse it for subsequent
        connections. Applicable only to RSA key exchange, useful only for
        tests that run the same conversation over and over (like timing tests).
+    :ivar encrypted_premaster_file: The :term:`file object` from which to
+       read the encrypted premaster secret, on node re-ececution will read
+       subsequent values, does not rewind the file pointer or close the file.
+       The file must be opened in binary mode
+    :vartype encrypted_premaster_file: :term:`file object`
+    :ivar int encrypted_premaster_length: The length of data to read, in bytes
+    :ivar bool random_premaster: whether to use a random premaster value
+       or the static default (48 zero bytes)
     """
 
     def __init__(self, cipher=None, version=None, client_version=None,
@@ -734,7 +774,10 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
                  ecdh_Yc=None, encrypted_premaster=None,
                  modulus_as_encrypted_premaster=False, p_as_share=False,
                  p_1_as_share=False, premaster_secret=None,
-                 padding_byte=None, reuse_encrypted_premaster=False):
+                 padding_byte=None, reuse_encrypted_premaster=False,
+                 encrypted_premaster_file=None,
+                 encrypted_premaster_length=None,
+                 random_premaster=False):
         """Set settings of the Client Key Exchange to be sent."""
         super(ClientKeyExchangeGenerator, self).__init__()
         self.cipher = cipher
@@ -754,6 +797,17 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
         self.p_1_as_share = p_1_as_share
         self.padding_byte = padding_byte
         self.reuse_encrypted_premaster = reuse_encrypted_premaster
+        self.encrypted_premaster_file = encrypted_premaster_file
+        self.encrypted_premaster_length = encrypted_premaster_length
+        self.random_premaster = random_premaster
+
+        if encrypted_premaster_file and not encrypted_premaster_length:
+            raise ValueError("Must specify the length of data to read from"
+                             " encrypted_premaster_file")
+
+        if modulus_as_encrypted_premaster and encrypted_premaster_file:
+            raise ValueError("Can't set both modulus_as_encrypted_premaster "
+                             "and encrypted_premaster_file at the same time")
 
         if p_as_share and p_1_as_share:
             raise ValueError("Can't set both p_as_share and p_1_as_share at "
@@ -775,14 +829,19 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
             if self.modulus_as_encrypted_premaster:
                 public_key = status.get_server_public_key()
                 self.encrypted_premaster = numberToByteArray(public_key.n)
+            elif self.encrypted_premaster_file:
+                self.encrypted_premaster = self.encrypted_premaster_file.read(
+                    self.encrypted_premaster_length)
             if self.encrypted_premaster:
                 cke.createRSA(self.encrypted_premaster)
                 if self.reuse_encrypted_premaster:
                     status.key['premaster_secret'] = self.premaster_secret
             else:
-                assert len(self.premaster_secret) > 1
-                self.premaster_secret[0] = self.client_version[0]
-                self.premaster_secret[1] = self.client_version[1]
+                if self.random_premaster:
+                    self.premaster_secret = getRandomBytes(48)
+                if len(self.premaster_secret) >= 2:
+                    self.premaster_secret[0] = self.client_version[0]
+                    self.premaster_secret[1] = self.client_version[1]
 
                 status.key['premaster_secret'] = self.premaster_secret
 
@@ -794,7 +853,8 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
                     self.encrypted_premaster = enc_premaster
 
                 cke.createRSA(enc_premaster)
-        elif self.cipher in CipherSuite.dheCertSuites:
+        elif self.cipher in CipherSuite.dheCertSuites or \
+                self.cipher in CipherSuite.dheDsaSuites:
             if self.dh_Yc is not None:
                 cke = ClientKeyExchange(self.cipher,
                                         self.version).createDH(self.dh_Yc)
@@ -809,12 +869,14 @@ class ClientKeyExchangeGenerator(HandshakeProtocolMessageGenerator):
                                             self.version).createDH(ske.dh_p-1)
             else:
                 cke = status.key_exchange.makeClientKeyExchange()
+            status.key['ClientKeyExchange.dh_Yc'] = cke.dh_Yc
         elif self.cipher in CipherSuite.ecdhAllSuites:
             if self.ecdh_Yc is not None:
                 cke = ClientKeyExchange(self.cipher,
                                         self.version).createECDH(self.ecdh_Yc)
             else:
                 cke = status.key_exchange.makeClientKeyExchange()
+            status.key['ClientKeyExchange.ecdh_Yc'] = cke.ecdh_Yc
         else:
             raise AssertionError("Unknown cipher/key exchange type")
 
@@ -996,6 +1058,8 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
         self.msg_alg = msg_alg
         self.msg_version = msg_version
         self.sig_version = sig_version
+        if not isinstance(sig_version, tuple) and sig_version is not None:
+            raise ValueError("sig_version must be None or a tuple")
         self.sig_alg = sig_alg
         self.signature = signature
         self.rsa_pss_salt_len = rsa_pss_salt_len
@@ -1047,6 +1111,24 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
         return (getattr(HashAlgorithm, hash_name), SignatureAlgorithm.ecdsa)
 
     @staticmethod
+    def _sig_alg_for_dsa_key(accept_sig_algs, version, key):
+        """Select an acceptable signature algorithm for a given DSA key."""
+        if version < (3, 3):
+            # in TLS 1.1 and earlier, there is no algorithm selection,
+            # pick one closest, as far as used algorithms are concerned, to
+            # the TLS 1.2 algorithm
+            return (HashAlgorithm.sha1, SignatureAlgorithm.dsa)
+        if version < (3, 4):
+            # in TLS 1.2 we can mix and match hashes and curves
+            return next((i for i in accept_sig_algs
+                         if i in DSA_ALL), DSA_ALL[0])
+        # but in TLS 1.3 we need to select a hash that matches our key
+        hash_name = curve_name_to_hash_tls13(key.curve_name)
+        # while it may select one that wasn't advertised by server,
+        # this is better last resort than sending a sha1+rsa sigalg
+        return (getattr(HashAlgorithm, hash_name), SignatureAlgorithm.dsa)
+
+    @staticmethod
     def _sig_alg_for_eddsa_key(key_alg, accept_sig_algs):
         sig_alg = getattr(SignatureScheme, key_alg.lower())
         assert sig_alg in accept_sig_algs
@@ -1064,6 +1146,9 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
         if key_alg in ("Ed25519", "Ed448"):
             return CertificateVerifyGenerator._sig_alg_for_eddsa_key(
                 key_alg, accept_sig_algs)
+        if key_alg == "dsa":
+            return CertificateVerifyGenerator._sig_alg_for_dsa_key(
+                accept_sig_algs, version, key)
         assert key_alg == "ecdsa"
         return CertificateVerifyGenerator._sig_alg_for_ecdsa_key(
             accept_sig_algs, version, key)
@@ -1214,6 +1299,9 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
                 SignatureScheme.ed25519, SignatureScheme.ed448) or \
                 self.private_key.key_type in ("Ed25519", "Ed448"):
             signature_type = "eddsa"
+        elif self.sig_alg and self.sig_alg[1] == SignatureAlgorithm.dsa or \
+                self.private_key.key_type == "dsa":
+            signature_type = "dsa"
         else:
             signature_type = "rsa"
         if self.context:
@@ -1251,6 +1339,10 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
             verify_bytes = verify_bytes[:self.private_key.
                                         private_key.curve.baselen]
             sig_func = self.private_key.sign
+        elif signature_type == "dsa":
+            padding = None
+            old_private_key_op = None
+            sig_func = self.private_key.sign
         else:
             # we don't have to handle non pkcs1 padding because the
             # calcVerifyBytes does everything
@@ -1266,8 +1358,8 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
             # make sure the changes are undone even if the signing fails
             self.private_key._raw_private_key_op_bytes = old_private_key_op
 
-        if signature_type == "ecdsa":
-            # because ECDSA signatures are ANS.1 DER objects, they
+        if signature_type in ("ecdsa", "dsa"):
+            # because DSA and ECDSA signatures are ANS.1 DER objects, they
             # can have different lengths depending on the bit size of
             # "r" and "s" variables
             # given that indexing would fail if it was asked to index
@@ -1275,7 +1367,7 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
             signature = bytearray(signature)
             max_byte = len(signature) - 1
             self._normalise_subs_and_xors(max_byte)
-        if signature_type in ("ecdsa", "eddsa"):
+        if signature_type in ("ecdsa", "eddsa", "dsa"):
             # but EdDSA signatures are always the same length for given
             # key type, so don't normalise the values for them
             signature = substitute_and_xor(signature, self.padding_subs,
@@ -1674,19 +1766,29 @@ def truncate_handshake(generator, size=0, pad_byte=0):
     return pad_handshake(generator, -size, pad_byte)
 
 
+def _apply_function(data, settings, fun):
+    """Modify data based on settings and function fun."""
+    for pos in settings:
+        if settings[pos] == -1:
+            data[pos] = fun(data[pos], random.randint(0, 255))
+        elif settings[pos] == -2:
+            data[pos] = fun(data[pos], random.randint(1, 255))
+        else:
+            assert settings[pos] >= 0
+            data[pos] = fun(data[pos], settings[pos])
+
+
 def substitute_and_xor(data, substitutions, xors):
     """
     Apply changes from substitutions and xors to data for fuzzing.
 
     (Method used internally by tlsfuzzer.)
     """
-    if substitutions is not None:
-        for pos in substitutions:
-            data[pos] = substitutions[pos]
+    if substitutions:
+        _apply_function(data, substitutions, lambda a, b: b)
 
-    if xors is not None:
-        for pos in xors:
-            data[pos] ^= xors[pos]
+    if xors:
+        _apply_function(data, xors, lambda a, b: a ^ b)
 
     return data
 
@@ -2055,6 +2157,48 @@ def split_message(generator, fragment_list, size):
     return generator
 
 
+def queue_message(generator):
+    """Queue message with other ones of the same content type.
+
+    Allow coalescing of the message with other messages with the same
+    content type, this allows for sending Certificate and CertificateVerify
+    in a single record.
+    """
+    assert generator.is_generator()
+    generator.queue = True
+    return generator
+
+
+def skip_post_send(generator):
+    """Make the post_send method of generator do nothing.
+
+    This is useful when combining messages that update connection state,
+    like KeyUpdate or Finished in TLS 1.3.
+    """
+    assert generator.is_generator()
+
+    generator.post_send = lambda _: None
+    return generator
+
+
+class FlushMessageQueue(Command):
+    """Flush the record layer queue of messages."""
+
+    def __init__(self, description=None):
+        super(FlushMessageQueue, self).__init__()
+        self.description = description
+
+    def __repr__(self):
+        vals = []
+        if self.description:
+            vals.append(('description', repr(self.description)))
+        return 'FlushMessageQueue({0})'.format(
+                ', '.join("{0}={1}".format(i[0], i[1]) for i in vals))
+
+    def process(self, state):
+        state.msg_sock.flushBlocking()
+
+
 class PopMessageFromList(MessageGenerator):
     """Takes a reference to list, pops a message from it to generate one."""
 
@@ -2097,7 +2241,7 @@ def fuzz_pkcs1_padding(key, substitutions=None, xors=None, padding_byte=None):
 
     Use to modify Client Key Exchange padding of encrypted value.
     """
-    if not xors and not substitutions:
+    if xors is None and substitutions is None and padding_byte is None:
         return key
 
     def new_addPKCS1Padding(bytes, blockType, self=key,

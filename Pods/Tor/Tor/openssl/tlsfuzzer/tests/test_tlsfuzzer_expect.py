@@ -45,7 +45,7 @@ from tlslite.messages import Message, ServerHello, CertificateRequest, \
         ClientHello, Certificate, ServerHello2, ServerFinished, \
         ServerKeyExchange, CertificateStatus, CertificateVerify, \
         Finished, EncryptedExtensions, NewSessionTicket, Heartbeat, \
-        KeyUpdate, HelloRequest, ServerHelloDone
+        KeyUpdate, HelloRequest, ServerHelloDone, NewSessionTicket1_0
 from tlslite.extensions import SNIExtension, TLSExtension, \
         SupportedGroupsExtension, ALPNExtension, ECPointFormatsExtension, \
         NPNExtension, ServerKeyShareExtension, ClientKeyShareExtension, \
@@ -66,6 +66,11 @@ from tlslite.keyexchange import ECDHKeyExchange
 from tlslite.mathtls import goodGroupParameters
 from tlslite.utils.cryptomath import secureHash
 
+
+if sys.version_info < (3, 0):
+    BUILTIN_PRINT = "__builtin__.print"
+else:
+    BUILTIN_PRINT = "builtins.print"
 
 srv_raw_key = str(
     "-----BEGIN RSA PRIVATE KEY-----\n"\
@@ -2950,6 +2955,7 @@ class TestExpectNewSessionTicket(unittest.TestCase):
         nst = NewSessionTicket().create(12, 44, b'abba', b'I am a ticket', [])
 
         state = ConnectionState()
+        state.version = (3, 4)
 
         exp.process(state, nst)
 
@@ -2966,6 +2972,19 @@ class TestExpectNewSessionTicket(unittest.TestCase):
 
         self.assertEqual("ExpectNewSessionTicket(description='some string')",
                          repr(exp))
+
+    def test_process_in_TLS1_2(self):
+        exp = ExpectNewSessionTicket()
+
+        nst = NewSessionTicket1_0().create(3600, b'I am an old ticket')
+
+        state = ConnectionState()
+        state.version = (3, 3)
+
+        exp.process(state, nst)
+
+        self.assertIn(nst, state.session_tickets)
+        self.assertIsNotNone(state.session_tickets[0].time)
 
 
 class TestExpectVerify(unittest.TestCase):
@@ -3287,7 +3306,8 @@ class TestExpectServerKeyExchange(unittest.TestCase):
 
         exp.process(state, msg)
 
-    def test_process_with_ECDHE_RSA_bad_signature(self):
+    @mock.patch(BUILTIN_PRINT)
+    def test_process_with_ECDHE_RSA_bad_signature(self, mock_print):
         exp = ExpectServerKeyExchange()
 
         state = ConnectionState()
@@ -3322,9 +3342,10 @@ class TestExpectServerKeyExchange(unittest.TestCase):
         msg = srv_key_exchange.makeServerKeyExchange('sha256')
         msg.signature[-1] ^= 1
 
-        print("Error printed below is expected", file=sys.stderr)
         with self.assertRaises(TLSDecryptionFailed):
             exp.process(state, msg)
+
+        self.assertIn("Bad signature", mock_print.call_args[0][0])
 
     def test_process_with_default_signature_algorithm(self):
         exp = ExpectServerKeyExchange()
@@ -3988,7 +4009,7 @@ class TestExpectKeyUpdate(unittest.TestCase):
 
         exp.process(state, ku)
 
-        state.msg_sock.calcTLS1_3PendingState.called_once_with(
+        state.msg_sock.calcTLS1_3KeyUpdate_sender.assert_called_once_with(
             cipher, cats, sats)
         self.assertIs(state.key['server application traffic secret'], ret)
 

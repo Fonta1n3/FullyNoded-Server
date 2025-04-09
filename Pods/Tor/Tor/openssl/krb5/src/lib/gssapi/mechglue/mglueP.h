@@ -79,19 +79,12 @@ typedef struct gss_cred_id_struct {
 /* it to initialize the GSSAPI library		  */
 int gssint_mechglue_initialize_library(void);
 
-OM_uint32 gssint_get_mech_type_oid(gss_OID OID, gss_buffer_t token);
-
 /*
- * This is the definition of the mechs_array struct, which is used to
- * define the mechs array table. This table is used to indirectly
- * access mechanism specific versions of the gssapi routines through
- * the routines in the glue module (gssd_mech_glue.c)
- *
- * This contains all of the functions defined in gssapi.h except for
- * gss_release_buffer() and gss_release_oid_set(), which I am
- * assuming, for now, to be equal across mechanisms.
+ * This table is used to access mechanism-specific versions of the GSSAPI
+ * functions.  It contains all of the functions defined in gssapi.h except for
+ * gss_release_buffer() and gss_release_oid_set(), which are assumed to be
+ * identical across mechanisms.
  */
-
 typedef struct gss_config {
     gss_OID_desc    mech_type;
     void *	    context;
@@ -823,23 +816,6 @@ OM_uint32 gss_add_mech_name_type
 /*
  * Sun extensions to GSS-API v2
  */
-
-int
-gssint_get_der_length(
-	unsigned char **,	/* buf */
-	unsigned int,		/* buf_len */
-	unsigned int *		/* bytes */
-);
-
-unsigned int
-gssint_der_length_size(unsigned int /* len */);
-
-int
-gssint_put_der_length(
-	unsigned int,		/* length */
-	unsigned char **,	/* buf */
-	unsigned int		/* max_len */
-);
 
 OM_uint32
 gssint_wrap_aead (gss_mechanism,	/* mech */

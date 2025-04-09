@@ -14,7 +14,7 @@ try:
 except ImportError:  # pragma: no cover
     HC_PRESENT = False
 from .numbertheory import inverse_mod
-from .ellipticcurve import CurveFp, INFINITY, Point
+from .ellipticcurve import CurveFp, INFINITY, Point, CurveEdTw
 
 
 HYP_SETTINGS = {}
@@ -40,11 +40,11 @@ g_23 = Point(c_23, 13, 7, 7)
 
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-HYP_SLOW_SETTINGS["max_examples"] = 10
+HYP_SLOW_SETTINGS["max_examples"] = 2
 
 
 @settings(**HYP_SLOW_SETTINGS)
-@given(st.integers(min_value=1, max_value=r + 1))
+@given(st.integers(min_value=1, max_value=r - 1))
 def test_p192_mult_tests(multiple):
     inv_m = inverse_mod(multiple, r)
 
@@ -83,6 +83,11 @@ class TestCurve(unittest.TestCase):
         c192 = CurveFp(p, -3, b)
         self.assertNotEqual(self.c_23, c192)
 
+    def test_inequality_curves_by_b_only(self):
+        a = CurveFp(23, 1, 0)
+        b = CurveFp(23, 1, 1)
+        self.assertNotEqual(a, b)
+
     def test_usability_in_a_hashed_collection_curves(self):
         {self.c_23: None}
 
@@ -96,6 +101,32 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(set((c_23, ne1, ne2, ne3))), 4)
         self.assertDictEqual({c_23: None}, {eq1: None})
         self.assertIn(eq2, {eq3: None})
+
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveFp(p=23, a=1, b=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveFp(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveFp(p=23, a=1, b=1, h=4)")
+
+
+class TestCurveEdTw(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.c_23 = CurveEdTw(23, 1, 1)
+
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveEdTw(p=23, a=1, d=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveEdTw(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveEdTw(p=23, a=1, d=1, h=4)")
+
+    def test_usability_in_a_hashed_collection_curves(self):
+        {self.c_23: None}
+
+    def test_hashability_curves(self):
+        hash(self.c_23)
 
 
 class TestPoint(unittest.TestCase):
@@ -158,6 +189,33 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(p3.x(), x3)
         self.assertEqual(p3.y(), y3)
 
+    def test_double_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1.double()
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2.double()
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_add_self_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1 + p1
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 + p2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_mul_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1 * 2
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 * 2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
     def test_multiply(self):
         x1, y1, m, x3, y3 = (3, 10, 2, 7, 12)
         p1 = Point(self.c_23, x1, y1)
@@ -197,3 +255,40 @@ class TestPoint(unittest.TestCase):
     def test_inequality_points_diff_types(self):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
+
+    def test_inequality_diff_y(self):
+        p1 = Point(self.c_23, 6, 4)
+        p2 = Point(self.c_23, 6, 19)
+
+        self.assertNotEqual(p1, p2)
+
+    def test_to_bytes_from_bytes(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(p, Point.from_bytes(self.c_23, p.to_bytes()))
+
+    def test_add_to_neg_self(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(INFINITY, p + (-p))
+
+    def test_add_to_infinity(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertIs(p, p + INFINITY)
+
+    def test_mul_infinity_by_scalar(self):
+        self.assertIs(INFINITY, INFINITY * 10)
+
+    def test_mul_by_negative(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(p * -5, (-p) * 5)
+
+    def test_str_infinity(self):
+        self.assertEqual(str(INFINITY), "infinity")
+
+    def test_str_point(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(str(p), "(3,10)")

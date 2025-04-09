@@ -13,4 +13,6 @@ Submodules
 
    tlsfuzzer.utils.lists
    tlsfuzzer.utils.ordered_dict
+   tlsfuzzer.utils.progress_report
+   tlsfuzzer.utils.stats
 

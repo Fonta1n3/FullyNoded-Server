@@ -46,8 +46,10 @@ use constant {
     AL_DESC_UNEXPECTED_MESSAGE => 10,
     AL_DESC_BAD_RECORD_MAC => 20,
     AL_DESC_ILLEGAL_PARAMETER => 47,
+    AL_DESC_DECODE_ERROR => 50,
     AL_DESC_PROTOCOL_VERSION => 70,
-    AL_DESC_NO_RENEGOTIATION => 100
+    AL_DESC_NO_RENEGOTIATION => 100,
+    AL_DESC_MISSING_EXTENSION => 109
 };
 
 my %message_type = (
@@ -463,6 +465,19 @@ sub create_message
                 [@message_frag_lens]
             );
         }
+        $message->parse();
+    }  elsif ($mt == MT_NEXT_PROTO) {
+        $message = TLSProxy::NextProto->new(
+            $isdtls,
+            $server,
+            $msgseq,
+            $msgfrag,
+            $msgfragoffs,
+            $data,
+            [@message_rec_list],
+            $startoffset,
+            [@message_frag_lens]
+        );
         $message->parse();
     } else {
         #Unknown message type

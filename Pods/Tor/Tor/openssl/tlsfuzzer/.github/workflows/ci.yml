@@ -17,19 +17,10 @@ jobs:
             container: centos:6
             python-version: 2.6
           - name: py2.7
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
-          - name: py3.3
-            os: ubuntu-18.04
-            python-version: 3.3
-          - name: py3.4
-            os: ubuntu-18.04
-            python-version: 3.4
-          - name: py3.5
-            os: ubuntu-18.04
-            python-version: 3.5
           - name: py3.6
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.6
           - name: py3.7
             os: ubuntu-latest
@@ -42,7 +33,13 @@ jobs:
             python-version: 3.9
           - name: py3.10
             os: ubuntu-latest
-            python-version: '3.10.0-rc.1'
+            python-version: '3.10'
+          - name: py3.11
+            os: ubuntu-latest
+            python-version: '3.11'
+          - name: py3.12
+            os: ubuntu-latest
+            python-version: '3.12'
           # also test with extraction tooling installed
           - name: py2.6 with extract
             os: ubuntu-latest
@@ -50,23 +47,11 @@ jobs:
             python-version: 2.6
             opt-deps: ['extract']
           - name: py2.7 with extract
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             opt-deps: ['extract']
-          - name: py3.3 with extract
-            os: ubuntu-18.04
-            python-version: 3.3
-            opt-deps: ['extract']
-          - name: py3.4 with extract
-            os: ubuntu-18.04
-            python-version: 3.4
-            opt-deps: ['extract']
-          - name: py3.5 with extract
-            os: ubuntu-18.04
-            python-version: 3.5
-            opt-deps: ['extract']
           - name: py3.6 with extract
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.6
             opt-deps: ['extract']
           - name: py3.7 with extract
@@ -83,11 +68,19 @@ jobs:
             opt-deps: ['extract']
           - name: py3.10 with extract
             os: ubuntu-latest
-            python-version: '3.10.0-rc.1'
+            python-version: '3.10'
+            opt-deps: ['extract']
+          - name: py3.11 with extract
+            os: ubuntu-latest
+            python-version: '3.11'
+            opt-deps: ['extract']
+          - name: py3.12 with extract
+            os: ubuntu-latest
+            python-version: '3.12'
             opt-deps: ['extract']
           # also test with just analysis tooling installed
           - name: py3.6 with analysis
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.6
             opt-deps: ['analysis']
           - name: py3.7 with analysis
@@ -104,11 +97,19 @@ jobs:
             opt-deps: ['analysis']
           - name: py3.10 with analysis
             os: ubuntu-latest
-            python-version: '3.10.0-rc.1'
+            python-version: '3.10'
+            opt-deps: ['analysis']
+          - name: py3.11 with analysis
+            os: ubuntu-latest
+            python-version: '3.11'
+            opt-deps: ['analysis']
+          - name: py3.12 with analysis
+            os: ubuntu-latest
+            python-version: '3.12'
             opt-deps: ['analysis']
           # and with both extract and analysis
           - name: py3.6 with extract and analysis
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.6
             opt-deps: ['extract', 'analysis']
           - name: py3.7 with extract and analysis
@@ -125,7 +126,15 @@ jobs:
             opt-deps: ['extract', 'analysis']
           - name: py3.10 with extract and analysis
             os: ubuntu-latest
-            python-version: '3.10.0-rc.1'
+            python-version: '3.10'
+            opt-deps: ['extract', 'analysis']
+          - name: py3.11 with extract and analysis
+            os: ubuntu-latest
+            python-version: '3.11'
+            opt-deps: ['extract', 'analysis']
+          - name: py3.12 with extract and analysis
+            os: ubuntu-latest
+            python-version: '3.12'
             # note: codeclimate can be specified in only one environment
             opt-deps: ['extract', 'analysis', 'codeclimate']
     steps:
@@ -176,10 +185,20 @@ jobs:
         run: git fetch origin master:refs/remotes/origin/master
       - name: Set up Python ${{ matrix.python-version }}
         # we use containers to use the native python version from them
-        if: ${{ !matrix.container }}
+        if: ${{ !matrix.container && matrix.python-version != '2.7' }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Ensure python 2.7
+        if: matrix.python-version == '2.7'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python2.7 python2.7-dev python-pip-whl
+          sudo ln -sf python2.7 /usr/bin/python
+          export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+          sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+          sudo chown -R $USER /usr/local/lib/python2.7
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
       - name: Display installed python package versions
@@ -207,23 +226,25 @@ jobs:
           pip install setuptools-28.8.0-py2.py3-none-any.whl wheel-0.30.0a0-py2.py3-none-any.whl
       # gmpy2 and m2crypto are not necessary but make tlslite-ng much faster
       - name: Install gmpy2 dependencies
-        if: ${{ !matrix.container }}
+        if: ${{ !matrix.container && matrix.python-version != '3.3' }}
         run: sudo apt-get install -y libmpfr-dev libmpc-dev libgmp-dev
       - name: Install gmpy2
-        if: ${{ !matrix.container && matrix.python-version != '3.10.0-rc.1' }}
+        if: ${{ !matrix.container && matrix.python-version != '3.3' && matrix.python-version != '3.12' }}
         run: pip install gmpy2
-      - name: Install gmpy2 2.1.0b6 (3.10)
-        if: ${{ !matrix.container && matrix.python-version == '3.10.0-rc.1' }}
-        run: pip install git+https://github.com/aleaxit/gmpy@gmpy2-2.1.0b6
-      - name: Install M2Crypto dependencies
-        if: ${{ !matrix.container }}
-        run: sudo apt-get install -y swig libssl-dev
-      - name: Install M2Crypto (py2.7+)
-        if: ${{ !matrix.container && matrix.python-version != '3.3' && matrix.python-version != '3.4'}}
-        run: pip install m2crypto
-      - name: Install M2Crypto (py2.6)
-        if: ${{ matrix.container }}
-        run: yum install -y m2crypto
+      # mainline gmpy2 doesn't compile on py3.12, use pre-release version
+      - name: Install gmpy2 on py3.12
+        if: ${{ !matrix.container && matrix.python-version == '3.12' }}
+        run: pip install gmpy2==2.2.0a1
+      # m2crypto makes server crash with SIGSEGV (see https://github.com/tlsfuzzer/tlsfuzzer/issues/788)
+      # - name: Install M2Crypto dependencies
+      #   if: ${{ !matrix.container && matrix.python-version != '3.3' }}
+      #   run: sudo apt-get install -y swig libssl-dev
+      # - name: Install M2Crypto (py2.7+)
+      #   if: ${{ !matrix.container && matrix.python-version != '3.3' && matrix.python-version != '3.4' && matrix.python-version != 3.5 }}
+      #   run: pip install m2crypto
+      # - name: Install M2Crypto (py2.6)
+      #   if: ${{ matrix.container }}
+      #   run: yum install -y m2crypto
       - name: Install build dependencies (2.6)
         if: ${{ matrix.python-version == '2.6' }}
         run: |
@@ -293,9 +314,9 @@ jobs:
       - name: Install dependencies (2.6)
         if: ${{ matrix.python-version == '2.6' }}
         run: |
-          wget https://files.pythonhosted.org/packages/9b/dc/5d948af9faca0634f3f284eb85851101ea7bc024b24aa484393630244465/tlslite-ng-0.8.0-alpha42.tar.gz
-          wget https://files.pythonhosted.org/packages/84/0b/61a79cf7f50cdbb703112e903c1a4d3744afedca62220aabfd5a5b5a516d/ecdsa-0.18.0b1-py2.py3-none-any.whl
-          pip install tlslite-ng-0.8.0-alpha42.tar.gz ecdsa-0.18.0b1-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/a0/da/20dca663a8c6002654ffc3155481b200dc44dd242bc94c9122ad7d68cdcb/tlslite-ng-0.8.0b2.tar.gz
+          wget https://files.pythonhosted.org/packages/b4/4c/f8b4ed6c61dff52294f98aaf99053dd979c1b4233d953f371afb0a2977a1/ecdsa-0.18.0b2-py2.py3-none-any.whl
+          pip install tlslite-ng-0.8.0b2.tar.gz ecdsa-0.18.0b2-py2.py3-none-any.whl
       - name: Install dependencies
         if: ${{ matrix.python-version != '2.6' }}
         run: pip install -r requirements.txt
@@ -330,7 +351,13 @@ jobs:
           COVERALLS_FLAG_NAME: ${{ matrix.name }}
           COVERALLS_PARALLEL: true
           COVERALLS_SERVICE_NAME: github
-        run: coveralls
+          PY_VERSION: ${{ matrix.python-version }}
+        run: |
+          if [[ $PY_VERSION == "2.6" ]]; then
+            COVERALLS_SKIP_SSL_VERIFY=1 coveralls
+          else
+            coveralls
+          fi
       - name: Ensure that json files include all test scripts
         run: python tests/verify-scripts-json.py tests/tlslite-ng-random-subset.json tests/tlslite-ng.json
       - name: Verify that all scripts pass against tlslite-ng
@@ -341,15 +368,20 @@ jobs:
           # more generally, it should be `1845 + len(sys.version.split()[0])`,
           # as http.server uses `sys_version = "Python/" + sys.version.split()[0]`
           # https://github.com/python/cpython/blob/2c050e52f1ccf5db03819e4ed70690521d67e9fa/Lib/http/server.py#L253
-          if [[ $PYTHON_VERSION == '2.7' || $PYTHON_VERSION == '3.4' || $PYTHON_VERSION == '3.5' || $PYTHON_VERSION == '3.6' || $PYTHON_VERSION == '3.7' || $PYTHON_VERSION == '3.8' ]]; then
-            export REPLY_SIZE=1850
-          elif [[ $PYTHON_VERSION == '3.10.0-rc.1' ]]; then
-            export REPLY_SIZE=1853  # Server: SimpleHTTP/0.6 Python/3.10.0rc1
-          elif [[ $PYTHON_VERSION == 'nightly' ]]; then
-            export REPLY_SIZE=1852  # Server: SimpleHTTP/0.6 Python/3.10.0a0
-          else
-            export REPLY_SIZE=1849  # Server: SimpleHTTP/0.6 Python/3.8.6
-          fi
+          case $PYTHON_VERSION in
+            2.7 | 3.6 | 3.7 | 3.8 | 3.9 | 3.11 | 3.12 )
+              export REPLY_SIZE=1850
+              ;;
+            3.10)
+              export REPLY_SIZE=1851  # Server: SimpleHTTP/0.6 Python/3.10.10
+              ;;
+            nightly)
+              export REPLY_SIZE=1852  # Server: SimpleHTTP/0.6 Python/3.10.0a0
+              ;;
+            *)
+              export REPLY_SIZE=1849  # Server: SimpleHTTP/0.6 Python/3.8.6
+              ;;
+          esac
           python tests/scripts_retention.py tests/tlslite-ng-random-subset.json `which tls.py` $REPLY_SIZE
       - name: Linter
         # pylint doesn't work on 2.6: https://bitbucket.org/logilab/pylint/issue/390/py26-compatiblity-broken
@@ -358,7 +390,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
           opt=""
-          if ! [[ $PYTHON_VERSION == 2.6 || $PYTHON_VERSION == 2.7 || $PYTHON_VERSION == 3.3 || $PYTHON_VERSION == 3.4 || $PYTHON_VERSION == 3.5 ]]; then
+          if ! [[ $PYTHON_VERSION == 2.6 || $PYTHON_VERSION == 2.7 ]]; then
             opt="--compare-branch origin/master"
           fi
           pylint --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" tlsfuzzer > pylint_report.txt || :

@@ -23,14 +23,22 @@ __all__ = [
     "NIST521p",
     "curves",
     "find_curve",
+    "curve_by_name",
     "SECP256k1",
     "BRAINPOOLP160r1",
+    "BRAINPOOLP160t1",
     "BRAINPOOLP192r1",
+    "BRAINPOOLP192t1",
     "BRAINPOOLP224r1",
+    "BRAINPOOLP224t1",
     "BRAINPOOLP256r1",
+    "BRAINPOOLP256t1",
     "BRAINPOOLP320r1",
+    "BRAINPOOLP320t1",
     "BRAINPOOLP384r1",
+    "BRAINPOOLP384t1",
     "BRAINPOOLP512r1",
+    "BRAINPOOLP512t1",
     "PRIME_FIELD_OID",
     "CHARACTERISTIC_TWO_FIELD_OID",
     "Ed25519",
@@ -374,12 +382,30 @@ BRAINPOOLP160r1 = Curve(
 )
 
 
+BRAINPOOLP160t1 = Curve(
+    "BRAINPOOLP160t1",
+    ecdsa.curve_brainpoolp160t1,
+    ecdsa.generator_brainpoolp160t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 2),
+    "brainpoolP160t1",
+)
+
+
 BRAINPOOLP192r1 = Curve(
     "BRAINPOOLP192r1",
     ecdsa.curve_brainpoolp192r1,
     ecdsa.generator_brainpoolp192r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 3),
     "brainpoolP192r1",
+)
+
+
+BRAINPOOLP192t1 = Curve(
+    "BRAINPOOLP192t1",
+    ecdsa.curve_brainpoolp192t1,
+    ecdsa.generator_brainpoolp192t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 4),
+    "brainpoolP192t1",
 )
 
 
@@ -392,12 +418,30 @@ BRAINPOOLP224r1 = Curve(
 )
 
 
+BRAINPOOLP224t1 = Curve(
+    "BRAINPOOLP224t1",
+    ecdsa.curve_brainpoolp224t1,
+    ecdsa.generator_brainpoolp224t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 6),
+    "brainpoolP224t1",
+)
+
+
 BRAINPOOLP256r1 = Curve(
     "BRAINPOOLP256r1",
     ecdsa.curve_brainpoolp256r1,
     ecdsa.generator_brainpoolp256r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 7),
     "brainpoolP256r1",
+)
+
+
+BRAINPOOLP256t1 = Curve(
+    "BRAINPOOLP256t1",
+    ecdsa.curve_brainpoolp256t1,
+    ecdsa.generator_brainpoolp256t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 8),
+    "brainpoolP256t1",
 )
 
 
@@ -410,12 +454,30 @@ BRAINPOOLP320r1 = Curve(
 )
 
 
+BRAINPOOLP320t1 = Curve(
+    "BRAINPOOLP320t1",
+    ecdsa.curve_brainpoolp320t1,
+    ecdsa.generator_brainpoolp320t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 10),
+    "brainpoolP320t1",
+)
+
+
 BRAINPOOLP384r1 = Curve(
     "BRAINPOOLP384r1",
     ecdsa.curve_brainpoolp384r1,
     ecdsa.generator_brainpoolp384r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 11),
     "brainpoolP384r1",
+)
+
+
+BRAINPOOLP384t1 = Curve(
+    "BRAINPOOLP384t1",
+    ecdsa.curve_brainpoolp384t1,
+    ecdsa.generator_brainpoolp384t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 12),
+    "brainpoolP384t1",
 )
 
 
@@ -428,13 +490,28 @@ BRAINPOOLP512r1 = Curve(
 )
 
 
+BRAINPOOLP512t1 = Curve(
+    "BRAINPOOLP512t1",
+    ecdsa.curve_brainpoolp512t1,
+    ecdsa.generator_brainpoolp512t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 14),
+    "brainpoolP512t1",
+)
+
+
 Ed25519 = Curve(
-    "Ed25519", eddsa.curve_ed25519, eddsa.generator_ed25519, (1, 3, 101, 112),
+    "Ed25519",
+    eddsa.curve_ed25519,
+    eddsa.generator_ed25519,
+    (1, 3, 101, 112),
 )
 
 
 Ed448 = Curve(
-    "Ed448", eddsa.curve_ed448, eddsa.generator_ed448, (1, 3, 101, 113),
+    "Ed448",
+    eddsa.curve_ed448,
+    eddsa.generator_ed448,
+    (1, 3, 101, 113),
 )
 
 
@@ -459,14 +536,55 @@ curves = [
     SECP160r1,
     Ed25519,
     Ed448,
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
 ]
 
 
 def find_curve(oid_curve):
+    """Select a curve based on its OID
+
+    :param tuple[int,...] oid_curve: ASN.1 Object Identifier of the
+        curve to return, like ``(1, 2, 840, 10045, 3, 1, 7)`` for ``NIST256p``.
+
+    :raises UnknownCurveError: When the oid doesn't match any of the supported
+        curves
+
+    :rtype: ~ecdsa.curves.Curve
+    """
     for c in curves:
         if c.oid == oid_curve:
             return c
     raise UnknownCurveError(
         "I don't know about the curve with oid %s."
         "I only know about these: %s" % (oid_curve, [c.name for c in curves])
+    )
+
+
+def curve_by_name(name):
+    """Select a curve based on its name.
+
+    Returns a :py:class:`~ecdsa.curves.Curve` object with a ``name`` name.
+    Note that ``name`` is case-sensitve.
+
+    :param str name: Name of the curve to return, like ``NIST256p`` or
+        ``prime256v1``
+
+    :raises UnknownCurveError: When the name doesn't match any of the supported
+        curves
+
+    :rtype: ~ecdsa.curves.Curve
+    """
+    for c in curves:
+        if name == c.name or (c.openssl_name and name == c.openssl_name):
+            return c
+    raise UnknownCurveError(
+        "Curve with name {0!r} unknown, only curves supported: {1}".format(
+            name, [c.name for c in curves]
+        )
     )

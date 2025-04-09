@@ -56,7 +56,10 @@ from .util import orderlen, string_to_number, number_to_string
 
 @python_2_unicode_compatible
 class CurveFp(object):
-    """Short Weierstrass Elliptic Curve over a prime field."""
+    """
+    :term:`Short Weierstrass Elliptic Curve <short Weierstrass curve>` over a
+    prime field.
+    """
 
     if GMPY:  # pragma: no branch
 
@@ -133,11 +136,17 @@ class CurveFp(object):
         return (y * y - ((x * x + self.__a) * x + self.__b)) % self.__p == 0
 
     def __str__(self):
-        return "CurveFp(p=%d, a=%d, b=%d, h=%d)" % (
+        if self.__h is not None:
+            return "CurveFp(p={0}, a={1}, b={2}, h={3})".format(
+                self.__p,
+                self.__a,
+                self.__b,
+                self.__h,
+            )
+        return "CurveFp(p={0}, a={1}, b={2})".format(
             self.__p,
             self.__a,
             self.__b,
-            self.__h,
         )
 
 
@@ -216,8 +225,17 @@ class CurveEdTw(object):
         return self.__h
 
     def __str__(self):
-        return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
-            self.__p, self.__a, self.__d, self.__h,
+        if self.__h is not None:
+            return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+                self.__p,
+                self.__a,
+                self.__d,
+                self.__h,
+            )
+        return "CurveEdTw(p={0}, a={1}, d={2})".format(
+            self.__p,
+            self.__a,
+            self.__d,
         )
 
 
@@ -257,7 +275,7 @@ class AbstractPoint(object):
         alpha = (pow(x, 3, p) + (curve.a() * x) + curve.b()) % p
         try:
             beta = numbertheory.square_root_mod_prime(alpha, p)
-        except numbertheory.SquareRootError as e:
+        except numbertheory.Error as e:
             raise MalformedPointError(
                 "Encoding does not correspond to a point on curve", e
             )
@@ -312,7 +330,7 @@ class AbstractPoint(object):
 
         try:
             x = numbertheory.square_root_mod_prime(x2, p)
-        except numbertheory.SquareRootError as e:
+        except numbertheory.Error as e:
             raise MalformedPointError(
                 "Encoding does not correspond to a point on curve", e
             )
@@ -339,7 +357,7 @@ class AbstractPoint(object):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -350,8 +368,8 @@ class AbstractPoint(object):
             name). All formats by default (specified with ``None``).
         :type valid_encodings: :term:`set-like object`
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: x and y coordinates of the encoded point
         :rtype: tuple(int, int)
@@ -544,7 +562,7 @@ class PointJacobi(AbstractPoint):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -560,8 +578,8 @@ class PointJacobi(AbstractPoint):
             such, it will be commonly used with scalar multiplication. This
             will cause to precompute multiplication table generation for it
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Point on curve
         :rtype: PointJacobi
@@ -615,7 +633,7 @@ class PointJacobi(AbstractPoint):
         """
         x1, y1, z1 = self.__coords
         if other is INFINITY:
-            return not y1 or not z1
+            return not z1
         if isinstance(other, Point):
             x2, y2, z2 = other.x(), other.y(), 1
         elif isinstance(other, PointJacobi):
@@ -665,7 +683,7 @@ class PointJacobi(AbstractPoint):
             return x
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
-        return x * z ** 2 % p
+        return x * z**2 % p
 
     def y(self):
         """
@@ -681,7 +699,7 @@ class PointJacobi(AbstractPoint):
             return y
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
-        return y * z ** 3 % p
+        return y * z**3 % p
 
     def scale(self):
         """
@@ -705,11 +723,13 @@ class PointJacobi(AbstractPoint):
 
     def to_affine(self):
         """Return point in affine form."""
-        _, y, z = self.__coords
-        if not y or not z:
+        _, _, z = self.__coords
+        p = self.__curve.p()
+        if not (z % p):
             return INFINITY
         self.scale()
         x, y, z = self.__coords
+        assert z == 1
         return Point(self.__curve, x, y, self.__order)
 
     @staticmethod
@@ -741,7 +761,7 @@ class PointJacobi(AbstractPoint):
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-mdbl-2007-bl
         XX, YY = X1 * X1 % p, Y1 * Y1 % p
         if not YY:
-            return 0, 0, 1
+            return 0, 0, 0
         YYYY = YY * YY % p
         S = 2 * ((X1 + YY) ** 2 - XX - YYYY) % p
         M = 3 * XX + a
@@ -755,13 +775,13 @@ class PointJacobi(AbstractPoint):
         """Add a point to itself, arbitrary z."""
         if Z1 == 1:
             return self._double_with_z_1(X1, Y1, p, a)
-        if not Y1 or not Z1:
-            return 0, 0, 1
+        if not Z1:
+            return 0, 0, 0
         # after:
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
         XX, YY = X1 * X1 % p, Y1 * Y1 % p
         if not YY:
-            return 0, 0, 1
+            return 0, 0, 0
         YYYY = YY * YY % p
         ZZ = Z1 * Z1 % p
         S = 2 * ((X1 + YY) ** 2 - XX - YYYY) % p
@@ -777,14 +797,14 @@ class PointJacobi(AbstractPoint):
         """Add a point to itself."""
         X1, Y1, Z1 = self.__coords
 
-        if not Y1:
+        if not Z1:
             return INFINITY
 
         p, a = self.__curve.p(), self.__curve.a()
 
         X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -800,7 +820,7 @@ class PointJacobi(AbstractPoint):
         if not H and not r:
             return self._double_with_z_1(X1, Y1, p, self.__curve.a())
         V = X1 * I
-        X3 = (r ** 2 - J - 2 * V) % p
+        X3 = (r**2 - J - 2 * V) % p
         Y3 = (r * (V - X3) - 2 * Y1 * J) % p
         Z3 = 2 * H % p
         return X3, Y3, Z3
@@ -868,10 +888,10 @@ class PointJacobi(AbstractPoint):
 
     def _add(self, X1, Y1, Z1, X2, Y2, Z2, p):
         """add two points, select fastest method."""
-        if not Y1 or not Z1:
-            return X2, Y2, Z2
-        if not Y2 or not Z2:
-            return X1, Y1, Z1
+        if not Z1:
+            return X2 % p, Y2 % p, Z2 % p
+        if not Z2:
+            return X1 % p, Y1 % p, Z1 % p
         if Z1 == Z2:
             if Z1 == 1:
                 return self._add_with_z_1(X1, Y1, X2, Y2, p)
@@ -899,7 +919,7 @@ class PointJacobi(AbstractPoint):
 
         X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -909,7 +929,7 @@ class PointJacobi(AbstractPoint):
 
     def _mul_precompute(self, other):
         """Multiply point by integer with precomputation table."""
-        X3, Y3, Z3, p = 0, 0, 1, self.__curve.p()
+        X3, Y3, Z3, p = 0, 0, 0, self.__curve.p()
         _add = self._add
         for X2, Y2 in self.__precompute:
             if other % 2:
@@ -922,7 +942,7 @@ class PointJacobi(AbstractPoint):
             else:
                 other //= 2
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -941,7 +961,7 @@ class PointJacobi(AbstractPoint):
 
         self = self.scale()
         X2, Y2, _ = self.__coords
-        X3, Y3, Z3 = 0, 0, 1
+        X3, Y3, Z3 = 0, 0, 0
         p, a = self.__curve.p(), self.__curve.a()
         _double = self._double
         _add = self._add
@@ -954,7 +974,7 @@ class PointJacobi(AbstractPoint):
             elif i > 0:
                 X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -983,7 +1003,7 @@ class PointJacobi(AbstractPoint):
             other_mul = other_mul % self.__order
 
         # (X3, Y3, Z3) is the accumulator
-        X3, Y3, Z3 = 0, 0, 1
+        X3, Y3, Z3 = 0, 0, 0
         p, a = self.__curve.p(), self.__curve.a()
 
         # as we have 6 unique points to work with, we can't scale all of them,
@@ -1002,12 +1022,12 @@ class PointJacobi(AbstractPoint):
         # so we need 4 combined points:
         mAmB_X, mAmB_Y, mAmB_Z = _add(X1, -Y1, Z1, X2, -Y2, Z2, p)
         pAmB_X, pAmB_Y, pAmB_Z = _add(X1, Y1, Z1, X2, -Y2, Z2, p)
-        mApB_X, mApB_Y, mApB_Z = _add(X1, -Y1, Z1, X2, Y2, Z2, p)
-        pApB_X, pApB_Y, pApB_Z = _add(X1, Y1, Z1, X2, Y2, Z2, p)
+        mApB_X, mApB_Y, mApB_Z = pAmB_X, -pAmB_Y, pAmB_Z
+        pApB_X, pApB_Y, pApB_Z = mAmB_X, -mAmB_Y, mAmB_Z
         # when the self and other sum to infinity, we need to add them
         # one by one to get correct result but as that's very unlikely to
         # happen in regular operation, we don't need to optimise this case
-        if not pApB_Y or not pApB_Z:
+        if not pApB_Z:
             return self * self_mul + other * other_mul
 
         # gmp object creation has cumulatively higher overhead than the
@@ -1052,7 +1072,7 @@ class PointJacobi(AbstractPoint):
                     assert B > 0
                     X3, Y3, Z3 = _add(X3, Y3, Z3, pApB_X, pApB_Y, pApB_Z, p)
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -1107,7 +1127,7 @@ class Point(AbstractPoint):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -1120,8 +1140,8 @@ class Point(AbstractPoint):
         :param int order: the point order, must be non zero when using
             generator=True
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Point on curve
         :rtype: Point
@@ -1136,6 +1156,8 @@ class Point(AbstractPoint):
 
         Note: only points that lay on the same curve can be equal.
         """
+        if other is INFINITY:
+            return self.__x is None or self.__y is None
         if isinstance(other, Point):
             return (
                 self.__curve == other.__curve
@@ -1202,17 +1224,22 @@ class Point(AbstractPoint):
         # From X9.62 D.3.2:
 
         e3 = 3 * e
-        negative_self = Point(self.__curve, self.__x, -self.__y, self.__order)
+        negative_self = Point(
+            self.__curve,
+            self.__x,
+            (-self.__y) % self.__curve.p(),
+            self.__order,
+        )
         i = leftmost_bit(e3) // 2
         result = self
-        # print_("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
+        # print("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
         while i > 1:
             result = result.double()
             if (e3 & i) != 0 and (e & i) == 0:
                 result = result + self
             if (e3 & i) == 0 and (e & i) != 0:
                 result = result + negative_self
-            # print_(". . . i = %d, result = %s" % ( i, result ))
+            # print(". . . i = %d, result = %s" % ( i, result ))
             i = i // 2
 
         return result
@@ -1229,7 +1256,6 @@ class Point(AbstractPoint):
 
     def double(self):
         """Return a new point that is twice the old."""
-
         if self == INFINITY:
             return INFINITY
 
@@ -1242,6 +1268,9 @@ class Point(AbstractPoint):
             (3 * self.__x * self.__x + a)
             * numbertheory.inverse_mod(2 * self.__y, p)
         ) % p
+
+        if not l:
+            return INFINITY
 
         x3 = (l * l - 2 * self.__x) % p
         y3 = (l * (self.__x - x3) - self.__y) % p
@@ -1317,8 +1346,8 @@ class PointEdwards(AbstractPoint):
             this will cause the library to pre-compute some values to
             make repeated usages of the point much faster
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Initialised point on an Edwards curve
         :rtype: PointEdwards
@@ -1514,7 +1543,9 @@ class PointEdwards(AbstractPoint):
 
         X3, Y3, Z3, T3 = self._double(X1, Y1, Z1, T1, p, a)
 
-        if not X3 or not T3:
+        # both Ed25519 and Ed448 have prime order, so no point added to
+        # itself will equal zero
+        if not X3 or not T3:  # pragma: no branch
             return INFINITY
         return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
 

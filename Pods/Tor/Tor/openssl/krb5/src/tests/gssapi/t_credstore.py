@@ -9,8 +9,8 @@ service_cs = 'service/cs@%s' % realm.realm
 realm.addprinc(service_cs)
 realm.extract_keytab(service_cs, servicekeytab)
 realm.kinit(service_cs, None, ['-k', '-t', servicekeytab])
-msgs = ('Storing %s -> %s in %s' % (service_cs, realm.krbtgt_princ,
-                                    storagecache),
+msgs = ('Storing %s -> %s in MEMORY:' % (service_cs, realm.krbtgt_princ),
+        'Moving ccache MEMORY:',
         'Retrieving %s from FILE:%s' % (service_cs, servicekeytab))
 realm.run(['./t_credstore', '-s', 'p:' + service_cs, 'ccache', storagecache,
            'keytab', servicekeytab], expected_trace=msgs)
@@ -50,10 +50,9 @@ else:
 mark('rcache')
 # t_credstore -r should produce a replay error normally, but not with
 # rcache set to "none:".
-output = realm.run(['./t_credstore', '-r', '-a', 'p:' + realm.host_princ],
-                   expected_code=1)
-if 'gss_accept_sec_context(2): Request is a replay' not in output:
-    fail('Expected replay error not seen in t_credstore output')
+realm.run(['./t_credstore', '-r', '-a', 'p:' + realm.host_princ],
+          expected_code=1,
+          expected_msg='gss_accept_sec_context(2): Request is a replay')
 realm.run(['./t_credstore', '-r', '-a', 'p:' + realm.host_princ,
            'rcache', 'none:'])
 
