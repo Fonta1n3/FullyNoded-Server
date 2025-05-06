@@ -8,6 +8,10 @@
 import SwiftUI
 
 struct BtcUtilsView: View {
+    @State private var promptToSelectWallet = false
+    @State private var promptToDeleteWallet = false
+    @State private var isShowingPicker = false
+    @State private var walletToDeletePath: String?
     @State private var showError = false
     @State private var message = ""
     @State private var env: [String: String] = [:]
@@ -59,7 +63,14 @@ struct BtcUtilsView: View {
                         Text("Reindex")
                     }
                 }
-                
+                Button {
+                    //isShowingPicker = true
+                    // prompt that user will need to select the wallet folder first.
+                    promptToSelectWallet = true
+                } label: {
+                    Image(systemName: "exclamationmark.triangle")
+                    Text("Delete a Wallet")
+                }
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,8 +108,54 @@ struct BtcUtilsView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $isShowingPicker) {
+            FilePicker(completion: { path in
+                isShowingPicker = false
+                if path != nil {
+                    walletToDeletePath = path
+                    promptToDeleteWallet = true
+                }
+            }, defaultPath: defaultPath)
+        }
+        
         Spacer()
         Spacer()
+        
+            .alert("Delete \(walletToDeletePath ?? "")?\n\nAre you absolutely sure!?", isPresented: $promptToDeleteWallet) {
+                if let _ = walletToDeletePath {
+                    Button("Delete now", role: .destructive, action: deleteWallet)
+                }
+            }
+            .alert("Please select a wallet directory to delete.", isPresented: $promptToSelectWallet) {
+                Button("Select Wallet Directory", action: { isShowingPicker = true })
+                Text("Once deleted the wallet is gone forever!")
+            }
+            .alert(message, isPresented: $showError) {
+                Button("OK", role: .cancel) {}
+            }
+    }
+    
+    private var defaultPath: String {
+        let chain = Defaults.shared.chain
+        let root = Defaults.shared.bitcoinCoreDataDir
+        var url = root
+        if chain != "main" {
+            url += "/\(chain)/wallets"
+        }
+        return url
+    }
+    
+    private func deleteWallet() {
+        guard let walletToDeletePath = walletToDeletePath else { return }
+        print("delete \(walletToDeletePath)")
+        do {
+            try FileManager.default.removeItem(atPath: walletToDeletePath)
+            print("Directory deleted successfully: \(walletToDeletePath)")
+            showMessage(message: "Wallet deleted successfully.")
+        } catch {
+            print("Error deleting directory: \(error)")
+            showMessage(message: "Error deleting directory: \(error)")
+        }
     }
     
     private func bitcoinConfPath() -> String {

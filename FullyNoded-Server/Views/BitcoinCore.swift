@@ -42,6 +42,7 @@ struct BitcoinCore: View {
                     openWindow(id: "QuickConnect")
                 } label: {
                     Image(systemName: "qrcode")
+                    Text("Quick Connect")
                 }
                 .padding([.trailing])
                 Button {
@@ -61,12 +62,15 @@ struct BitcoinCore: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
+                Image(systemName: "network")
+                    .padding(.leading)
+                
                 Picker("Blockchain", selection: $selectedChain) {
                     ForEach(chains, id: \.self) {
                         Text($0)
                     }
                 }
-                .padding([.leading])
+                //.padding([.leading])
                 .onChange(of: selectedChain) {
                     updateChain(chain: selectedChain)
                     isBitcoinCoreRunning()

@@ -44,6 +44,7 @@ struct JoinMarket: View {
                     openWindow(id: "QuickConnect-JM")
                 } label: {
                     Image(systemName: "qrcode")
+                    Text("Quick Connect")
                 }
                 .padding([.trailing])
                 Button {

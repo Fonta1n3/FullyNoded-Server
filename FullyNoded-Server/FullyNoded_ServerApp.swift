@@ -16,7 +16,6 @@ struct FullyNoded_ServerApp: App {
     @State private var isRunning = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var menuBarImageString: String = "server.rack"
     @State private var blockchainInfo: BlockchainInfo?
     
     var body: some Scene {
@@ -100,7 +99,6 @@ struct FullyNoded_ServerApp: App {
                 return
             }
             isRunning = true
-            menuBarImageString = "circle.fill"
         }
     }
 }

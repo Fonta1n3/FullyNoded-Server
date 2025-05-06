@@ -88,6 +88,9 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
+		595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 595B518F2DC936C0002FD7E5 /* DeleteWallet.command */; };
+		595B51922DC93EA6002FD7E5 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51912DC93EA6002FD7E5 /* DocumentPicker.swift */; };
+		595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51932DC9416E002FD7E5 /* FilePickerView.swift */; };
 		5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5963C3832D5E4291007C89DC /* ConfigureJM.swift */; };
 		59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */; };
 		59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */; };
@@ -188,6 +191,9 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
+		595B518F2DC936C0002FD7E5 /* DeleteWallet.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
+		595B51912DC93EA6002FD7E5 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
+		595B51932DC9416E002FD7E5 /* FilePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePickerView.swift; sourceTree = "<group>"; };
 		5963C3832D5E4291007C89DC /* ConfigureJM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureJM.swift; sourceTree = "<group>"; };
 		59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CloneJMMaster.command; sourceTree = "<group>"; };
 		59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMCloner.command; sourceTree = "<group>"; };
@@ -235,6 +241,7 @@
 				59CC77F12D551A1B005D5A9B /* JMUtilsView.swift */,
 				59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */,
 				59A2E1902D6EB25900F0C194 /* BlockchainInfoView.swift */,
+				595B51932DC9416E002FD7E5 /* FilePickerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -283,6 +290,7 @@
 				59CD1FF92D400BB500110A12 /* DownloadHelper.swift */,
 				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
 				5963C3832D5E4291007C89DC /* ConfigureJM.swift */,
+				595B51912DC93EA6002FD7E5 /* DocumentPicker.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -378,6 +386,7 @@
 				59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */,
 				59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */,
 				59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */,
+				595B518F2DC936C0002FD7E5 /* DeleteWallet.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -488,6 +497,7 @@
 				593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */,
 				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
+				595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
 				59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */,
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
@@ -578,6 +588,7 @@
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
 				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
 				59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */,
+				595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */,
 				590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
@@ -588,6 +599,7 @@
 				0A5CE8CE2C89EC1F00534A8D /* RPCAuth.swift in Sources */,
 				593A89292CE6797C001504F0 /* Entity.swift in Sources */,
 				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
+				595B51922DC93EA6002FD7E5 /* DocumentPicker.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
 				0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */,

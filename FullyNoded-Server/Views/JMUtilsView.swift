@@ -58,12 +58,6 @@ struct JMUtilsView: View {
                 } label: {
                     Text("Order Book")
                 }
-//                Button {
-//                    refreshConfig()
-//                } label: {
-//                    Text("Refresh Config")
-//                }
-                
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,6 +81,7 @@ struct JMUtilsView: View {
         .alert("The order book launches a terminal (see output if any issues and report) and opens the browser at http://localhost:62601 to display the current order book.", isPresented: $orderBookOpened) {
             Button("Open", action: openOrderBookNow)
         }
+        
         Spacer()
         Spacer()
     }
@@ -96,13 +91,15 @@ struct JMUtilsView: View {
         self.message = message
     }
     
+    
+    
     private func confirgureJm() {
         ConfigureJM.configureJm { (configured, error) in
             guard configured else {
                 showMessage(message: error ?? "Unknown error configuring Join Market.")
                 return
             }
-            showMessage(message: "Join Market configured ✓")
+            showMessage(message: "Join Market configured. You will need to restart Bitcoin Core for the changes to take effect.")
         }
     }
     
