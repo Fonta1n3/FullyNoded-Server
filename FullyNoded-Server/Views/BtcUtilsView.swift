@@ -64,8 +64,6 @@ struct BtcUtilsView: View {
                     }
                 }
                 Button {
-                    //isShowingPicker = true
-                    // prompt that user will need to select the wallet folder first.
                     promptToSelectWallet = true
                 } label: {
                     Image(systemName: "exclamationmark.triangle")
@@ -111,10 +109,24 @@ struct BtcUtilsView: View {
         .sheet(isPresented: $isShowingPicker) {
             FilePicker(completion: { path in
                 isShowingPicker = false
-                if path != nil {
-                    walletToDeletePath = path
-                    promptToDeleteWallet = true
+                guard let path = path else {
+                    showMessage(message: "No path returned from your selection.")
+                    return
                 }
+                // ensure it is in the correctdatadir
+                guard path.hasPrefix(defaultPath) && !path.hasSuffix("wallets") else {
+                    showMessage(message: "Looks like you are not attempting to delete a wallet directory or are attempting to delete more then one wallet, please be careful, double check you are selecting the correct directory and try again.")
+                    return
+                }
+                // check contents of directory for a .dat
+                guard ((try? hasFileWithExtension(in: path, fileExtension: "dat")) != nil) else {
+                    showMessage(message: "Unable to verify the selected directory conatins a .dat file, not a valid Bitcoin wallet directory.")
+                    return
+                }
+                
+                walletToDeletePath = path
+                promptToDeleteWallet = true
+                
             }, defaultPath: defaultPath)
         }
         
@@ -146,15 +158,55 @@ struct BtcUtilsView: View {
     }
     
     private func deleteWallet() {
-        guard let walletToDeletePath = walletToDeletePath else { return }
-        print("delete \(walletToDeletePath)")
+        guard let walletToDeletePath = walletToDeletePath else {
+            showMessage(message: "No path provided to delete...")
+            return
+        }
+        
         do {
             try FileManager.default.removeItem(atPath: walletToDeletePath)
-            print("Directory deleted successfully: \(walletToDeletePath)")
-            showMessage(message: "Wallet deleted successfully.")
+            showMessage(message: "Wallet deleted successfully at \(walletToDeletePath)")
         } catch {
-            print("Error deleting directory: \(error)")
             showMessage(message: "Error deleting directory: \(error)")
+        }
+    }
+    
+    /// Checks if a directory contains any file with a specific file extension.
+    ///
+    /// - Parameters:
+    ///   - directoryPath: The path to the directory (e.g., "~/Library/Application Support/Bitcoin/wallets/").
+    ///   - fileExtension: The file extension to check for (e.g., "dat") without the dot.
+    /// - Returns: `true` if at least one file with the extension exists, `false` otherwise.
+    /// - Throws: An error if the directory is invalid or inaccessible.
+    func hasFileWithExtension(in directoryPath: String, fileExtension: String) throws -> Bool {
+        let fileManager = FileManager.default
+        
+        // Expand tilde to full path (e.g., "~/Library" -> "/Users/username/Library")
+        let expandedPath = NSString(string: directoryPath).expandingTildeInPath
+        let directoryURL = URL(fileURLWithPath: expandedPath)
+        
+        // Check if the directory exists and is accessible
+        var isDir: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDir), isDir.boolValue else {
+            throw NSError(domain: "DirectoryError", code: -1, userInfo: [
+                NSLocalizedDescriptionKey: "Directory does not exist or is not accessible: \(expandedPath)"
+            ])
+        }
+        
+        // Get directory contents
+        let contents = try fileManager.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+        )
+        
+        // Check for any file with the specified extension
+        return contents.contains { url in
+            if let resourceValues = try? url.resourceValues(forKeys: [.isRegularFileKey]),
+               resourceValues.isRegularFile == true {
+                return url.pathExtension.lowercased() == fileExtension.lowercased()
+            }
+            return false
         }
     }
     
