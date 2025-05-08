@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct JoinMarket: View {
-    
     @Environment(\.openWindow) var openWindow
     @Environment(\.scenePhase) var scenePhase
+    @State private var sessionInfo: SessionInfo?
     @State private var statusText = "Refreshing..."
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
     @State private var startCheckingIfRunning = false
@@ -158,6 +158,21 @@ struct JoinMarket: View {
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
+        
+        if let status = sessionInfo {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Block Height: \(status.blockHeight.map(String.init) ?? "None")")
+                Text("Coinjoin In Process: \(status.coinjoinInProcess ? "Yes" : "No")")
+                Text("Maker Running: \(status.makerRunning ? "Yes" : "No")")
+                Text("Nickname: \(status.nickname ?? "None")")
+                Text("Offer List: \(status.offerList ?? "None")")
+                Text("Rescanning: \(status.rescanning ? "Yes" : "No")")
+                Text("Schedule: \(status.schedule ?? "None")")
+                Text("Session: \(status.session ? "Active" : "Inactive")")
+                Text("Wallet Name: \(status.walletName ?? "None")")
+            }
+            .padding()
+        }
     }
     
     private func updateTimer(interval: Double) {
@@ -260,12 +275,13 @@ struct JoinMarket: View {
                 }
                 return
             }
-            guard let _ = response as? [String:Any] else {
+            guard let response = response as? [String:Any] else {
                 isRunning = false
                 return
             }
             isRunning = true
             updateTimer(interval: 15.0)
+            //sessionInfo = try? SessionInfo(from: response)
         }
     }
     
@@ -273,6 +289,8 @@ struct JoinMarket: View {
         showError = true
         self.message = message
     }
+    
+    
 }
 
 #Preview {
