@@ -31,7 +31,7 @@ struct JMUtilsView: View {
                 Button {
                     openFile(file: "joinmarket.cfg")
                 } label: {
-                    Text("joinmarket.cfg")
+                    Text("Configuration file")
                 }
                 Button {
                     confirgureJm()
@@ -41,7 +41,7 @@ struct JMUtilsView: View {
                 Button {
                     openDataDir()
                 } label: {
-                    Text("Data Dir")
+                    Text("Data directory")
                 }
                 Button {
                     promptToIncreaseGapLimit = true
@@ -56,7 +56,12 @@ struct JMUtilsView: View {
                 Button {
                     orderBook()
                 } label: {
-                    Text("Order Book")
+                    Text("Order book")
+                }
+                Button {
+                    configureNetwork()
+                } label: {
+                    Text("Configure network")
                 }
             }
             .padding([.leading, .trailing])
@@ -91,7 +96,9 @@ struct JMUtilsView: View {
         self.message = message
     }
     
-    
+    private func configureNetwork() {
+        ConfigureJM.configureNetwork()
+    }
     
     private func confirgureJm() {
         ConfigureJM.configureJm { (configured, error) in

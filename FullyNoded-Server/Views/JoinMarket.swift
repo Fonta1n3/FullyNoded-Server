@@ -10,7 +10,7 @@ import SwiftUI
 struct JoinMarket: View {
     @Environment(\.openWindow) var openWindow
     @Environment(\.scenePhase) var scenePhase
-    @State private var sessionInfo: SessionInfo?
+    @State private var sessionInfo: JMSession?
     @State private var statusText = "Refreshing..."
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
     @State private var startCheckingIfRunning = false
@@ -64,7 +64,6 @@ struct JoinMarket: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
-                
                 Label("Blockchain", systemImage: "network")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(width: 90)
@@ -132,6 +131,16 @@ struct JoinMarket: View {
             }
             .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let session = sessionInfo {
+                HStack() {
+                    StatusView(isActive: session.session, statusText: "session", statusImage: "wifi.circle")
+                    StatusView(isActive: session.coinjoin_in_process, statusText: "coinjoin", statusImage: "arrow.trianglehead.2.clockwise")
+                    StatusView(isActive: session.maker_running, statusText: "maker", statusImage: "bitcoinsign.circle")
+                }
+                .padding([.trailing])
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active {
@@ -157,21 +166,6 @@ struct JoinMarket: View {
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
-        }
-        
-        if let status = sessionInfo {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Block Height: \(status.blockHeight.map(String.init) ?? "None")")
-                Text("Coinjoin In Process: \(status.coinjoinInProcess ? "Yes" : "No")")
-                Text("Maker Running: \(status.makerRunning ? "Yes" : "No")")
-                Text("Nickname: \(status.nickname ?? "None")")
-                Text("Offer List: \(status.offerList ?? "None")")
-                Text("Rescanning: \(status.rescanning ? "Yes" : "No")")
-                Text("Schedule: \(status.schedule ?? "None")")
-                Text("Session: \(status.session ? "Active" : "Inactive")")
-                Text("Wallet Name: \(status.walletName ?? "None")")
-            }
-            .padding()
         }
     }
     
@@ -281,7 +275,7 @@ struct JoinMarket: View {
             }
             isRunning = true
             updateTimer(interval: 15.0)
-            //sessionInfo = try? SessionInfo(from: response)
+            sessionInfo = JMSession(response)
         }
     }
     

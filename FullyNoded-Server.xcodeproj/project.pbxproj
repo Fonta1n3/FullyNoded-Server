@@ -92,6 +92,7 @@
 		595B51922DC93EA6002FD7E5 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51912DC93EA6002FD7E5 /* DocumentPicker.swift */; };
 		595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51932DC9416E002FD7E5 /* FilePickerView.swift */; };
 		595B51962DCC2AE2002FD7E5 /* JMSessionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51952DCC2AE2002FD7E5 /* JMSessionInfo.swift */; };
+		595B51982DD280DD002FD7E5 /* JMSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51972DD280DD002FD7E5 /* JMSessionView.swift */; };
 		5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5963C3832D5E4291007C89DC /* ConfigureJM.swift */; };
 		59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */; };
 		59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */; };
@@ -196,6 +197,7 @@
 		595B51912DC93EA6002FD7E5 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		595B51932DC9416E002FD7E5 /* FilePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePickerView.swift; sourceTree = "<group>"; };
 		595B51952DCC2AE2002FD7E5 /* JMSessionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMSessionInfo.swift; sourceTree = "<group>"; };
+		595B51972DD280DD002FD7E5 /* JMSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMSessionView.swift; sourceTree = "<group>"; };
 		5963C3832D5E4291007C89DC /* ConfigureJM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureJM.swift; sourceTree = "<group>"; };
 		59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CloneJMMaster.command; sourceTree = "<group>"; };
 		59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMCloner.command; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 				59CC77F32D5523EA005D5A9B /* JMQuickConnectView.swift */,
 				59A2E1902D6EB25900F0C194 /* BlockchainInfoView.swift */,
 				595B51932DC9416E002FD7E5 /* FilePickerView.swift */,
+				595B51972DD280DD002FD7E5 /* JMSessionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -594,6 +597,7 @@
 				595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */,
 				590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
+				595B51982DD280DD002FD7E5 /* JMSessionView.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
 				0A6787592D36E119000AB105 /* Settings.swift in Sources */,
 				593A89232CE511F8001504F0 /* FNIcon.swift in Sources */,
@@ -760,7 +764,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -775,7 +779,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -803,7 +807,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.1.1 Beta";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -818,7 +822,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

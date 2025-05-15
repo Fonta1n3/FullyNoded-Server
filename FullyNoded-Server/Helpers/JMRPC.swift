@@ -39,8 +39,8 @@ class JMRPC: NSObject, URLSessionDelegate {
         }
         
         var request = URLRequest(url: url)
-        var timeout = 10.0
-        var httpMethod = "GET"
+        let timeout = 10.0
+        let httpMethod = "GET"
         
         //            if !paramToUse.isEmpty {
         //                guard let jsonData = try? JSONSerialization.data(withJSONObject: paramToUse) else {
@@ -65,13 +65,11 @@ class JMRPC: NSObject, URLSessionDelegate {
         
         
         let task = session.dataTask(with: request as URLRequest) { [weak self] (data, response, error) in
-            guard let self = self else { return }
+            guard let _ = self else { return }
             
             guard let urlContent = data else {
-                
                 guard let error = error else {
                     completion((nil, "Unknown error."))
-                    
                     return
                 }
                 
@@ -79,32 +77,8 @@ class JMRPC: NSObject, URLSessionDelegate {
                 print("error: \(error.localizedDescription)")
 #endif
                 completion((nil, error.localizedDescription))
-                
                 return
             }
-            
-//            do {
-//                let decoder = JSONDecoder()
-//                let jsonResponse = try decoder.decode(JSONRPCResponse<SessionInfo>.self, from: urlContent)
-//                
-//                if let error = jsonResponse.error, error.code != nil || error.message != nil {
-//                    let errorMessage = "JSON-RPC error: \(error.message ?? "Unknown error") (code: \(error.code ?? 0))"
-//                    completion((nil, errorMessage))
-//                    return
-//                }
-//                
-//                guard let status = jsonResponse.result else {
-//                    completion((nil, "No result in response"))
-//                    return
-//                }
-//                
-//                completion((status, nil))
-//            } catch {
-//                completion((nil, error.localizedDescription))
-//            }
-            
-
-            
             
             guard let json = try? JSONSerialization.jsonObject(with: urlContent, options: .mutableLeaves) as? [String: Any] else {
                 if let httpResponse = response as? HTTPURLResponse {
@@ -120,14 +94,8 @@ class JMRPC: NSObject, URLSessionDelegate {
 #endif
             
             guard let message = json["message"] as? String else {
-                if method == .session {
-                    completion((nil, nil))
-                    return
-                } else {
-                    completion((json, nil))
-                    return
-                }
-                
+                completion((json, nil))
+                return
             }
             completion((nil, message))
         }
@@ -135,7 +103,6 @@ class JMRPC: NSObject, URLSessionDelegate {
     }
     
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        print("did receive challenge")
         guard let trust = challenge.protectionSpace.serverTrust else {
             return
         }
