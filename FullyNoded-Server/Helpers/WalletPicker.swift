@@ -8,7 +8,7 @@
 import SwiftUI
 
 // SwiftUI wrapper for NSOpenPanel
-struct FilePicker: NSViewControllerRepresentable {
+struct WalletPicker: NSViewControllerRepresentable {
     var completion: (String?) -> Void
     var defaultPath: String // New parameter for default directory path
     

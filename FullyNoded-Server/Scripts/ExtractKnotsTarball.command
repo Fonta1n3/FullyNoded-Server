@@ -9,11 +9,12 @@
 BINARY_NAME=$1
 VERSION=$2
 
-function installBitcoin() {
+function installBitcoinKnots() {
   cd ~/.fullynoded/BitcoinKnots
   echo "Checking sha256 checksums $BINARY_NAME against provided SHA256SUMS"
   ACTUAL_SHA=$(shasum -a 256 $BINARY_NAME | awk '{print $1}')
-  EXPECTED_SHA=$(grep $BINARY_NAME SHA256SUMS | awk '{print $1}')
+#  EXPECTED_SHA=$(grep $BINARY_NAME SHA256SUMS | awk '{print $1}')
+  EXPECTED_SHA=$(grep -w "$BINARY_NAME" SHA256SUMS | head -n 1 | awk '{print $1}')
 
   echo "See two hashes (they should match):"
   echo $ACTUAL_SHA
@@ -46,6 +47,6 @@ function unpackTarball() {
   fi
 }
 
-installBitcoin
+installBitcoinKnots
 
 

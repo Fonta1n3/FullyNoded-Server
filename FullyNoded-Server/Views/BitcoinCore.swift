@@ -348,7 +348,7 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
-        statusText = "Starting.."
+        statusText = "Starting..."
         ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
            updateTimer(interval: 3.0)
         }

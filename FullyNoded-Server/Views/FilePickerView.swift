@@ -36,7 +36,7 @@ struct FilePickerView: View {
             }
         }
         .sheet(isPresented: $isShowingPicker) {
-            FilePicker(completion: { path in
+            WalletPicker(completion: { path in
                 selectedPath = path
                 if let path = path {
                     onDirectorySelected(path) // Call the callback with the selected path

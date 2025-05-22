@@ -144,5 +144,9 @@ class Defaults {
     var chain: String {
         return ud.string(forKey: "chain") ?? "signet"
     }
+    
+    var knotsChain: String {
+        return ud.string(forKey: "knotsChain") ?? "signet"
+    }
 
 }

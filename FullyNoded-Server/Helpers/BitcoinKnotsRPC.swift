@@ -1,16 +1,15 @@
 //
-//  MakeRPCCall.swift
-//  StandUp
+//  BitcoinKnotsRPC.swift
+//  FullyNoded-Server
 //
-//  Created by Peter on 03/06/20.
-//  Copyright © 2020 Peter. All rights reserved.
+//  Created by Peter Denton on 5/21/25.
 //
 
 import Foundation
 
-class BitcoinRPC {
+class BitcoinKnotsRPC {
     
-    static let shared = BitcoinRPC()
+    static let shared = BitcoinKnotsRPC()
     lazy var session = URLSession(configuration: .default)
     
     func command(method: String, params: [String: Any], completion: @escaping ((result: Any?, error: String?)) -> Void) {
@@ -19,7 +18,7 @@ class BitcoinRPC {
         let nodeIp = "127.0.0.1:\(port)"
         let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
         
-        DataManager.retrieve(entityName: .rpcCreds) { [weak self] creds in
+        DataManager.retrieve(entityName: .knotsRpcCreds) { [weak self] creds in
             guard let self = self else { return }
             
             guard let creds = creds else {
@@ -109,3 +108,4 @@ class BitcoinRPC {
         }
     }
 }
+

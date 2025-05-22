@@ -107,7 +107,7 @@ struct BtcUtilsView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $isShowingPicker) {
-            FilePicker(completion: { path in
+            WalletPicker(completion: { path in
                 isShowingPicker = false
                 guard let path = path else {
                     showMessage(message: "No path returned from your selection.")
