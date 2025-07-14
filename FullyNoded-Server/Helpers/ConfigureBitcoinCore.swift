@@ -7,7 +7,7 @@
 
 import Foundation
 
-class CreateFNDirConfigureCore {
+class ConfigureCore {
     
     class func checkForExistingConf(updatedPruneValue: Int?, completion: @escaping (Bool) -> Void) {
         var existingPruneValue: Int?

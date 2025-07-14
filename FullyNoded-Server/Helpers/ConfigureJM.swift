@@ -41,7 +41,7 @@ enum ConfigureJM {
             return
         }
         
-        guard CreateFNDirConfigureCore.writeFile(cookie, "") else {
+        guard ConfigureCore.writeFile(cookie, "") else {
             completion((false, "Could not create cookie file."))
             return
         }

@@ -11,8 +11,8 @@ class ConfigureKnots {
     
     class func checkForExistingConf(updatedPruneValue: Int?, completion: @escaping (Bool) -> Void) {
         var existingPruneValue: Int?
-        BitcoinConf.getBitcoinConf { (conf, error) in
-            if let existingBitcoinConf = conf {
+        KnotsConf.getKnotsConf { (conf, error) in
+            if let existingKnotsConf = conf {
                 var createBdbExists = false
                 
                 func setNow() {
@@ -41,20 +41,20 @@ class ConfigureKnots {
                             return
                         }
                         
-                        var updatedBitcoinConf = existingBitcoinConf.joined(separator: "\n")
+                        var updatedKnotsConf = existingKnotsConf.joined(separator: "\n")
                         if !createBdbExists {
                             // For Join Market to work...
-                            updatedBitcoinConf = "deprecatedrpc=create_bdb" + "\n" + updatedBitcoinConf
+                            updatedKnotsConf = "deprecatedrpc=create_bdb" + "\n" + updatedKnotsConf
                             if let updatedPruneValue = updatedPruneValue, let existingPruneValue = existingPruneValue {
-                                updatedBitcoinConf = updatedBitcoinConf.replacingOccurrences(of: "prune=\(existingPruneValue)", with: "prune=\(updatedPruneValue)")
+                                updatedKnotsConf = updatedKnotsConf.replacingOccurrences(of: "prune=\(existingPruneValue)", with: "prune=\(updatedPruneValue)")
                             }
                         }
-                        updatedBitcoinConf = rpcauth + "\n" + updatedBitcoinConf
-                        setBitcoinConf(updatedBitcoinConf, completion: completion)
+                        updatedKnotsConf = rpcauth + "\n" + updatedKnotsConf
+                        setKnotsConf(updatedKnotsConf, completion: completion)
                     }
                 }
                 // check if deprecatedrpc=create_bdb exists, if not add it.
-                for (i, item) in existingBitcoinConf.enumerated() {
+                for (i, item) in existingKnotsConf.enumerated() {
                     let arr = item.split(separator: "=")
                     if arr.count > 1 {
                         if let value = Int(arr[1])  {
@@ -75,15 +75,15 @@ class ConfigureKnots {
                             }
                         }
                     }
-                    if i + 1 == existingBitcoinConf.count {
+                    if i + 1 == existingKnotsConf.count {
                         setNow()
                     }
                 }
                 
                 
             } else {
-                if let defaultConf = BitcoinConf.newBitcoinConf() {
-                    self.setBitcoinConf(defaultConf, completion: completion)
+                if let defaultConf = KnotsConf.new() {
+                    self.setKnotsConf(defaultConf, completion: completion)
                 } else {
                     #if DEBUG
                     print("Error fetching bitcoin.conf: \(error).")
@@ -112,8 +112,8 @@ class ConfigureKnots {
         return ((try? file.write(to: filePath)) != nil)
     }
     
-    class func setBitcoinConf(_ bitcoinConf: String, completion: @escaping (Bool) -> Void) {
-        if BitcoinConf.setBitcoinConf(bitcoinConf) {
+    class func setKnotsConf(_ knotsConf: String, completion: @escaping (Bool) -> Void) {
+        if KnotsConf.setKnotsConf(knotsConf) {
             setFullyNodedDirectory(completion: completion)
         } else {
             completion((false))
@@ -125,14 +125,14 @@ class ConfigureKnots {
     class func setFullyNodedDirectory(completion: @escaping (Bool) -> Void) {
         createDirectory(fnServerDir, completion: completion)
         if writeFile("\(fnServerDir)/fullynoded.log", "") {
-            createBitcoinCoreDirectory(completion: completion)
+            createBitcoinKnotsDirectory(completion: completion)
         } else {
             completion((false))
         }
     }
     
-    class func createBitcoinCoreDirectory(completion: @escaping (Bool) -> Void) {
-        let path = "\(fnServerDir)/BitcoinCore"
+    class func createBitcoinKnotsDirectory(completion: @escaping (Bool) -> Void) {
+        let path = "\(fnServerDir)/BitcoinKnots"
         do {
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: path) {
@@ -147,14 +147,14 @@ class ConfigureKnots {
     }
     
     class func updateRpcCreds(encryptedPass: Data, rpcUser: String, completion: @escaping (Bool) -> Void) {
-        DataManager.retrieve(entityName: .rpcCreds) { existingCreds in
+        DataManager.retrieve(entityName: .knotsRpcCreds) { existingCreds in
             if let _ = existingCreds {
-                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(updated)
                 }
             } else {
-                DataManager.saveEntity(entityName: .rpcCreds, dict: ["password": encryptedPass]) { saved in
+                DataManager.saveEntity(entityName: .knotsRpcCreds, dict: ["password": encryptedPass]) { saved in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(saved)
                 }

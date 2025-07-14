@@ -288,31 +288,7 @@ struct TaggedReleasesBitcoinKnotsView: View {
         let downloader = FileDownloader()
         let directoryPath = Defaults.shared.fnDataDir + "/BitcoinKnots"
 
-        downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: macOsUrl) { success, message in
-            if success {
-                downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: sha256sumsUrl) { success, message in
-                    if success {
-                        downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: sha256sumsSigUrl) { success, message in
-                            if success {
-                                // checkSigs and hash
-                                // configureKnots
-                                // extract
-                                print("now we check sigs next")
-                                let filename = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-                                let tarballPath = directoryPath + "/" + filename
-                                extract(tarballPath: tarballPath, binaryName: filename, version: processedVersion)
-                            } else {
-                                print("Error: \(message)") // Error message if failed
-                            }
-                        }
-                    } else {
-                        print("Error: \(message)") // Error message if failed
-                    }
-                }
-            } else {
-                print("Error: \(message)") // Error message if failed
-            }
-        }
+        
         
         
         
@@ -322,16 +298,43 @@ struct TaggedReleasesBitcoinKnotsView: View {
 //        macOSUrl = "\(clearnet)/bin/bitcoin-Knots-\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
 //        description = "Downloading Bitcoin Knots tarball from \(macOSUrl)"
 //        
-//        CreateFNDirConfigureKnots.checkForExistingConf(updatedPruneValue: newPruneAmount) { startDownload in
-//            print("startDownload")
-//            if startDownload {
-//                isAnimating = true
+        ConfigureKnots.checkForExistingConf(updatedPruneValue: newPruneAmount) { startDownload in
+            print("startDownload")
+            if startDownload {
+                //isAnimating = true
 //                downloadTask(url: URL(string: macOSUrl)!) { data in
 //                    guard writeData(data: data, filePath: "\(fnServerPath)/BitcoinKnots/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz") else { return }
 //                    downloadSHA256SUMS(processedVersion: processedVersion, arch: arch)
 //                }
-//            }
-//        }
+                
+                
+                downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: macOsUrl) { success, message in
+                    if success {
+                        downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: sha256sumsUrl) { success, message in
+                            if success {
+                                downloader.downloadAndSaveFile(toDirectory: directoryPath, fromURL: sha256sumsSigUrl) { success, message in
+                                    if success {
+                                        // checkSigs and hash
+                                        // configureKnots
+                                        // extract
+                                        print("now we check sigs next")
+                                        let filename = "bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
+                                        let tarballPath = directoryPath + "/" + filename
+                                        extract(tarballPath: tarballPath, binaryName: filename, version: processedVersion)
+                                    } else {
+                                        print("Error: \(message)") // Error message if failed
+                                    }
+                                }
+                            } else {
+                                print("Error: \(message)") // Error message if failed
+                            }
+                        }
+                    } else {
+                        print("Error: \(message)") // Error message if failed
+                    }
+                }
+            }
+        }
     }
     
     private func extract(tarballPath: String, binaryName: String, version: String) {

@@ -21,7 +21,7 @@ struct BitcoinKnots: View {
     @State private var selectedChain = UserDefaults.standard.string(forKey: "knotsChain") ?? "main"
     @State private var env: [String: String] = [:]
     @State private var blockchainInfo: BlockchainInfo? = nil
-    @State private var timerForBitcoinStatus = Timer.publish(every: 15.0, on: .main, in: .common).autoconnect()
+    @State private var timerForKnotsStatus = Timer.publish(every: 15.0, on: .main, in: .common).autoconnect()
     private var chains = ["main", "test", "signet", "regtest"]
     
     
@@ -50,7 +50,7 @@ struct BitcoinKnots: View {
                 }
                 .padding([.trailing])
                 Button {
-                    isBitcoinCoreRunning()
+                    isKnotsRunning()
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -68,7 +68,7 @@ struct BitcoinKnots: View {
                 .padding([.leading])
                 .onChange(of: selectedChain) {
                     updateChain(chain: selectedChain)
-                    isBitcoinCoreRunning()
+                    isKnotsRunning()
                 }
                 .frame(width: 180)
                 
@@ -109,13 +109,13 @@ struct BitcoinKnots: View {
                 }
                 if !isRunning, !isAnimating {
                     Button {
-                        startBitcoinCore()
+                        startKnots()
                     } label: {
                         Text("Start")
                     }
                 } else if !isAnimating {
                     Button {
-                        stopBitcoinCore()
+                        stopKnots()
                     } label: {
                         Text("Stop")
                     }
@@ -158,8 +158,8 @@ struct BitcoinKnots: View {
                 }
                 
                 EmptyView()
-                    .onReceive(timerForBitcoinStatus) { _ in
-                        isBitcoinCoreRunning()
+                    .onReceive(timerForKnotsStatus) { _ in
+                        isKnotsRunning()
                     }
             }
             .padding([.leading, .bottom])
@@ -168,9 +168,9 @@ struct BitcoinKnots: View {
             if newPhase == .active {
                 updateTimer(interval: 15.0)
             } else if newPhase == .inactive {
-                timerForBitcoinStatus.upstream.connect().cancel()
+                timerForKnotsStatus.upstream.connect().cancel()
             } else if newPhase == .background {
-                timerForBitcoinStatus.upstream.connect().cancel()
+                timerForKnotsStatus.upstream.connect().cancel()
             }
         }
         .padding([.top])
@@ -223,15 +223,15 @@ struct BitcoinKnots: View {
         selectedChain = UserDefaults.standard.string(forKey: "knotsChain") ?? "main"
         DataManager.retrieve(entityName: .bitcoinKnotsEnv) { env in
             guard let env = env else { return }
-            let envValues = BitcoinEnvValues(dictionary: env)
+            let envValues = BitcoinKnotsEnvValues(dictionary: env)
             self.env = [
                 "BINARY_NAME": envValues.binaryName,
                 "VERSION": envValues.version,
                 "PREFIX": envValues.prefix,
                 "DATADIR": Defaults.shared.bitcoinKnotsDataDir,
-                "knotsChain": envValues.chain
+                "CHAIN": envValues.chain
             ]
-            isBitcoinCoreRunning()
+            isKnotsRunning()
         }
     }
     
@@ -253,36 +253,37 @@ struct BitcoinKnots: View {
                 showMessage(message: "There was an issue updating your network...")
                 return
             }
-            isBitcoinCoreRunning()
-            showBitcoinLog()
+            isKnotsRunning()
+            showKnotsLog()
         }
     }
     
     
     
     private func updateTimer(interval: Double) {
-        timerForBitcoinStatus.upstream.connect().cancel()
-        timerForBitcoinStatus = Timer.publish(every: interval, on: .main, in: .common).autoconnect()
+        timerForKnotsStatus.upstream.connect().cancel()
+        timerForKnotsStatus = Timer.publish(every: interval, on: .main, in: .common).autoconnect()
     }
     
-    private func startBitcoinCore() {
+    private func startKnots() {
+        print("startKnots")
         isAnimating = true
         statusText = "Starting.."
-        ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+        ScriptUtil.runScript(script: .startKnots, env: env, args: nil) { (output, rawData, errorMessage) in
            updateTimer(interval: 3.0)
         }
     }
     
-    private func parseDidBitcoinStart(result: String) {
+    private func parseDidKnotsStart(result: String) {
         if !result.contains("Stopped") {
-            isBitcoinCoreRunning()
+            isKnotsRunning()
         }
     }
     
-    private func stopBitcoinCore() {
+    private func stopKnots() {
         isAnimating = true
         statusText = "Stopping..."
-        BitcoinRPC.shared.command(method: "stop", params: [:]) { (result, error) in
+        BitcoinKnotsRPC.shared.command(method: "stop", params: [:]) { (result, error) in
             updateTimer(interval: 3.0)
             
             guard let result = result as? String else {
@@ -291,23 +292,23 @@ struct BitcoinKnots: View {
                 return
             }
             
-            self.showBitcoinLog()
-            self.stopBitcoinParse(result: result)
+            self.showKnotsLog()
+            self.stopKnotsParse(result: result)
         }
     }
     
-    private func stopBitcoinParse(result: String) {
+    private func stopKnotsParse(result: String) {
         if result.contains("Shutdown: done") {
             isRunning = false
             isAnimating = false
             blockchainInfo = nil
-            timerForBitcoinStatus.upstream.connect().cancel()
+            timerForKnotsStatus.upstream.connect().cancel()
         } else {
             isRunning = true
         }
     }
     
-    private func showBitcoinLog() {
+    private func showKnotsLog() {
         guard let debugPath = debugLogPath() else { return }
         
         let path = URL(fileURLWithPath: debugPath)
@@ -330,28 +331,29 @@ struct BitcoinKnots: View {
     }
     
     private func debugLogPath() -> String? {
-        let chain = Defaults.shared.chain
+        let chain = Defaults.shared.knotsChain
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/signet/debug.log"
         default:
             break
         }
         return debugLogPath
     }
     
-    private func isBitcoinCoreRunning() {
+    private func isKnotsRunning() {
         isAnimating = true
         statusText = "Refreshing..."
-        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
-            showBitcoinLog()
+        
+        BitcoinKnotsRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+            showKnotsLog()
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {
                     handleRPCError(error: error)
@@ -391,8 +393,8 @@ struct BitcoinKnots: View {
         } else {
             isAnimating = false
             isRunning = false
-            showBitcoinLog()
-            timerForBitcoinStatus.upstream.connect().cancel()
+            showKnotsLog()
+            timerForKnotsStatus.upstream.connect().cancel()
         }
     }
     
@@ -403,11 +405,11 @@ struct BitcoinKnots: View {
         
     func parseScriptResult(script: SCRIPT, result: String) {
         switch script {
-        case .startBitcoin:
-            showBitcoinLog()
+        case .startKnots:
+            showKnotsLog()
             
-        case .didBitcoindStart:
-            parseDidBitcoinStart(result: result)
+        case .didKnotsStart:
+            parseDidKnotsStart(result: result)
             
         default:
             break

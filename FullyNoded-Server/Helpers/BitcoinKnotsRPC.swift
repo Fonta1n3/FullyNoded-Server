@@ -41,7 +41,7 @@ class BitcoinKnotsRPC {
                 return
             }
             
-            var stringUrl = "http://\(user):\(rpcPassword)@\(nodeIp)"
+            let stringUrl = "http://\(user):\(rpcPassword)@\(nodeIp)"
 //            if method == "rescanblockchain" {
 //                stringUrl += "/wallet/jm_wallet"
 //            }
