@@ -99,6 +99,7 @@
 		599E9C9A2DDECBA300BFA551 /* BitcoinKnotsRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */; };
 		599E9C9C2DDECED100BFA551 /* ConfigureKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */; };
 		599E9C9E2DDED1C100BFA551 /* KnotsConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */; };
+		599E9CA02DE774D700BFA551 /* KnotsUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */; };
 		59A2E18D2D6E36F800F0C194 /* CloneJMMaster.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */; };
 		59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */ = {isa = PBXBuildFile; fileRef = 59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */; };
 		59A2E1912D6EB25900F0C194 /* BlockchainInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59A2E1902D6EB25900F0C194 /* BlockchainInfoView.swift */; };
@@ -209,6 +210,7 @@
 		599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnotsRPC.swift; sourceTree = "<group>"; };
 		599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureKnots.swift; sourceTree = "<group>"; };
 		599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsConf.swift; sourceTree = "<group>"; };
+		599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsUtilsView.swift; sourceTree = "<group>"; };
 		59A2E18C2D6E36F800F0C194 /* CloneJMMaster.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CloneJMMaster.command; sourceTree = "<group>"; };
 		59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMCloner.command; sourceTree = "<group>"; };
 		59A2E1902D6EB25900F0C194 /* BlockchainInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainInfoView.swift; sourceTree = "<group>"; };
@@ -257,6 +259,7 @@
 				59A2E1902D6EB25900F0C194 /* BlockchainInfoView.swift */,
 				595B51932DC9416E002FD7E5 /* FilePickerView.swift */,
 				595B51972DD280DD002FD7E5 /* JMSessionView.swift */,
+				599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -642,6 +645,7 @@
 				0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
+				599E9CA02DE774D700BFA551 /* KnotsUtilsView.swift in Sources */,
 				0AD7BE1B2CBD921100428D02 /* Commands.swift in Sources */,
 				0A9822E32CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift in Sources */,
 				0AD7BE172CBD8DA000428D02 /* JoinMarket.swift in Sources */,

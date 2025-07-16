@@ -28,6 +28,14 @@ class KnotsConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
+        [test]
+        rpcport=18662
+        [main]
+        rpcport=8662
+        [signet]
+        rpcport=38662
+        [regtest]
+        rpcport=18663
         """
     }
     
@@ -73,6 +81,7 @@ class KnotsConf {
     class func setKnotsConf(_ bitcoinConf: String) -> Bool {
         createDirectory(Defaults.shared.bitcoinKnotsDataDir)
         
+        print("Defaults.shared.bitcoinKnotsDataDir: \(Defaults.shared.bitcoinKnotsDataDir)")
         return writeFile("\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf", bitcoinConf)
     }
     

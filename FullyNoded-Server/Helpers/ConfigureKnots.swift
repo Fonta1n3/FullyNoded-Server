@@ -40,6 +40,9 @@ class ConfigureKnots {
                             completion(false)
                             return
                         }
+                        if UserDefaults.standard.object(forKey: "knotsPort") == nil {
+                            UserDefaults.standard.set("8662", forKey: "knotsPort")
+                        }
                         
                         var updatedKnotsConf = existingKnotsConf.joined(separator: "\n")
                         if !createBdbExists {

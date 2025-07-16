@@ -1,13 +1,13 @@
 //
-//  BtcUtilsView.swift
+//  KnotsUtilsView.swift
 //  FullyNoded-Server
 //
-//  Created by Peter Denton on 1/7/25.
+//  Created by Peter Denton on 5/28/25.
 //
 
 import SwiftUI
 
-struct BtcUtilsView: View {
+struct KnotsUtilsView: View {
     @State private var promptToSelectWallet = false
     @State private var promptToDeleteWallet = false
     @State private var isShowingPicker = false
@@ -35,7 +35,7 @@ struct BtcUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -82,14 +82,14 @@ struct BtcUtilsView: View {
                 .padding([.leading, .trailing])
         )
         .onAppear(perform: {
-            DataManager.retrieve(entityName: .bitcoinEnv) { env in
+            DataManager.retrieve(entityName: .bitcoinKnotsEnv) { env in
                 guard let env = env else { return }
                 let envValues = BitcoinEnvValues(dictionary: env)
                 self.env = [
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.bitcoinCoreDataDir,
+                    "DATADIR": Defaults.shared.bitcoinKnotsDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -149,7 +149,7 @@ struct BtcUtilsView: View {
     
     private var defaultPath: String {
         let chain = Defaults.shared.chain
-        let root = Defaults.shared.bitcoinCoreDataDir
+        let root = Defaults.shared.bitcoinKnotsDataDir
         var url = root
         if chain != "main" {
             url += "/\(chain)/wallets"
@@ -211,7 +211,7 @@ struct BtcUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinCoreDataDir
+        let dataDir = Defaults.shared.bitcoinKnotsDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -288,11 +288,12 @@ struct BtcUtilsView: View {
             return
         }
         
-        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
             guard updated else {
-                showMessage(message: "BitcoinRPCCreds update failed")
+                showMessage(message: "BitcoinKnotsRPCCreds update failed")
                 return
             }
+            
             showMessage(message: "Password updated, you'll need to restart your node now.")
 //            ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
 //                guard errorMessage == nil else {
@@ -409,8 +410,4 @@ struct BtcUtilsView: View {
             }
         }
     }
-}
-
-#Preview {
-    BtcUtilsView()
 }

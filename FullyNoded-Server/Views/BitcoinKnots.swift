@@ -44,7 +44,7 @@ struct BitcoinKnots: View {
                 }
                 .padding([.trailing])
                 Button {
-                    openWindow(id: "Utilities")
+                    openWindow(id: "Utilities-Knots")
                 } label: {
                     Image(systemName: "wrench.and.screwdriver")
                 }
@@ -236,19 +236,19 @@ struct BitcoinKnots: View {
     }
     
     private func updateChain(chain: String) {
-        var port = "8332"
+        var port = "8662"
         switch chain {
-        case "signet": port = "38332"
-        case "regtest": port = "18443"
-        case "test": port = "18332"
-        default: port = "8332"
+        case "signet": port = "38662"
+        case "regtest": port = "18663"
+        case "test": port = "18662"
+        default: port = "8662"
         }
         UserDefaults.standard.setValue(port, forKey: "knotsPort")
         UserDefaults.standard.setValue(chain.lowercased(), forKey: "knotsChain")
-        self.env["knotsChain"] = chain
+        self.env["CHAIN"] = chain
         self.blockchainInfo = nil
         self.logOutput = ""
-        DataManager.update(keyToUpdate: "knotsChain", newValue: chain, entity: .bitcoinEnv) { updated in
+        DataManager.update(keyToUpdate: "chain", newValue: chain, entity: .bitcoinKnotsEnv) { updated in
             guard updated else {
                 showMessage(message: "There was an issue updating your network...")
                 return

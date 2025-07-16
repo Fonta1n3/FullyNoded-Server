@@ -37,6 +37,9 @@ struct FullyNoded_ServerApp: App {
         Window("Utilities", id: "Utilities") {
             BtcUtilsView()
         }
+        Window("Utilities", id: "Utilities-Knots") {
+            KnotsUtilsView()
+        }
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
         }

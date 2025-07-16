@@ -13,8 +13,7 @@ class BitcoinKnotsRPC {
     lazy var session = URLSession(configuration: .default)
     
     func command(method: String, params: [String: Any], completion: @escaping ((result: Any?, error: String?)) -> Void) {
-        let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
-        
+        let port = UserDefaults.standard.string(forKey: "knotsPort") ?? "8662"
         let nodeIp = "127.0.0.1:\(port)"
         let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
         
