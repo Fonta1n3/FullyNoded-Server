@@ -38,7 +38,7 @@ struct BitcoinKnots: View {
                 }
                 Spacer()
                 Button {
-                    openWindow(id: "QuickConnect")
+                    openWindow(id: "KnotsQuickConnect")
                 } label: {
                     Image(systemName: "qrcode")
                 }
@@ -266,9 +266,8 @@ struct BitcoinKnots: View {
     }
     
     private func startKnots() {
-        print("startKnots")
         isAnimating = true
-        statusText = "Starting.."
+        statusText = "Starting..."
         ScriptUtil.runScript(script: .startKnots, env: env, args: nil) { (output, rawData, errorMessage) in
            updateTimer(interval: 3.0)
         }

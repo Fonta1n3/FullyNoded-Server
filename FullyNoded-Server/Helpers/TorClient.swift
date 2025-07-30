@@ -191,9 +191,15 @@ class TorClient: NSObject, URLSessionDelegate {
         let btcTestDir = "\(torPath())/host/bitcoin/rpc/test/"
         let btcRegtestDir = "\(torPath())/host/bitcoin/rpc/regtest/"
         let btcSignetDir = "\(torPath())/host/bitcoin/rpc/signet/"
+        
+        let knotsMainDir = "\(torPath())/host/knots/rpc/main/"
+        let knotsTestDir = "\(torPath())/host/knots/rpc/test/"
+        let knotsRegtestDir = "\(torPath())/host/knots/rpc/regtest/"
+        let knotsSignetDir = "\(torPath())/host/knots/rpc/signet/"
+        
         let clnDir = "\(torPath())/host/cln/rpc/"
         
-        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir, clnDir]
+        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir, knotsMainDir, knotsTestDir, knotsRegtestDir, knotsSignetDir, clnDir]
         for hsDir in hsDirs {
             do {
                 try FileManager.default.createDirectory(atPath: hsDir,
@@ -207,13 +213,20 @@ class TorClient: NSObject, URLSessionDelegate {
     
     func hostnames() -> [String]? {
         let jmHost = "\(torPath())/host/joinmarket/hostname"
+        
         let btcMain = "\(torPath())/host/bitcoin/rpc/main/hostname"
         let btcTest = "\(torPath())/host/bitcoin/rpc/test/hostname"
         let btcRegtest = "\(torPath())/host/bitcoin/rpc/regtest/hostname"
         let btcSignet = "\(torPath())/host/bitcoin/rpc/signet/hostname"
+        
+        let knotsMain = "\(torPath())/host/knots/rpc/main/hostname"
+        let knotsTest = "\(torPath())/host/knots/rpc/test/hostname"
+        let knotsRegtest = "\(torPath())/host/knots/rpc/regtest/hostname"
+        let knotsSignet = "\(torPath())/host/knots/rpc/signet/hostname"
+        
         let clnDir = "\(torPath())/host/cln/rpc/hostname"
         
-        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest, clnDir]
+        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest, knotsMain, knotsTest, knotsSignet, knotsRegtest, clnDir]
         var hostnames: [String] = []
         
         for host in hosts {

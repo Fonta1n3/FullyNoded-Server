@@ -148,7 +148,7 @@ struct KnotsUtilsView: View {
     }
     
     private var defaultPath: String {
-        let chain = Defaults.shared.chain
+        let chain = Defaults.shared.knotsChain
         let root = Defaults.shared.bitcoinKnotsDataDir
         var url = root
         if chain != "main" {
@@ -367,13 +367,13 @@ struct KnotsUtilsView: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/signet/debug.log"
         default:
             break
         }
@@ -381,7 +381,7 @@ struct KnotsUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinCoreDataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinKnotsDataDir)
     }
     
     private func verify() {

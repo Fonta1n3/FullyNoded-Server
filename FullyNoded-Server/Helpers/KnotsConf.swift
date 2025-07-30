@@ -81,7 +81,6 @@ class KnotsConf {
     class func setKnotsConf(_ bitcoinConf: String) -> Bool {
         createDirectory(Defaults.shared.bitcoinKnotsDataDir)
         
-        print("Defaults.shared.bitcoinKnotsDataDir: \(Defaults.shared.bitcoinKnotsDataDir)")
         return writeFile("\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf", bitcoinConf)
     }
     

@@ -1,13 +1,13 @@
 //
-//  QuickConnectView.swift
+//  KnotsQuickConnectView.swift
 //  FullyNoded-Server
 //
-//  Created by Peter Denton on 1/8/25.
+//  Created by Peter Denton on 7/21/25.
 //
 
 import SwiftUI
 
-struct QuickConnectView: View {
+struct KnotsQuickConnectView: View {
     
     @State private var qrImage: NSImage? = nil
     @State private var rpcAuth = ""
@@ -111,7 +111,7 @@ struct QuickConnectView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinCoreDataDir
+        let dataDir = Defaults.shared.bitcoinKnotsDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -169,22 +169,22 @@ struct QuickConnectView: View {
             return
         }
         var onionHost = ""
-        let chain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        let chain = UserDefaults.standard.string(forKey: "knotsChain") ?? "main"
         
          switch chain {
          case "main":
-             onionHost = hiddenServices[1] + ":" + "8332"
+             onionHost = hiddenServices[5] + ":" + "86622"
          case "test":
-             onionHost = hiddenServices[2] + ":" + "18332"
+             onionHost = hiddenServices[6] + ":" + "18662"
          case "signet":
-             onionHost = hiddenServices[3] + ":" + "38332"
+             onionHost = hiddenServices[7] + ":" + "38662"
          case "regtest":
-             onionHost = hiddenServices[3] + ":" + "18443"
+             onionHost = hiddenServices[8] + ":" + "18663"
          default:
              break
          }
         
-        DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
+        DataManager.retrieve(entityName: .knotsRpcCreds) { rpcCred in
             guard let _ = rpcCred else {
                 showMessage(message: "No rpc credentials saved.")
                 return
@@ -193,7 +193,7 @@ struct QuickConnectView: View {
             let url = "http://xxx:xxx@\(onionHost)"
             qrImage = url.qrQode
             
-            let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
+            let port = UserDefaults.standard.object(forKey: "knotsPort") as? String ?? "8662"
             self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
             self.fnBcoreUrl = "fnbtccore://xxx:xxx@localhost:\(port)"
@@ -202,5 +202,6 @@ struct QuickConnectView: View {
 }
 
 #Preview {
-    QuickConnectView()
+    KnotsQuickConnectView()
 }
+

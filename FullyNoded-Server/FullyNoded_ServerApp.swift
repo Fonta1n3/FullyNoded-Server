@@ -43,6 +43,9 @@ struct FullyNoded_ServerApp: App {
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
         }
+        Window("KnotsQuickConnect", id: "KnotsQuickConnect") {
+            KnotsQuickConnectView()
+        }
         Window("Blockchain Info", id: "BlockchainInfo") {
             if let blockchainInfo = blockchainInfo {
                 BlockchainInfoView(blockchainInfo: blockchainInfo)

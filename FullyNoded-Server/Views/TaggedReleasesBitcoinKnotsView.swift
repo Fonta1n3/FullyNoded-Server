@@ -215,7 +215,7 @@ struct TaggedReleasesBitcoinKnotsView: View {
             guard response == .OK else { return }
             let pickedFolder = folderPicker.urls[0].path().replacingOccurrences(of: "%20", with: " ").dropLast()
             
-                UserDefaults.standard.setValue("\(pickedFolder)", forKey: "dataDir")
+                UserDefaults.standard.setValue("\(pickedFolder)", forKey: "knotsDataDir")
                 self.bitcoinKnotsDataDir = "\(pickedFolder)"
             
         }

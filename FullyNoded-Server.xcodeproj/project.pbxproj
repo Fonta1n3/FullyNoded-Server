@@ -37,6 +37,7 @@
 		0A6787592D36E119000AB105 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6787582D36E119000AB105 /* Settings.swift */; };
 		0A67875B2D380D7B000AB105 /* LatestBtcKnotsRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */; };
 		0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */; };
+		0A7DFAC92E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */; };
 		0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E02CA4263E008DB52E /* GithubReleases.swift */; };
 		0A9822E32CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */; };
 		0AA43FD02CCE1B3D0049D4AD /* BlockchainInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */; };
@@ -145,6 +146,7 @@
 		0A6787582D36E119000AB105 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcKnotsRelease.swift; sourceTree = "<group>"; };
 		0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ExtractKnotsTarball.command; sourceTree = "<group>"; };
+		0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsQuickConnectView.swift; sourceTree = "<group>"; };
 		0A9822E02CA4263E008DB52E /* GithubReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubReleases.swift; sourceTree = "<group>"; };
 		0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinCoreView.swift; sourceTree = "<group>"; };
 		0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainInfo.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 				595B51932DC9416E002FD7E5 /* FilePickerView.swift */,
 				595B51972DD280DD002FD7E5 /* JMSessionView.swift */,
 				599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */,
+				0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -613,6 +616,7 @@
 				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				599E9C9C2DDECED100BFA551 /* ConfigureKnots.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
+				0A7DFAC92E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift in Sources */,
 				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
 				59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */,
 				595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */,
