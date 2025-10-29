@@ -179,7 +179,7 @@ struct QuickConnectView: View {
          case "signet":
              onionHost = hiddenServices[3] + ":" + "38332"
          case "regtest":
-             onionHost = hiddenServices[3] + ":" + "18443"
+             onionHost = hiddenServices[4] + ":" + "18443"
          default:
              break
          }
