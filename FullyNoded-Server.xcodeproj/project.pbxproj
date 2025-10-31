@@ -37,6 +37,8 @@
 		0A6787592D36E119000AB105 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6787582D36E119000AB105 /* Settings.swift */; };
 		0A67875B2D380D7B000AB105 /* LatestBtcKnotsRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */; };
 		0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */; };
+		0A6C58532EB47EE2000FB22E /* MineBlocks.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A6C58522EB47EE2000FB22E /* MineBlocks.command */; };
+		0A6C58552EB49770000FB22E /* DropDownAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6C58542EB49770000FB22E /* DropDownAlert.swift */; };
 		0A7DFAC92E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */; };
 		0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E02CA4263E008DB52E /* GithubReleases.swift */; };
 		0A9822E32CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */; };
@@ -146,6 +148,8 @@
 		0A6787582D36E119000AB105 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcKnotsRelease.swift; sourceTree = "<group>"; };
 		0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ExtractKnotsTarball.command; sourceTree = "<group>"; };
+		0A6C58522EB47EE2000FB22E /* MineBlocks.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = MineBlocks.command; sourceTree = "<group>"; };
+		0A6C58542EB49770000FB22E /* DropDownAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownAlert.swift; sourceTree = "<group>"; };
 		0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsQuickConnectView.swift; sourceTree = "<group>"; };
 		0A9822E02CA4263E008DB52E /* GithubReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubReleases.swift; sourceTree = "<group>"; };
 		0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinCoreView.swift; sourceTree = "<group>"; };
@@ -263,6 +267,7 @@
 				595B51972DD280DD002FD7E5 /* JMSessionView.swift */,
 				599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */,
 				0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */,
+				0A6C58542EB49770000FB22E /* DropDownAlert.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -414,6 +419,7 @@
 				59A2E18E2D6E38AB00F0C194 /* LaunchJMCloner.command */,
 				595B518F2DC936C0002FD7E5 /* DeleteWallet.command */,
 				59028E182E259CC2005BB904 /* StartKnots.command */,
+				0A6C58522EB47EE2000FB22E /* MineBlocks.command */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -537,6 +543,7 @@
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
 				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,
 				0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */,
+				0A6C58532EB47EE2000FB22E /* MineBlocks.command in Resources */,
 				0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */,
 				593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
@@ -621,6 +628,7 @@
 				59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */,
 				595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */,
 				590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */,
+				0A6C58552EB49770000FB22E /* DropDownAlert.swift in Sources */,
 				0AD7BE132CBD6F1000428D02 /* Assets.swift in Sources */,
 				595B51982DD280DD002FD7E5 /* JMSessionView.swift in Sources */,
 				0A573E252CB435F200899F84 /* GetInfo.swift in Sources */,
@@ -792,7 +800,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.2.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.2.1 Beta";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -807,7 +816,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -835,7 +844,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "FN Server - v0.2.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.2.1 Beta";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -850,7 +860,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

@@ -17,9 +17,14 @@ struct BtcUtilsView: View {
     @State private var env: [String: String] = [:]
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
+    @State private var promptToMineRegtestBlocks = false
+    @State private var showDropdownAlert = false
+    @State private var selectedWallet = ""
+    @State private var wallets: [String] = []
+    @State private var sheetID = UUID()
+    @State private var isLoading = false
     
-    //var refresh: () -> Void
-    
+        
     var body: some View {
         Spacer()
         VStack() {
@@ -68,6 +73,21 @@ struct BtcUtilsView: View {
                 } label: {
                     Image(systemName: "exclamationmark.triangle")
                     Text("Delete a Wallet")
+                }
+                if env["CHAIN"] == "regtest" {
+                    Button {
+                        promptToMineRegtestBlocks = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .scaleEffect(0.5)
+                            }
+                            Text(isLoading ? "Mining..." : "Mine regtest blocks")
+                        }
+                    }
+                    .disabled(isLoading)
                 }
             }
             .padding([.leading, .trailing])
@@ -142,8 +162,27 @@ struct BtcUtilsView: View {
                 Button("Select Wallet Directory", action: { isShowingPicker = true })
                 Text("Once deleted the wallet is gone forever!")
             }
+            .alert("Start mining?", isPresented: $promptToMineRegtestBlocks) {
+                Button("Select a wallet to mine to.", action: { chooseWalletToMineTo() })
+            } message: {
+                Text("In order to test a wallet in regtest you need some bitcoins to send and receive, this makes it easy. 100 blocks will be mined in about 20 seconds. First you will need to select a wallet to mine to. 100 blocks are mined as it takes 100 confirmations before a coinbase utxo is spendable.")
+            }
             .alert(message, isPresented: $showError) {
                 Button("OK", role: .cancel) {}
+            }
+            .sheet(isPresented: $showDropdownAlert) {
+                DropdownAlert(
+                    isPresented: $showDropdownAlert,
+                    selection: $selectedWallet, title: "Select a wallet to mine to.",
+                    options: self.wallets,
+                    onConfirm: {
+                        mine(wallet: selectedWallet)
+                    }
+                )
+                .id(sheetID)
+            }
+            .onChange(of: wallets) {
+                sheetID = UUID()
             }
     }
     
@@ -168,6 +207,31 @@ struct BtcUtilsView: View {
             showMessage(message: "Wallet deleted successfully at \(walletToDeletePath)")
         } catch {
             showMessage(message: "Error deleting directory: \(error)")
+        }
+    }
+    
+    private func chooseWalletToMineTo() {
+        BitcoinRPC.shared.command(method: "listwallets", params: [:]) { (result, error) in
+            guard let result = result as? [String] else {
+                showMessage(message: error ?? "Can't cast bitcoin-cli result as [String].")
+                return
+            }
+            wallets = result
+            showDropdownAlert = true
+        }
+    }
+    
+    private func mine(wallet: String) {
+        isLoading = true
+        let mineEnv = ["RPCWALLET" : wallet, "PREFIX" : env["PREFIX"]!, "DATADIR" : env["DATADIR"]!]
+        ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
+            guard let output = output else {
+                isLoading = false
+                showMessage(message: errorMessage ?? "We did not get a response from your node...")
+                return
+            }
+            isLoading = false
+            showMessage(message: output)
         }
     }
     
@@ -411,6 +475,6 @@ struct BtcUtilsView: View {
     }
 }
 
-#Preview {
-    BtcUtilsView()
-}
+//#Preview {
+//    BtcUtilsView(selectedChain: $)
+//}
