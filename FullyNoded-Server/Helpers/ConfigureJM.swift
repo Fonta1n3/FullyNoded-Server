@@ -9,7 +9,7 @@ import Foundation
 
 enum ConfigureJM {
     
-    static func configureJm(completion: @escaping ((configured: Bool, error: String?)) -> Void) {
+    static func configureNetwork() {
         var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
         let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
         switch chain {
@@ -19,6 +19,12 @@ enum ConfigureJM {
         default:
             break
         }
+        updateConf(key: "network", value: chain)
+        updateConf(key: "rpc_port", value: port)
+    }
+    
+    static func configureJm(completion: @escaping ((configured: Bool, error: String?)) -> Void) {
+        ConfigureJM.configureNetwork()
         //updateConf(key: "tx_fees", value: "7000")//https://github.com/openoms/bitcoin-tutorials/blob/master/joinmarket/README.md
         let tempStringPath = "/Users/\(NSUserName())/.fullynoded/JoinMarket/.temp"
         let tempDirPath = URL(fileURLWithPath: tempStringPath)
@@ -35,7 +41,7 @@ enum ConfigureJM {
             return
         }
         
-        guard CreateFNDirConfigureCore.writeFile(cookie, "") else {
+        guard ConfigureCore.writeFile(cookie, "") else {
             completion((false, "Could not create cookie file."))
             return
         }
@@ -53,8 +59,7 @@ enum ConfigureJM {
             completion((false, error.localizedDescription))
         }
         
-        updateConf(key: "network", value: chain)
-        updateConf(key: "rpc_port", value: port)
+        
         updateConf(key: "rpc_wallet_file", value: "jm_wallet")
         updateConf(key: "tor_control_host", value: "/Users/\(NSUserName())/Library/Caches/tor/cp")
         updateConf(key: "rpc_cookie_file", value: cookie)

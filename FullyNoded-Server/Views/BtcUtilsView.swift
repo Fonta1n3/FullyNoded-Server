@@ -8,14 +8,23 @@
 import SwiftUI
 
 struct BtcUtilsView: View {
+    @State private var promptToSelectWallet = false
+    @State private var promptToDeleteWallet = false
+    @State private var isShowingPicker = false
+    @State private var walletToDeletePath: String?
     @State private var showError = false
     @State private var message = ""
     @State private var env: [String: String] = [:]
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
+    @State private var promptToMineRegtestBlocks = false
+    @State private var showDropdownAlert = false
+    @State private var selectedWallet = ""
+    @State private var wallets: [String] = []
+    @State private var sheetID = UUID()
+    @State private var isLoading = false
     
-    //var refresh: () -> Void
-    
+        
     var body: some View {
         Spacer()
         VStack() {
@@ -59,7 +68,27 @@ struct BtcUtilsView: View {
                         Text("Reindex")
                     }
                 }
-                
+                Button {
+                    promptToSelectWallet = true
+                } label: {
+                    Image(systemName: "exclamationmark.triangle")
+                    Text("Delete a Wallet")
+                }
+                if env["CHAIN"] == "regtest" {
+                    Button {
+                        promptToMineRegtestBlocks = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .scaleEffect(0.5)
+                            }
+                            Text(isLoading ? "Mining..." : "Mine regtest blocks")
+                        }
+                    }
+                    .disabled(isLoading)
+                }
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,8 +126,152 @@ struct BtcUtilsView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $isShowingPicker) {
+            WalletPicker(completion: { path in
+                isShowingPicker = false
+                guard let path = path else {
+                    showMessage(message: "No path returned from your selection.")
+                    return
+                }
+                // ensure it is in the correctdatadir
+                guard path.hasPrefix(defaultPath) && !path.hasSuffix("wallets") else {
+                    showMessage(message: "Looks like you are not attempting to delete a wallet directory or are attempting to delete more then one wallet, please be careful, double check you are selecting the correct directory and try again.")
+                    return
+                }
+                // check contents of directory for a .dat
+                guard ((try? hasFileWithExtension(in: path, fileExtension: "dat")) != nil) else {
+                    showMessage(message: "Unable to verify the selected directory conatins a .dat file, not a valid Bitcoin wallet directory.")
+                    return
+                }
+                
+                walletToDeletePath = path
+                promptToDeleteWallet = true
+                
+            }, defaultPath: defaultPath)
+        }
+        
         Spacer()
         Spacer()
+        
+            .alert("Delete \(walletToDeletePath ?? "")?\n\nAre you absolutely sure!?", isPresented: $promptToDeleteWallet) {
+                if let _ = walletToDeletePath {
+                    Button("Delete now", role: .destructive, action: deleteWallet)
+                }
+            }
+            .alert("Please select a wallet directory to delete.", isPresented: $promptToSelectWallet) {
+                Button("Select Wallet Directory", action: { isShowingPicker = true })
+                Text("Once deleted the wallet is gone forever!")
+            }
+            .alert("Start mining?", isPresented: $promptToMineRegtestBlocks) {
+                Button("Select a wallet to mine to.", action: { chooseWalletToMineTo() })
+            } message: {
+                Text("In order to test a wallet in regtest you need some bitcoins to send and receive, this makes it easy. 100 blocks will be mined in about 20 seconds. First you will need to select a wallet to mine to. 100 blocks are mined as it takes 100 confirmations before a coinbase utxo is spendable.")
+            }
+            .alert(message, isPresented: $showError) {
+                Button("OK", role: .cancel) {}
+            }
+            .sheet(isPresented: $showDropdownAlert) {
+                DropdownAlert(
+                    isPresented: $showDropdownAlert,
+                    selection: $selectedWallet, title: "Select a wallet to mine to.",
+                    options: self.wallets,
+                    onConfirm: {
+                        mine(wallet: selectedWallet)
+                    }
+                )
+                .id(sheetID)
+            }
+            .onChange(of: wallets) {
+                sheetID = UUID()
+            }
+    }
+    
+    private var defaultPath: String {
+        let chain = Defaults.shared.chain
+        let root = Defaults.shared.bitcoinCoreDataDir
+        var url = root
+        if chain != "main" {
+            url += "/\(chain)/wallets"
+        }
+        return url
+    }
+    
+    private func deleteWallet() {
+        guard let walletToDeletePath = walletToDeletePath else {
+            showMessage(message: "No path provided to delete...")
+            return
+        }
+        
+        do {
+            try FileManager.default.removeItem(atPath: walletToDeletePath)
+            showMessage(message: "Wallet deleted successfully at \(walletToDeletePath)")
+        } catch {
+            showMessage(message: "Error deleting directory: \(error)")
+        }
+    }
+    
+    private func chooseWalletToMineTo() {
+        BitcoinRPC.shared.command(method: "listwallets", params: [:]) { (result, error) in
+            guard let result = result as? [String] else {
+                showMessage(message: error ?? "Can't cast bitcoin-cli result as [String].")
+                return
+            }
+            wallets = result
+            showDropdownAlert = true
+        }
+    }
+    
+    private func mine(wallet: String) {
+        isLoading = true
+        let mineEnv = ["RPCWALLET" : wallet, "PREFIX" : env["PREFIX"]!, "DATADIR" : env["DATADIR"]!]
+        ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
+            guard let output = output else {
+                isLoading = false
+                showMessage(message: errorMessage ?? "We did not get a response from your node...")
+                return
+            }
+            isLoading = false
+            showMessage(message: output)
+        }
+    }
+    
+    /// Checks if a directory contains any file with a specific file extension.
+    ///
+    /// - Parameters:
+    ///   - directoryPath: The path to the directory (e.g., "~/Library/Application Support/Bitcoin/wallets/").
+    ///   - fileExtension: The file extension to check for (e.g., "dat") without the dot.
+    /// - Returns: `true` if at least one file with the extension exists, `false` otherwise.
+    /// - Throws: An error if the directory is invalid or inaccessible.
+    func hasFileWithExtension(in directoryPath: String, fileExtension: String) throws -> Bool {
+        let fileManager = FileManager.default
+        
+        // Expand tilde to full path (e.g., "~/Library" -> "/Users/username/Library")
+        let expandedPath = NSString(string: directoryPath).expandingTildeInPath
+        let directoryURL = URL(fileURLWithPath: expandedPath)
+        
+        // Check if the directory exists and is accessible
+        var isDir: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDir), isDir.boolValue else {
+            throw NSError(domain: "DirectoryError", code: -1, userInfo: [
+                NSLocalizedDescriptionKey: "Directory does not exist or is not accessible: \(expandedPath)"
+            ])
+        }
+        
+        // Get directory contents
+        let contents = try fileManager.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+        )
+        
+        // Check for any file with the specified extension
+        return contents.contains { url in
+            if let resourceValues = try? url.resourceValues(forKeys: [.isRegularFileKey]),
+               resourceValues.isRegularFile == true {
+                return url.pathExtension.lowercased() == fileExtension.lowercased()
+            }
+            return false
+        }
     }
     
     private func bitcoinConfPath() -> String {
@@ -171,7 +344,7 @@ struct BtcUtilsView: View {
         
         let passData = Data(newCreds.rpcPassword.utf8)
         
-        updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
+        //updateJMConf(key: "rpc_password", value: newCreds.rpcPassword)
         //updateCLNConfig(rpcpass: newCreds.rpcPassword)
         
         guard let encryptedPass = Crypto.encrypt(passData) else {
@@ -184,30 +357,31 @@ struct BtcUtilsView: View {
                 showMessage(message: "BitcoinRPCCreds update failed")
                 return
             }
-            ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
-                guard errorMessage == nil else {
-                    showMessage(message: errorMessage!)
-                    return
-                }
-                guard let output = output else {
-                    showMessage(message: "No output when killing Bitcoin Core, you can probably ignore this error. RPC credentials should be updated, ensure Bitcoin Core restarts for the changes to take place.")
-                    return
-                }
-                parseScriptResult(script: .killBitcoind, result: output)
-            }
+            showMessage(message: "Password updated, you'll need to restart your node now.")
+//            ScriptUtil.runScript(script: .killBitcoind, env: env, args: nil) { (output, rawData, errorMessage) in
+//                guard errorMessage == nil else {
+//                    showMessage(message: errorMessage!)
+//                    return
+//                }
+//                guard let output = output else {
+//                    showMessage(message: "No output when killing Bitcoin Core, you can probably ignore this error. RPC credentials should be updated, ensure Bitcoin Core restarts for the changes to take place.")
+//                    return
+//                }
+//                parseScriptResult(script: .killBitcoind, result: output)
+//            }
         }
     }
     
-    func parseScriptResult(script: SCRIPT, result: String) {
-        switch script {
-        case .killBitcoind:
-            if result.contains("Its dead") || result.contains("Does not exist") {
-                showMessage(message: "RPC Authentication refreshed, you need to start your node for the changes to take effect.")
-            }
-        default:
-            break
-        }
-    }
+//    func parseScriptResult(script: SCRIPT, result: String) {
+//        switch script {
+//        case .killBitcoind:
+//            if result.contains("Its dead") || result.contains("Does not exist") {
+//                showMessage(message: "RPC Authentication refreshed, you need to start your node for the changes to take effect.")
+//            }
+//        default:
+//            break
+//        }
+//    }
     
 //    private func updateCLNConfig(rpcpass: String) {
 //        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
@@ -221,17 +395,17 @@ struct BtcUtilsView: View {
 //        }
 //    }
     
-    private func updateJMConf(key: String, value: String) {
-        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard let conf = conf(stringPath: jmConfPath) else { return }
-        let arr = conf.split(separator: "\n")
-        for item in arr {
-            if item.hasPrefix("\(key) =") {
-                let newConf = conf.replacingOccurrences(of: item, with: key + " = " + value)
-                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
-            }
-        }
-    }
+//    private func updateJMConf(key: String, value: String) {
+//        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+//        guard let conf = conf(stringPath: jmConfPath) else { return }
+//        let arr = conf.split(separator: "\n")
+//        for item in arr {
+//            if item.hasPrefix("\(key) =") {
+//                let newConf = conf.replacingOccurrences(of: item, with: key + " = " + value)
+//                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+//            }
+//        }
+//    }
     
     private func writeBitcoinConf(newConf: String) -> Bool {
         return ((try? newConf.write(to: URL(fileURLWithPath: bitcoinConfPath()), atomically: false, encoding: .utf8)) != nil)
@@ -301,6 +475,6 @@ struct BtcUtilsView: View {
     }
 }
 
-#Preview {
-    BtcUtilsView()
-}
+//#Preview {
+//    BtcUtilsView(selectedChain: $)
+//}

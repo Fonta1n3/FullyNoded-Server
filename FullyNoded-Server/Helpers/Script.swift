@@ -8,6 +8,9 @@
 import Foundation
 
 public enum SCRIPT: String {
+    case didKnotsStart
+    case startKnots
+    case deleteWallet
     case launchJmCloner
     case cloneJmMaster
     case launchExtractKnots
@@ -51,9 +54,16 @@ public enum SCRIPT: String {
     //case isBitcoinOn
     //case deleteWallet
     case startBitcoin
+    case mineBlocks
     
     var stringValue:String {
         switch self {
+        case .mineBlocks:
+            return "MineBlocks"
+        case .startKnots:
+            return "StartKnots"
+        case .deleteWallet:
+            return "DeleteWallet"
         case .launchJmCloner:
             return "LaunchJMCloner"
         case .cloneJmMaster:
@@ -110,7 +120,8 @@ public enum SCRIPT: String {
             return "LaunchVerifier"
         case .launchInstaller:
             return "LaunchInstaller"
-        case .hasBitcoinShutdownCompleted, .isBitcoindRunning, .didBitcoindStart:
+        case .hasBitcoinShutdownCompleted, .isBitcoindRunning, .didBitcoindStart, .didKnotsStart:
+            // need to update this for knots and bitcoind incase running simultaneously
             return "IsProcessRunning"
         case .installHomebrew:
             return "LaunchBrewInstall"

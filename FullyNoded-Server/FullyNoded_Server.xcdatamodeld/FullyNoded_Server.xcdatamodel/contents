@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="23C71" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D60" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="BitcoinEnv" representedClassName="BitcoinEnv" syncable="YES" codeGenerationType="class">
         <attribute name="binaryName" optional="YES" attributeType="String"/>
         <attribute name="chain" optional="YES" attributeType="String"/>
         <attribute name="dataDir" optional="YES" attributeType="String"/>
         <attribute name="prefix" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="BitcoinKnotsEnv" representedClassName="BitcoinKnotsEnv" syncable="YES" codeGenerationType="class">
+        <attribute name="binaryName" optional="YES" attributeType="String"/>
+        <attribute name="chain" optional="YES" attributeType="String"/>
+        <attribute name="dataDir" optional="YES" attributeType="String"/>
+        <attribute name="prefix" optional="YES" attributeType="String"/>
+        <attribute name="version" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="BitcoinKnotsRPCCreds" representedClassName="BitcoinKnotsRPCCreds" syncable="YES" codeGenerationType="class">
+        <attribute name="password" optional="YES" attributeType="Binary"/>
     </entity>
     <entity name="BitcoinRPCCreds" representedClassName="BitcoinRPCCreds" syncable="YES" codeGenerationType="class">
         <attribute name="password" optional="YES" attributeType="Binary"/>

@@ -16,7 +16,6 @@ struct FullyNoded_ServerApp: App {
     @State private var isRunning = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var menuBarImageString: String = "server.rack"
     @State private var blockchainInfo: BlockchainInfo?
     
     var body: some Scene {
@@ -38,8 +37,14 @@ struct FullyNoded_ServerApp: App {
         Window("Utilities", id: "Utilities") {
             BtcUtilsView()
         }
+        Window("Utilities", id: "Utilities-Knots") {
+            KnotsUtilsView()
+        }
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
+        }
+        Window("KnotsQuickConnect", id: "KnotsQuickConnect") {
+            KnotsQuickConnectView()
         }
         Window("Blockchain Info", id: "BlockchainInfo") {
             if let blockchainInfo = blockchainInfo {
@@ -74,12 +79,7 @@ struct FullyNoded_ServerApp: App {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
-            if isRunning {
-                Image(systemName: "circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Image(systemName: "server.rack")
-            }
+            Image(systemName: "server.rack")
         }
     }
     
@@ -105,7 +105,6 @@ struct FullyNoded_ServerApp: App {
                 return
             }
             isRunning = true
-            menuBarImageString = "circle.fill"
         }
     }
 }

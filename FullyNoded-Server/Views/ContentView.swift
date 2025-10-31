@@ -19,6 +19,8 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
+    @State private var bitcoinKnotsInstalled = false
+    @State private var torVersion = "v0.4.8.19"
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -50,6 +52,7 @@ struct ContentView: View {
         "chain": Defaults.shared.chain
     ])
     
+    private let timerForBitcoinKnotsInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
@@ -80,14 +83,19 @@ struct ContentView: View {
                                         jmTaggedReleases: []
                                     )
                                 }
-//                            } else if service.name == "Bitcoin Knots" {
-//                                Home(
-//                                    showBitcoinCoreInstallButton: false,
-//                                    showBitcoinKnotsInstallButton: true,
-//                                    env: env,
-//                                    showJoinMarketInstallButton: false,
-//                                    jmTaggedReleases: []
-//                                )
+                            } else if service.name == "Bitcoin Knots" {
+                                if bitcoinKnotsInstalled {
+                                    BitcoinKnots()
+                                } else {
+                                    Home(
+                                        showBitcoinCoreInstallButton: false,
+                                        showBitcoinKnotsInstallButton: true,
+                                        env: env,
+                                        showJoinMarketInstallButton: false,
+                                        jmTaggedReleases: []
+                                    )
+                                }
+                                
                                 
 //                            } else if service.name == "Core Lightning" {
 //                                if isInstallingLightning {
@@ -133,7 +141,7 @@ struct ContentView: View {
                                 FNIcon()
                                 HStack() {
                                     if torProgress < 100.0 {
-                                        ProgressView("Tor v0.4.8.12 bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
+                                        ProgressView("Tor \(torVersion) bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
                                             .padding([.leading, .trailing])
                                             .frame(alignment: .topLeading)
                                     } else {
@@ -141,12 +149,12 @@ struct ContentView: View {
                                             Image(systemName: "circle.fill")
                                                 .foregroundStyle(.green)
                                                 .padding([.leading])
-                                            Text("Tor v0.4.8.12 running")
+                                            Text("Tor \(torVersion) running")
                                         } else {
                                             Image(systemName: "circle.fill")
                                                 .foregroundStyle(.orange)
                                                 .padding([.leading])
-                                            Text("Tor v0.4.8.12 stopped")
+                                            Text("Tor \(torVersion) stopped")
                                         }
                                     }
                                     Toggle("", isOn: $torRunning)
@@ -156,6 +164,9 @@ struct ContentView: View {
                                                 TorClient.sharedInstance.resign()
                                             } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
                                                 TorClient.sharedInstance.start(delegate: nil)
+                                            } else if torRunning {
+                                                TorClient.sharedInstance.resign()
+                                                torRunning = false
                                             }
                                         }
                                 }
@@ -192,9 +203,27 @@ struct ContentView: View {
                                     }
                                 }
                                 
-//                                if service.name == "Bitcoin Knots" {
-//                                   
-//                                }
+                                if service.name == "Bitcoin Knots" {
+                                    if bitcoinKnotsInstalled {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.gray)
+                                        EmptyView()
+                                            .onReceive(timerForBitcoinKnotsInstall) { _ in
+                                                DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
+                                                    guard let bitcoinKnotsEnv = bitcoinKnotsEnv else { return }
+                                                    let envValues = BitcoinKnotsEnvValues(dictionary: bitcoinKnotsEnv)
+                                                    let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinKnots/\(envValues.prefix)/bin/bitcoind"
+                                                    if FileManager.default.fileExists(atPath: tempPath) {
+                                                        bitcoinKnotsInstalled = true
+                                                        self.timerForBitcoinKnotsInstall.upstream.connect().cancel()
+                                                    }
+                                                }
+                                            }
+                                    }
+                                }
                                 
 //                                if service.name == "Core Lightning" {
 //                                    if lightningInstalled {
@@ -429,8 +458,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
-                    services = [bitcoinCore, joinMarket, tor, settings, help]
+                    services = [bitcoinCore, bitcoinKnots,/* coreLightning, */joinMarket, tor, settings, help]
                     checkForBitcoin()
                 }
                 
@@ -448,8 +476,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         
-            //services = [bitcoinCore, bitcoinKnots, coreLightning, joinMarket, tor, settings, help]
-            services = [bitcoinCore, joinMarket, tor, help]
+            services = [bitcoinCore, bitcoinKnots,/* coreLightning, */joinMarket, tor, settings, help]
             checkForBitcoin()
         }
     }

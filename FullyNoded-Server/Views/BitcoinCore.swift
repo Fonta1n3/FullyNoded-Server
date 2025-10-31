@@ -42,6 +42,7 @@ struct BitcoinCore: View {
                     openWindow(id: "QuickConnect")
                 } label: {
                     Image(systemName: "qrcode")
+                    Text("Quick Connect")
                 }
                 .padding([.trailing])
                 Button {
@@ -61,12 +62,15 @@ struct BitcoinCore: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
+                Image(systemName: "network")
+                    .padding(.leading)
+                
                 Picker("Blockchain", selection: $selectedChain) {
                     ForEach(chains, id: \.self) {
                         Text($0)
                     }
                 }
-                .padding([.leading])
+                //.padding([.leading])
                 .onChange(of: selectedChain) {
                     updateChain(chain: selectedChain)
                     isBitcoinCoreRunning()
@@ -344,7 +348,7 @@ struct BitcoinCore: View {
     
     private func startBitcoinCore() {
         isAnimating = true
-        statusText = "Starting.."
+        statusText = "Starting..."
         ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
            updateTimer(interval: 3.0)
         }

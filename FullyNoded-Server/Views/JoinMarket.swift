@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct JoinMarket: View {
-    
     @Environment(\.openWindow) var openWindow
     @Environment(\.scenePhase) var scenePhase
+    @State private var sessionInfo: JMSession?
     @State private var statusText = "Refreshing..."
     @State private var version = UserDefaults.standard.string(forKey: "tagName") ?? ""
     @State private var startCheckingIfRunning = false
@@ -44,6 +44,7 @@ struct JoinMarket: View {
                     openWindow(id: "QuickConnect-JM")
                 } label: {
                     Image(systemName: "qrcode")
+                    Text("Quick Connect")
                 }
                 .padding([.trailing])
                 Button {
@@ -63,7 +64,6 @@ struct JoinMarket: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack() {
-                
                 Label("Blockchain", systemImage: "network")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(width: 90)
@@ -131,6 +131,16 @@ struct JoinMarket: View {
             }
             .padding([.leading])
             .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let session = sessionInfo {
+                HStack() {
+                    StatusView(isActive: session.session, statusText: "session", statusImage: "wifi.circle")
+                    StatusView(isActive: session.coinjoin_in_process, statusText: "coinjoin", statusImage: "arrow.trianglehead.2.clockwise")
+                    StatusView(isActive: session.maker_running, statusText: "maker", statusImage: "bitcoinsign.circle")
+                }
+                .padding([.trailing])
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active {
@@ -259,12 +269,13 @@ struct JoinMarket: View {
                 }
                 return
             }
-            guard let _ = response as? [String:Any] else {
+            guard let response = response as? [String:Any] else {
                 isRunning = false
                 return
             }
             isRunning = true
             updateTimer(interval: 15.0)
+            sessionInfo = JMSession(response)
         }
     }
     
@@ -272,6 +283,8 @@ struct JoinMarket: View {
         showError = true
         self.message = message
     }
+    
+    
 }
 
 #Preview {

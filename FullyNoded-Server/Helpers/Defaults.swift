@@ -104,7 +104,7 @@ class Defaults {
     }
     
     var bitcoinKnotsDataDir: String {
-        return ud.object(forKey: "knotsDataDir") as? String ?? "/Users/\(NSUserName())/.bitcoinknots"
+        return ud.object(forKey: "knotsDataDir") as? String ?? "/Users/\(NSUserName())/.knots"
     }
     
     var blocksDir: String {
@@ -143,6 +143,10 @@ class Defaults {
     
     var chain: String {
         return ud.string(forKey: "chain") ?? "signet"
+    }
+    
+    var knotsChain: String {
+        return ud.string(forKey: "knotsChain") ?? "signet"
     }
 
 }

@@ -1,3 +1,0 @@
-[allowlist]
-    description = "Ignore private keys in test files"
-    files = [ '''test_.*''' ]
