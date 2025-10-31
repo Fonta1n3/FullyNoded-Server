@@ -20,7 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = "v0.4.8.14"
+    @State private var torVersion = "v0.4.8.19"
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
