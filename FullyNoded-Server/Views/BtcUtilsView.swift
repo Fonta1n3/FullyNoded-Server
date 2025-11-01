@@ -160,10 +160,12 @@ struct BtcUtilsView: View {
             }
             .alert("Please select a wallet directory to delete.", isPresented: $promptToSelectWallet) {
                 Button("Select Wallet Directory", action: { isShowingPicker = true })
+                Button("Cancel", role: .cancel, action: {})
                 Text("Once deleted the wallet is gone forever!")
             }
             .alert("Start mining?", isPresented: $promptToMineRegtestBlocks) {
                 Button("Select a wallet to mine to.", action: { chooseWalletToMineTo() })
+                Button("Cancel", role: .cancel, action: {})
             } message: {
                 Text("In order to test a wallet in regtest you need some bitcoins to send and receive, this makes it easy. 100 blocks will be mined in about 20 seconds. First you will need to select a wallet to mine to. 100 blocks are mined as it takes 100 confirmations before a coinbase utxo is spendable.")
             }

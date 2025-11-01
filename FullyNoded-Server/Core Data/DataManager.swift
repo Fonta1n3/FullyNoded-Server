@@ -31,16 +31,19 @@ class DataManager: NSObject {
         fetchRequest.returnsObjectsAsFaults = false
         fetchRequest.resultType = .dictionaryResultType
         
-        do {
-            if let results = try context.fetch(fetchRequest) as? [[String:Any]], results.count > 0 {
-                completion(results[0])
-            } else {
+        Task.detached {
+            do {
+                if let results = try context.fetch(fetchRequest) as? [[String:Any]], results.count > 0 {
+                    completion(results[0])
+                } else {
+                    completion(nil)
+                }
+                
+            } catch {
                 completion(nil)
             }
-            
-        } catch {
-            completion(nil)
         }
+        
     }
     
     
