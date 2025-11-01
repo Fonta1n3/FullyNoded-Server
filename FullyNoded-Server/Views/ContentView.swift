@@ -157,23 +157,36 @@ struct ContentView: View {
                                             Text("Tor \(torVersion) stopped")
                                         }
                                     }
-                                    if TorClient.sharedInstance.state == .connected {
-                                        Toggle("", isOn: $torRunning)
-                                            .padding()
-                                            .toggleStyle(SwitchToggleStyle())
-                                            .onChange(of: torRunning) {
-                                                if !torRunning {
-                                                    TorClient.sharedInstance.resign()
-                                                } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
-                                                    TorClient.sharedInstance.start(delegate: nil)
-                                                } else if torRunning {
-                                                    TorClient.sharedInstance.resign()
-                                                    torRunning = false
-                                                }
-                                            }
-                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                HStack{
+                                    switch TorClient.sharedInstance.state {
+                                    case .connected, .started, .refreshing:
+                                        Button {
+                                            TorClient.sharedInstance.resign()
+                                            torRunning = false
+                                            torProgress = 100
+                                        } label: {
+                                            Text("Stop")
+                                        }
+                                        .padding(.leading)
+                                    case .stopped:
+                                        Button {
+                                            TorClient.sharedInstance.start(delegate: nil)
+                                            torProgress = 0
+                                        } label: {
+                                            Text("Start")
+                                        }
+                                        .padding(.leading)
+                                    default:
+                                        Text("Tor state is \(TorClient.sharedInstance.state).")
+                                            .padding(.leading)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                
                                 Spacer()
                             } else if service.name == "Help" {
                                 Help()
