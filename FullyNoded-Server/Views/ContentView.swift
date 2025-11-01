@@ -157,18 +157,21 @@ struct ContentView: View {
                                             Text("Tor \(torVersion) stopped")
                                         }
                                     }
-                                    Toggle("", isOn: $torRunning)
-                                        .toggleStyle(SwitchToggleStyle())
-                                        .onChange(of: torRunning) {
-                                            if !torRunning {
-                                                TorClient.sharedInstance.resign()
-                                            } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
-                                                TorClient.sharedInstance.start(delegate: nil)
-                                            } else if torRunning {
-                                                TorClient.sharedInstance.resign()
-                                                torRunning = false
+                                    if TorClient.sharedInstance.state == .connected {
+                                        Toggle("", isOn: $torRunning)
+                                            .padding()
+                                            .toggleStyle(SwitchToggleStyle())
+                                            .onChange(of: torRunning) {
+                                                if !torRunning {
+                                                    TorClient.sharedInstance.resign()
+                                                } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
+                                                    TorClient.sharedInstance.start(delegate: nil)
+                                                } else if torRunning {
+                                                    TorClient.sharedInstance.resign()
+                                                    torRunning = false
+                                                }
                                             }
-                                        }
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer()

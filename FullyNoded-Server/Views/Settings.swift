@@ -31,35 +31,35 @@ struct Settings: View {
              "chain": Defaults.shared.chain
          ]
          */
-        VStack {
-                   Button {
-                       isShowing.toggle()
-                   } label: {
-                       Text("documents")
-                   }
-                   .fileImporter(isPresented: $isShowing, allowedContentTypes: [.item], allowsMultipleSelection: true, onCompletion: { results in
-                       
-                       switch results {
-                       case .success(let fileurls):
-                           guard fileurls.count == 1 else {
-                               print("Too many/few files exist here, select the bitcoind binary only.")
-                               return
-                           }
-                           
-                           let fileurl = fileurls[0]
-                           
-                           guard fileurl.absoluteString.hasSuffix("/bitcoind") else {
-                               print("Not bitcoind.")
-                               return
-                           }
-                           
-                           print("User selected bitcoind.")
-                           
-                       case .failure(let error):
-                           print(error)
-                       }
-                   })
-               }
+//        VStack {
+//                   Button {
+//                       isShowing.toggle()
+//                   } label: {
+//                       Text("documents")
+//                   }
+//                   .fileImporter(isPresented: $isShowing, allowedContentTypes: [.item], allowsMultipleSelection: true, onCompletion: { results in
+//                       
+//                       switch results {
+//                       case .success(let fileurls):
+//                           guard fileurls.count == 1 else {
+//                               print("Too many/few files exist here, select the bitcoind binary only.")
+//                               return
+//                           }
+//                           
+//                           let fileurl = fileurls[0]
+//                           
+//                           guard fileurl.absoluteString.hasSuffix("/bitcoind") else {
+//                               print("Not bitcoind.")
+//                               return
+//                           }
+//                           
+//                           print("User selected bitcoind.")
+//                           
+//                       case .failure(let error):
+//                           print(error)
+//                       }
+//                   })
+//               }
     }
 }
 
