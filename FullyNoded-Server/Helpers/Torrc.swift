@@ -68,8 +68,8 @@ class Torrc {
     ControlPort 9051
     ## If you enable the controlport, be sure to enable one of these
     ## authentication methods, to prevent attackers from accessing it.
-    #HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
-    CookieAuthentication 1
+    HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
+    CookieAuthentication 0
 
     ############### This section is just for location-hidden services ###
 

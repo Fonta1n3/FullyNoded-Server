@@ -32,6 +32,9 @@ class BitcoinConf {
         listen=1
         listenonion=1
         debug=tor
+        i2psam=127.0.0.1:7656
+        i2pacceptincoming=1
+        debug=i2p 
         """
     }
     
