@@ -28,6 +28,10 @@ class BitcoinConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
+        proxy=127.0.0.1:9050
+        listen=1
+        listenonion=1
+        debug=tor
         """
     }
     

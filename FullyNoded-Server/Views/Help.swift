@@ -16,12 +16,14 @@ struct Help: View {
             Link("Let us know about an issue, bug, feature request or general comments here.", destination: URL(string: "https://github.com/Fonta1n3/FullyNoded-Server/issues/new")!)
                 .padding([.leading, .bottom])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+            
             Text("Visit our website")
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding([.leading])
             Link("www.FullyNoded.app", destination: URL(string: "https://www.FullyNoded.app")!)
                 .padding([.leading, .bottom])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+            
             Text("Come chat")
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -29,8 +31,12 @@ struct Help: View {
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             Link("Join the Discord", destination: URL(string: "https://discord.gg/TVf2zb9x")!)
+                .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+            Link("Follow us on X", destination: URL(string: "https://x.com/FullyNoded")!)
                 .padding([.leading, .bottom])
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            
             Text("Download Links")
                 .padding([.leading])
                 .frame(maxWidth: .infinity, alignment: .topLeading)
