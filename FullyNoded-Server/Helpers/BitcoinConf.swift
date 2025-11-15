@@ -32,6 +32,8 @@ class BitcoinConf {
         listen=1
         listenonion=1
         debug=tor
+        datacarriersize=0
+        permitbaremultisig=0
         """
     }
     
