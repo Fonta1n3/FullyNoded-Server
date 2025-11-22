@@ -45,6 +45,7 @@ struct ContentView: View {
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showTorrc = false
+    @State private var showTorLog = true
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
@@ -202,6 +203,16 @@ struct ContentView: View {
                                         Text("Open Tor Directory")
                                     }
                                     
+                                    Button {
+                                        showTorLog = !showTorLog
+                                    } label: {
+                                        if !showTorLog {
+                                            Text("Show Tor Log")
+                                        } else {
+                                            Text("Hide Tor Log")
+                                        }
+                                    }
+                                    
                                     Spacer()
                                 }
                                 
@@ -211,6 +222,19 @@ struct ContentView: View {
                                         title: "Torrc",
                                         contentType: .plain
                                     )
+                                }
+                                
+                                if showTorLog {
+                                    VStack() {
+                                        TorLogView()
+                                            .padding()
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            .background(Color.black.opacity(0.9))
+                                            .cornerRadius(12)
+                                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
+                                    }
+                                    .padding()
+                                    
                                 }
                                 
                                 Spacer()

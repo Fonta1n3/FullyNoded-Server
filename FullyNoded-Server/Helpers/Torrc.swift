@@ -46,7 +46,7 @@ class Torrc {
     ## may provide sensitive information to an attacker who obtains the logs.
     ##
     ## Send all messages of level 'notice' or higher to /usr/local/var/log/tor/notices.log
-    #Log notice file /Users/peterdenton/.gordian/tor/notices.log
+    Log notice file \(torPath())/notices.log
     ## Send every possible message to /usr/local/var/log/tor/debug.log
     #Log debug file /Users/peterdenton/.gordian/.tor/debug.log
     ## Use the system log instead of Tor's logfiles

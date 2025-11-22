@@ -70,6 +70,8 @@
 		0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */; };
 		0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */; };
 		0AD202432ED173C3006286DD /* ConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202422ED173C3006286DD /* ConfigView.swift */; };
+		0AD202452ED1A577006286DD /* TorLogMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202442ED1A577006286DD /* TorLogMonitor.swift */; };
+		0AD202472ED1A59B006286DD /* TorLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202462ED1A59B006286DD /* TorLogView.swift */; };
 		0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */; };
 		0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */; };
 		0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */; };
@@ -184,6 +186,8 @@
 		0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = UpdateLightning.command; sourceTree = "<group>"; };
 		0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchUpdateLightning.command; sourceTree = "<group>"; };
 		0AD202422ED173C3006286DD /* ConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigView.swift; sourceTree = "<group>"; };
+		0AD202442ED1A577006286DD /* TorLogMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorLogMonitor.swift; sourceTree = "<group>"; };
+		0AD202462ED1A59B006286DD /* TorLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorLogView.swift; sourceTree = "<group>"; };
 		0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestJoinMarketRelease.swift; sourceTree = "<group>"; };
 		0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarketTaggedReleases.swift; sourceTree = "<group>"; };
 		0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallJoinMarket.command; sourceTree = "<group>"; };
@@ -271,6 +275,7 @@
 				0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */,
 				0A6C58542EB49770000FB22E /* DropDownAlert.swift */,
 				0AD202422ED173C3006286DD /* ConfigView.swift */,
+				0AD202462ED1A59B006286DD /* TorLogView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -325,6 +330,7 @@
 				599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */,
 				599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */,
 				599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */,
+				0AD202442ED1A577006286DD /* TorLogMonitor.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -657,7 +663,9 @@
 				0A5CE8D42C89EE1C00534A8D /* Credentials.swift in Sources */,
 				595B51962DCC2AE2002FD7E5 /* JMSessionInfo.swift in Sources */,
 				0A5CE8D02C89EC3700534A8D /* Extensions.swift in Sources */,
+				0AD202452ED1A577006286DD /* TorLogMonitor.swift in Sources */,
 				59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */,
+				0AD202472ED1A59B006286DD /* TorLogView.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
