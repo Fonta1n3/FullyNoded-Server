@@ -20,7 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = "v0.4.8.19"
+    @State private var torVersion = "v0.4.8.20"
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -44,6 +44,7 @@ struct ContentView: View {
     @State private var env: [String: String] = [:]
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
+    @State private var showTorrc = false
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
@@ -184,7 +185,32 @@ struct ContentView: View {
                                             .padding(.leading)
                                             .foregroundStyle(.secondary)
                                     }
+                                    
+                                    Button {
+                                        showTorrc = !showTorrc
+                                    } label: {
+                                        if !showTorrc {
+                                            Text("Show Tor config")
+                                        } else {
+                                            Text("Hide Tor Config")
+                                        }
+                                    }
+                                    
+                                    Button {
+                                        openTorDir()
+                                    } label: {
+                                        Text("Open Tor Directory")
+                                    }
+                                    
                                     Spacer()
+                                }
+                                
+                                if showTorrc {
+                                    ConfigTextView(
+                                        configString: Torrc.torrc,
+                                        title: "Torrc",
+                                        contentType: .plain
+                                    )
                                 }
                                 
                                 Spacer()
@@ -360,6 +386,10 @@ struct ContentView: View {
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }        
+    }
+    
+    private func openTorDir() {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Torrc.torPath())
     }
     
     private func checkForXcode() {

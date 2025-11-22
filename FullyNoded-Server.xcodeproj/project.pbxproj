@@ -69,6 +69,7 @@
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
 		0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */; };
 		0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */; };
+		0AD202432ED173C3006286DD /* ConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202422ED173C3006286DD /* ConfigView.swift */; };
 		0AD7BE0D2CB97F4100428D02 /* LatestJoinMarketRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */; };
 		0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */; };
 		0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */; };
@@ -182,6 +183,7 @@
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
 		0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = UpdateLightning.command; sourceTree = "<group>"; };
 		0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchUpdateLightning.command; sourceTree = "<group>"; };
+		0AD202422ED173C3006286DD /* ConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigView.swift; sourceTree = "<group>"; };
 		0AD7BE0C2CB97F4100428D02 /* LatestJoinMarketRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestJoinMarketRelease.swift; sourceTree = "<group>"; };
 		0AD7BE0E2CB980D500428D02 /* JoinMarketTaggedReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinMarketTaggedReleases.swift; sourceTree = "<group>"; };
 		0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallJoinMarket.command; sourceTree = "<group>"; };
@@ -268,6 +270,7 @@
 				599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */,
 				0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */,
 				0A6C58542EB49770000FB22E /* DropDownAlert.swift */,
+				0AD202422ED173C3006286DD /* ConfigView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -609,6 +612,7 @@
 				5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */,
 				59CC77F42D5523EA005D5A9B /* JMQuickConnectView.swift in Sources */,
 				590EA1B92D2EE1680000BB1A /* QuickConnectView.swift in Sources */,
+				0AD202432ED173C3006286DD /* ConfigView.swift in Sources */,
 				59A2E1912D6EB25900F0C194 /* BlockchainInfoView.swift in Sources */,
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
