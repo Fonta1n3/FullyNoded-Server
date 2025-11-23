@@ -144,8 +144,11 @@ config will be commented out, of course this can easily be overridden by opening
     HiddenServicePort 18765 127.0.0.1:18765
     ```
     
+    ## License
+    GNU General Public License v3.0
 
-    
+    If you would like to relicense this code to distribute it on the App Store,
+    please contact me at [dentondevelopment@protonmail.com](mailto:dentondevelopment@protonmail.com).   
 
 
 

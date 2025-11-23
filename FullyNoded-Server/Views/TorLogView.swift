@@ -24,7 +24,7 @@ struct TorLogView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding()
+            //.padding()
         }
         .background(Color.black)
         .scrollTargetBehavior(.paging)
