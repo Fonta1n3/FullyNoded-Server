@@ -30,7 +30,7 @@ START=$(date +%s.%N)
 #echo "Mining 100 blocks (one per new address) using wallet '$RPCWALLET'..."
 
 # ---- 4. Mine 101 blocks --------------------------------------------
-for i in $(seq 1 100); do
+for i in $(seq 1 $NUMBER_OF_BLOCKS); do
   ADDR=$(get_new_address)
   # generatetoaddress returns an array with the single block hash
   #$(bitcoin-cli -regtest -rpcwallet="$RPCWALLET" generatetoaddress 1 "$ADDR")
@@ -41,4 +41,4 @@ done
 # ---- 5. Finish ------------------------------------------------------
 END=$(date +%s.%N)
 ELAPSED=$(echo "$END - $START" | bc)
-echo "Done! 100 blocks mined in $ELAPSED seconds."
+echo "Done! $NUMBER_OF_BLOCKS blocks mined in $ELAPSED seconds."
