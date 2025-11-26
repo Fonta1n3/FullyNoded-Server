@@ -8,54 +8,56 @@
 import SwiftUI
 
 // MARK: - Reusable Dropdown Alert (Sheet Style)
-struct DropdownAlert: View {
+struct MineBlocksSheet: View {
     @Binding var isPresented: Bool
-    @Binding var selection: String
-    let title: String
-    let options: [String]
+    
+    @Binding var selectedWallet: String
+    @Binding var selectedBlocks: String
+    
+    let wallets: [String]           // e.g. ["Regtest Wallet #1", "Hot Wallet"]
+    let blockOptions: [String]      // e.g. ["1", "10", "50", "100", "500", "1000"]
+    
     let onConfirm: () -> Void
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Title
-            Text(title)
-                .font(.headline)
-                .multilineTextAlignment(.center)
-                .padding(.top)
-            
-            // Dropdown (Picker)
-            Picker(title, selection: $selection) {
-                ForEach(options, id: \.self) { option in
-                    Text(option).tag(option)
+        NavigationStack {
+            Form {
+                Section("Wallet") {
+                    Picker("Select wallet", selection: $selectedWallet) {
+                        ForEach(wallets, id: \.self) { wallet in
+                            Text(wallet).tag(wallet)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                Section("Number of blocks to mine") {
+                    Picker("Blocks", selection: $selectedBlocks) {
+                        ForEach(blockOptions, id: \.self) { blocks in
+                            Text("\(blocks) block\(blocks == "1" ? "" : "s")").tag(blocks)
+                        }
+                    }
+                    .pickerStyle(.menu)  // Nice scrolling wheel on iPhone
                 }
             }
-            .pickerStyle(MenuPickerStyle())
-            .padding(.horizontal)
-            
-            Divider()
-            
-            // Buttons
-            HStack {
-                Button("Cancel", role: .cancel) {
-                    isPresented = false
+            .navigationTitle("Mine Blocks")
+            //.navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
                 }
-                .foregroundColor(.red)
-                
-                Spacer()
-                
-                Button("OK") {
-                    onConfirm()
-                    isPresented = false
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Mine") {
+                        onConfirm()
+                        isPresented = false
+                    }
+                    .fontWeight(.semibold)
                 }
-                .fontWeight(.semibold)
             }
-            .padding(.horizontal)
-            .padding(.bottom)
         }
-        .frame(maxWidth: 300)
-        .background(Color(.windowBackgroundColor))
-        .cornerRadius(12)
-        .shadow(radius: 20)
-        .padding()
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }

@@ -15,11 +15,11 @@ public struct BitcoinKnotsEnvValues: CustomStringConvertible {
     let chain: String
     
     init(dictionary: [String: Any]) {
-        binaryName = dictionary["binaryName"] as! String
-        version = dictionary["version"] as! String
-        prefix = dictionary["prefix"] as! String
-        dataDir = dictionary["dataDir"] as! String
-        chain = dictionary["chain"] as! String
+        binaryName = dictionary["binaryName"] as? String ?? ""
+        version = dictionary["version"] as? String ?? ""
+        prefix = dictionary["prefix"] as? String ?? ""
+        dataDir = dictionary["dataDir"] as? String ?? ""
+        chain = dictionary["chain"] as? String ?? ""
     }
     
     public var description: String {

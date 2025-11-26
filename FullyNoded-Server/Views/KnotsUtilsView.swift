@@ -363,7 +363,7 @@ struct KnotsUtilsView: View {
     }
     
     private func debugLogPath() -> String? {
-        let chain = Defaults.shared.chain
+        let chain = Defaults.shared.knotsChain
         var debugLogPath: String?
         switch chain {
         case "main":

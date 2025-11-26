@@ -27,6 +27,7 @@ struct BitcoinKnots: View {
     
     var body: some View {
         FNIcon()
+        //Spacer()
         VStack() {
             HStack() {
                 Image(systemName: "server.rack")
@@ -374,6 +375,7 @@ struct BitcoinKnots: View {
             switch error {
                 // We know these aren't really errors, just standard booting messages.
             case _ where error.contains("Loading block index"),
+                _ where error.contains("Checking all blk files are present"),
                 _ where error.contains("Verifying blocks"),
                 _ where error.contains("Loading P2P addresses…"),
                 _ where error.contains("Pruning"),

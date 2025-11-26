@@ -46,7 +46,7 @@ class Torrc {
     ## may provide sensitive information to an attacker who obtains the logs.
     ##
     ## Send all messages of level 'notice' or higher to /usr/local/var/log/tor/notices.log
-    #Log notice file /Users/peterdenton/.gordian/tor/notices.log
+    Log notice file \(torPath())/notices.log
     ## Send every possible message to /usr/local/var/log/tor/debug.log
     #Log debug file /Users/peterdenton/.gordian/.tor/debug.log
     ## Use the system log instead of Tor's logfiles
@@ -65,11 +65,11 @@ class Torrc {
 
     ## The port on which Tor will listen for local connections from Tor
     ## controller applications, as documented in control-spec.txt.
-    #ControlPort 9051
+    ControlPort 9051
     ## If you enable the controlport, be sure to enable one of these
     ## authentication methods, to prevent attackers from accessing it.
-    #HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
-    #CookieAuthentication 1
+    HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
+    CookieAuthentication 0
 
     ############### This section is just for location-hidden services ###
 

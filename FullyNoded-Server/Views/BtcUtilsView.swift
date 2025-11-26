@@ -18,11 +18,14 @@ struct BtcUtilsView: View {
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
     @State private var promptToMineRegtestBlocks = false
-    @State private var showDropdownAlert = false
     @State private var selectedWallet = ""
     @State private var wallets: [String] = []
     @State private var sheetID = UUID()
     @State private var isLoading = false
+    @State private var showMiningAlert = false
+    @State private var selectedBlocks = "100"
+    
+    let blockOptions = ["1", "10", "50", "100", "500", "1000"]
     
         
     var body: some View {
@@ -160,26 +163,29 @@ struct BtcUtilsView: View {
             }
             .alert("Please select a wallet directory to delete.", isPresented: $promptToSelectWallet) {
                 Button("Select Wallet Directory", action: { isShowingPicker = true })
+                Button("Cancel", role: .cancel, action: {})
                 Text("Once deleted the wallet is gone forever!")
             }
             .alert("Start mining?", isPresented: $promptToMineRegtestBlocks) {
                 Button("Select a wallet to mine to.", action: { chooseWalletToMineTo() })
+                Button("Cancel", role: .cancel, action: {})
             } message: {
                 Text("In order to test a wallet in regtest you need some bitcoins to send and receive, this makes it easy. 100 blocks will be mined in about 20 seconds. First you will need to select a wallet to mine to. 100 blocks are mined as it takes 100 confirmations before a coinbase utxo is spendable.")
             }
             .alert(message, isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             }
-            .sheet(isPresented: $showDropdownAlert) {
-                DropdownAlert(
-                    isPresented: $showDropdownAlert,
-                    selection: $selectedWallet, title: "Select a wallet to mine to.",
-                    options: self.wallets,
+            .sheet(isPresented: $showMiningAlert) {
+                MineBlocksSheet(
+                    isPresented: $showMiningAlert,
+                    selectedWallet: $selectedWallet,
+                    selectedBlocks: $selectedBlocks,
+                    wallets: wallets,
+                    blockOptions: blockOptions,
                     onConfirm: {
-                        mine(wallet: selectedWallet)
+                        mine(wallet: selectedWallet, numberOfBlocks: selectedBlocks)
                     }
                 )
-                .id(sheetID)
             }
             .onChange(of: wallets) {
                 sheetID = UUID()
@@ -217,13 +223,20 @@ struct BtcUtilsView: View {
                 return
             }
             wallets = result
-            showDropdownAlert = true
+            showMiningAlert = true
         }
     }
     
-    private func mine(wallet: String) {
+    private func mine(wallet: String, numberOfBlocks: String) {
         isLoading = true
-        let mineEnv = ["RPCWALLET" : wallet, "PREFIX" : env["PREFIX"]!, "DATADIR" : env["DATADIR"]!]
+        
+        let mineEnv = [
+            "RPCWALLET" : wallet,
+            "PREFIX" : env["PREFIX"]!,
+            "DATADIR" : env["DATADIR"]!,
+            "NUMBER_OF_BLOCKS": numberOfBlocks
+        ]
+        
         ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
             guard let output = output else {
                 isLoading = false

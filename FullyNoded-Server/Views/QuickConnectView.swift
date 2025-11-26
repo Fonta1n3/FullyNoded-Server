@@ -16,7 +16,7 @@ struct QuickConnectView: View {
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
     @State private var fnBcoreUrl: String?
-    
+    @State private var onionAddress: String?
     
     var body: some View {
         Spacer()
@@ -85,6 +85,22 @@ struct QuickConnectView: View {
                         .padding([.leading, .bottom])
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                
+                if let onionAddress = onionAddress {
+                    HStack {
+                        Label {
+                            Text("Onion address")
+                        } icon: {
+                            Image(systemName: "envelope.front")
+                        }
+                        Text(onionAddress)
+                        Button {
+                            copyOnion()
+                        } label: {
+                            Text("Copy")
+                        }
+                    }
+                }
             }
             .padding()
             .cornerRadius(8)
@@ -99,6 +115,13 @@ struct QuickConnectView: View {
             .alert(message, isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             }
+    }
+    
+    private func copyOnion() {
+        if let onionAddress = onionAddress {
+            Pasteboard.write(onionAddress)
+            showMessage(message: "Copied ✓")
+        }
     }
     
     private func showMessage(message: String) {
@@ -184,6 +207,8 @@ struct QuickConnectView: View {
              break
          }
         
+        onionAddress = onionHost
+        
         DataManager.retrieve(entityName: .rpcCreds) { rpcCred in
             guard let _ = rpcCred else {
                 showMessage(message: "No rpc credentials saved.")
@@ -198,6 +223,18 @@ struct QuickConnectView: View {
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
             self.fnBcoreUrl = "fnbtccore://xxx:xxx@localhost:\(port)"
         }
+    }
+}
+
+enum Pasteboard {
+    static func write(_ string: String) {
+        #if os(iOS) || os(visionOS)
+        // Secretly uses UIPasteboard on iOS (but no import needed here)
+        UIPasteboard.general.string = string
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(string, forType: .string)
+        #endif
     }
 }
 

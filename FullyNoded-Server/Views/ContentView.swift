@@ -20,7 +20,7 @@ public struct Service: Identifiable {
 
 struct ContentView: View {
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = "v0.4.8.19"
+    @State private var torVersion = "v0.4.8.21"
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -44,6 +44,8 @@ struct ContentView: View {
     @State private var env: [String: String] = [:]
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
+    @State private var showTorrc = false
+    @State private var showTorLog = true
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
@@ -51,6 +53,8 @@ struct ContentView: View {
         "dataDir": Defaults.shared.bitcoinCoreDataDir,
         "chain": Defaults.shared.chain
     ])
+    
+    @State private var knotsEnvValues: BitcoinKnotsEnvValues = .init(dictionary: [:])
     
     private let timerForBitcoinKnotsInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
@@ -157,25 +161,89 @@ struct ContentView: View {
                                             Text("Tor \(torVersion) stopped")
                                         }
                                     }
-                                    Toggle("", isOn: $torRunning)
-                                        .toggleStyle(SwitchToggleStyle())
-                                        .onChange(of: torRunning) {
-                                            if !torRunning {
-                                                TorClient.sharedInstance.resign()
-                                            } else if !isInitialLoad && TorClient.sharedInstance.state != .connected {
-                                                TorClient.sharedInstance.start(delegate: nil)
-                                            } else if torRunning {
-                                                TorClient.sharedInstance.resign()
-                                                torRunning = false
-                                            }
-                                        }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                HStack{
+                                    switch TorClient.sharedInstance.state {
+                                    case .connected, .started, .refreshing:
+                                        Button {
+                                            TorClient.sharedInstance.resign()
+                                            torRunning = false
+                                            torProgress = 100
+                                        } label: {
+                                            Text("Stop")
+                                        }
+                                        .padding(.leading)
+                                    case .stopped:
+                                        Button {
+                                            TorClient.sharedInstance.start(delegate: nil)
+                                            torProgress = 0
+                                        } label: {
+                                            Text("Start")
+                                        }
+                                        .padding(.leading)
+                                    default:
+                                        Text("Tor state is \(TorClient.sharedInstance.state).")
+                                            .padding(.leading)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    
+                                    Button {
+                                        showTorrc = !showTorrc
+                                    } label: {
+                                        if !showTorrc {
+                                            Text("Show Tor config")
+                                        } else {
+                                            Text("Hide Tor Config")
+                                        }
+                                    }
+                                    
+                                    Button {
+                                        openTorDir()
+                                    } label: {
+                                        Text("Open Tor Directory")
+                                    }
+                                    
+                                    Button {
+                                        showTorLog = !showTorLog
+                                    } label: {
+                                        if !showTorLog {
+                                            Text("Show Tor Log")
+                                        } else {
+                                            Text("Hide Tor Log")
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                
+                                if showTorrc {
+                                    ConfigTextView(
+                                        configString: Torrc.torrc,
+                                        title: "Torrc",
+                                        contentType: .plain
+                                    )
+                                }
+                                
+                                if showTorLog {
+                                    VStack() {
+                                        TorLogView()
+                                            .padding()
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            .background(Color.black.opacity(0.9))
+                                            .cornerRadius(12)
+                                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
+                                    }
+                                    .padding()
+                                    
+                                }
+                                
                                 Spacer()
                             } else if service.name == "Help" {
                                 Help()
                             } else if service.name == "Settings" {
-                                Settings(bitcoinEnvValues: bitcoinEnvValues)
+                                Settings(bitcoinEnvValues: bitcoinEnvValues, knotsEnvValues: knotsEnvValues)
                             }
                         } label: {
                             HStack() {
@@ -215,6 +283,7 @@ struct ContentView: View {
                                                 DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
                                                     guard let bitcoinKnotsEnv = bitcoinKnotsEnv else { return }
                                                     let envValues = BitcoinKnotsEnvValues(dictionary: bitcoinKnotsEnv)
+                                                    self.knotsEnvValues = envValues
                                                     let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinKnots/\(envValues.prefix)/bin/bitcoind"
                                                     if FileManager.default.fileExists(atPath: tempPath) {
                                                         bitcoinKnotsInstalled = true
@@ -344,6 +413,10 @@ struct ContentView: View {
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }        
+    }
+    
+    private func openTorDir() {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Torrc.torPath())
     }
     
     private func checkForXcode() {

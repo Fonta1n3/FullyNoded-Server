@@ -9,9 +9,9 @@ import SwiftUI
 
 struct FNIcon: View {
     var body: some View {
-        Image("1024")
+        Image("logo")
             .resizable()
-            .cornerRadius(20.0)
+            //.cornerRadius(20.0)
             .frame(width: 80.0, height: 80.0)
             .padding([.all])
             .scaledToFit()

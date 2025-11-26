@@ -28,6 +28,7 @@ struct BitcoinCore: View {
     
     var body: some View {
         FNIcon()
+        //Spacer()
         VStack() {
             HStack() {
                 Image(systemName: "server.rack")
