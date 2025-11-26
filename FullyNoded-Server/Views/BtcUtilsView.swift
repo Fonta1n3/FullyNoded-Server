@@ -18,7 +18,6 @@ struct BtcUtilsView: View {
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
     @State private var promptToMineRegtestBlocks = false
-    //@State private var showDropdownAlert = false
     @State private var selectedWallet = ""
     @State private var wallets: [String] = []
     @State private var sheetID = UUID()
