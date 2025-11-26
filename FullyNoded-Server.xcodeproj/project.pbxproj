@@ -804,7 +804,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"FullyNoded-Server/Preview Content\"";
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -813,7 +813,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.2.1 Beta";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -848,7 +847,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "FullyNoded-Server/FullyNoded_Server.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"FullyNoded-Server/Preview Content\"";
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -857,7 +856,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.2.1 Beta";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

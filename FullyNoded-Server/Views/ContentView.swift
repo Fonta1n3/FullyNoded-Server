@@ -54,6 +54,8 @@ struct ContentView: View {
         "chain": Defaults.shared.chain
     ])
     
+    @State private var knotsEnvValues: BitcoinKnotsEnvValues = .init(dictionary: [:])
+    
     private let timerForBitcoinKnotsInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
@@ -241,7 +243,7 @@ struct ContentView: View {
                             } else if service.name == "Help" {
                                 Help()
                             } else if service.name == "Settings" {
-                                Settings(bitcoinEnvValues: bitcoinEnvValues)
+                                Settings(bitcoinEnvValues: bitcoinEnvValues, knotsEnvValues: knotsEnvValues)
                             }
                         } label: {
                             HStack() {
@@ -281,6 +283,7 @@ struct ContentView: View {
                                                 DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
                                                     guard let bitcoinKnotsEnv = bitcoinKnotsEnv else { return }
                                                     let envValues = BitcoinKnotsEnvValues(dictionary: bitcoinKnotsEnv)
+                                                    self.knotsEnvValues = envValues
                                                     let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinKnots/\(envValues.prefix)/bin/bitcoind"
                                                     if FileManager.default.fileExists(atPath: tempPath) {
                                                         bitcoinKnotsInstalled = true

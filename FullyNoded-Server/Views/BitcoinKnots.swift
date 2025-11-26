@@ -26,8 +26,8 @@ struct BitcoinKnots: View {
     
     
     var body: some View {
-        //FNIcon()
-        Spacer()
+        FNIcon()
+        //Spacer()
         VStack() {
             HStack() {
                 Image(systemName: "server.rack")
