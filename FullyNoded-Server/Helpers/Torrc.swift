@@ -101,6 +101,10 @@ class Torrc {
     HiddenServiceVersion 3
     HiddenServicePort 38332 127.0.0.1:38332
     
+    HiddenServiceDir \(torPath())/host/bitcoin/rpc/testnet4/
+    HiddenServiceVersion 3
+    HiddenServicePort 48332 127.0.0.1:48332
+    
     HiddenServiceDir \(torPath())/host/knots/rpc/main/
     HiddenServiceVersion 3
     HiddenServicePort 8662 127.0.0.1:8662

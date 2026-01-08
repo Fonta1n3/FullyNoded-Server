@@ -383,12 +383,12 @@ struct ContentView: View {
             }
             checkForXcode()
         })
-        .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
-            Button("OK") {
-                installLightning()
-            }
-            Button("Cancel", role: .cancel) {}
-        }
+//        .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
+//            Button("OK") {
+//                installLightning()
+//            }
+//            Button("Cancel", role: .cancel) {}
+//        }
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
@@ -456,55 +456,55 @@ struct ContentView: View {
         }
     }
     
-    private func installLightning() {
-        isInstallingLightning = true
-        DataManager.retrieve(entityName: .rpcCreds) { bitcoinRPCCreds in
-            guard let bitcoinRPCCreds = bitcoinRPCCreds else {
-                isInstallingLightning = false
-                showMessage(message: "NO Bitcoin RPC Creds, create them?")
-                return
-            }
-            
-            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else {
-                isInstallingLightning = false
-                showMessage(message: "Unable to get encrypted rpc password.")
-                return
-            }
-            
-            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else {
-                isInstallingLightning = false
-                showMessage(message: "Decrypting rpc password failed.")
-                return
-            }
-            
-            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else {
-                isInstallingLightning = false
-                showMessage(message: "Encoding rpc password data as utf8 failed.")
-                return
-            }
-            
-            var lightningEnv: [String: String] = [:]
-            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
-            lightningEnv["RPC_PASSWORD"] = rpcPass
-            lightningEnv["DATA_DIR"] = Defaults.shared.bitcoinCoreDataDir.replacingOccurrences(of: " ", with: "*")
-            lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
-            var network = "bitcoin"
-            if Defaults.shared.chain != "main" {
-                 network = Defaults.shared.chain
-            }
-            lightningEnv["NETWORK"] = network
-            
-            ScriptUtil.runScript(script: .launchLightningInstall, env: lightningEnv, args: nil) { (output, rawData, errorMessage) in
-                guard errorMessage == nil else {
-                    if errorMessage != "" {
-                        showMessage(message: errorMessage!)
-                    }
-                    return
-                }
-                return
-            }
-        }
-    }
+//    private func installLightning() {
+//        isInstallingLightning = true
+//        DataManager.retrieve(entityName: .rpcCreds) { bitcoinRPCCreds in
+//            guard let bitcoinRPCCreds = bitcoinRPCCreds else {
+//                isInstallingLightning = false
+//                showMessage(message: "NO Bitcoin RPC Creds, create them?")
+//                return
+//            }
+//            
+//            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else {
+//                isInstallingLightning = false
+//                showMessage(message: "Unable to get encrypted rpc password.")
+//                return
+//            }
+//            
+//            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else {
+//                isInstallingLightning = false
+//                showMessage(message: "Decrypting rpc password failed.")
+//                return
+//            }
+//            
+//            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else {
+//                isInstallingLightning = false
+//                showMessage(message: "Encoding rpc password data as utf8 failed.")
+//                return
+//            }
+//            
+//            var lightningEnv: [String: String] = [:]
+//            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
+//            lightningEnv["RPC_PASSWORD"] = rpcPass
+//            lightningEnv["DATA_DIR"] = Defaults.shared.bitcoinCoreDataDir.replacingOccurrences(of: " ", with: "*")
+//            lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
+//            var network = "bitcoin"
+//            if Defaults.shared.chain != "main" {
+//                 network = Defaults.shared.chain
+//            }
+//            lightningEnv["NETWORK"] = network
+//            
+//            ScriptUtil.runScript(script: .launchLightningInstall, env: lightningEnv, args: nil) { (output, rawData, errorMessage) in
+//                guard errorMessage == nil else {
+//                    if errorMessage != "" {
+//                        showMessage(message: errorMessage!)
+//                    }
+//                    return
+//                }
+//                return
+//            }
+//        }
+//    }
     
     private func getSavedValues() {
         DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in

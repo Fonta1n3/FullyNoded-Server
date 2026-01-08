@@ -38,7 +38,7 @@ struct Settings: View {
                         InfoRow(label: "bitcoind path", value: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(bitcoinEnvValues.prefix)/bin/bitcoind")
                             .font(.system(.caption, design: .monospaced))
                             .foregroundColor(.secondary)
-                        InfoRow(label: "Default RPC Ports", value: "main: 83322 | signet: 38332 | regtest: 18443 | testnet: 18332")
+                        InfoRow(label: "Default RPC Ports", value: "main: 8332 | signet: 38332 | regtest: 18443 | testnet: 18332 | testnet4: 48332")
                             .foregroundColor(.secondary)
                     }
 

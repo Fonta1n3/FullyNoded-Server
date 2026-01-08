@@ -15,7 +15,7 @@ struct KnotsQuickConnectView: View {
     @State private var message = ""
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
-    @State private var fnBcoreUrl: String?
+    @State private var onionAddress: String = ""
     
     
     var body: some View {
@@ -74,16 +74,26 @@ struct KnotsQuickConnectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
-                if let fnBcoreUrl = fnBcoreUrl {
-                    Link("Connect Fully Noded - Bitcoin Core (locally)", destination: URL(string: fnBcoreUrl)!)
-                        .padding([.leading])
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
                 if let unifyUrl = unifyUrl {
                     Link("Connect Unify (locally)", destination: URL(string: unifyUrl)!)
                         .padding([.leading, .bottom])
                         .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                if onionAddress != "" {
+                    HStack {
+                        Label {
+                            Text("Onion address")
+                        } icon: {
+                            Image(systemName: "envelope.front")
+                        }
+                        Text(onionAddress)
+                        Button {
+                            copyOnion()
+                        } label: {
+                            Text("Copy")
+                        }
+                    }
                 }
             }
             .padding()
@@ -99,6 +109,13 @@ struct KnotsQuickConnectView: View {
             .alert(message, isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             }
+    }
+    
+    private func copyOnion() {
+        if  onionAddress != "" {
+            Pasteboard.write(onionAddress)
+            showMessage(message: "Copied ✓")
+        }
     }
     
     private func showMessage(message: String) {
@@ -168,18 +185,17 @@ struct KnotsQuickConnectView: View {
             showMessage(message: "No hostnames. Please report this.")
             return
         }
-        var onionHost = ""
         let chain = UserDefaults.standard.string(forKey: "knotsChain") ?? "main"
         
          switch chain {
          case "main":
-             onionHost = hiddenServices[5] + ":" + "86622"
+             onionAddress = hiddenServices[6] + ":" + "8662"
          case "test":
-             onionHost = hiddenServices[6] + ":" + "18662"
+             onionAddress = hiddenServices[7] + ":" + "18662"
          case "signet":
-             onionHost = hiddenServices[7] + ":" + "38662"
+             onionAddress = hiddenServices[8] + ":" + "38662"
          case "regtest":
-             onionHost = hiddenServices[8] + ":" + "18663"
+             onionAddress = hiddenServices[9] + ":" + "18663"
          default:
              break
          }
@@ -190,13 +206,12 @@ struct KnotsQuickConnectView: View {
                 return
             }
             
-            let url = "http://xxx:xxx@\(onionHost)"
+            let url = "http://xxx:xxx@\(onionAddress)"
             qrImage = url.qrQode
             
             let port = UserDefaults.standard.object(forKey: "knotsPort") as? String ?? "8662"
             self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
-            self.fnBcoreUrl = "fnbtccore://xxx:xxx@localhost:\(port)"
         }
     }
 }

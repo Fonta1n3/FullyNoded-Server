@@ -450,6 +450,8 @@ struct BtcUtilsView: View {
             debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
         case "signet":
             debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
+        case "testnet4":
+            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet4/debug.log"
         default:
             break
         }
