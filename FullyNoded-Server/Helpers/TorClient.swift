@@ -191,6 +191,7 @@ class TorClient: NSObject, URLSessionDelegate {
         let btcTestDir = "\(torPath())/host/bitcoin/rpc/test/"
         let btcRegtestDir = "\(torPath())/host/bitcoin/rpc/regtest/"
         let btcSignetDir = "\(torPath())/host/bitcoin/rpc/signet/"
+        let btcTestnet4 = "\(torPath())/host/bitcoin/rpc/testnet4/hostname"
         
         let knotsMainDir = "\(torPath())/host/knots/rpc/main/"
         let knotsTestDir = "\(torPath())/host/knots/rpc/test/"
@@ -199,7 +200,7 @@ class TorClient: NSObject, URLSessionDelegate {
         
         let clnDir = "\(torPath())/host/cln/rpc/"
         
-        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir, knotsMainDir, knotsTestDir, knotsRegtestDir, knotsSignetDir, clnDir]
+        let hsDirs = [jmHostDir, btcMainDir, btcTestDir, btcRegtestDir, btcSignetDir, btcTestnet4, knotsMainDir, knotsTestDir, knotsRegtestDir, knotsSignetDir, clnDir]
         for hsDir in hsDirs {
             do {
                 try FileManager.default.createDirectory(atPath: hsDir,
@@ -218,6 +219,7 @@ class TorClient: NSObject, URLSessionDelegate {
         let btcTest = "\(torPath())/host/bitcoin/rpc/test/hostname"
         let btcRegtest = "\(torPath())/host/bitcoin/rpc/regtest/hostname"
         let btcSignet = "\(torPath())/host/bitcoin/rpc/signet/hostname"
+        let btcTestnet4 = "\(torPath())/host/bitcoin/rpc/testnet4/hostname"
         
         let knotsMain = "\(torPath())/host/knots/rpc/main/hostname"
         let knotsTest = "\(torPath())/host/knots/rpc/test/hostname"
@@ -226,7 +228,7 @@ class TorClient: NSObject, URLSessionDelegate {
         
         let clnDir = "\(torPath())/host/cln/rpc/hostname"
         
-        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest, knotsMain, knotsTest, knotsSignet, knotsRegtest, clnDir]
+        let hosts = [jmHost, btcMain, btcTest, btcSignet, btcRegtest, btcTestnet4, knotsMain, knotsTest, knotsSignet, knotsRegtest, clnDir]
         var hostnames: [String] = []
         
         for host in hosts {
