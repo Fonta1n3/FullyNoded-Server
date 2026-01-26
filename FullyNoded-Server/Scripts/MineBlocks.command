@@ -22,7 +22,7 @@ fi
 
 # ---- 2. Helper: get a fresh bech32 address -------------------------
 get_new_address() {
-  sudo -u $(whoami) ~/.fullynoded/BitcoinCore/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" getnewaddress "" "bech32"
+  sudo -u $(whoami) ~/.fullynoded/$IMPLEMENTATION/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" getnewaddress "" "bech32"
 }
 
 # ---- 3. Start timing ------------------------------------------------
@@ -34,7 +34,7 @@ for i in $(seq 1 $NUMBER_OF_BLOCKS); do
   ADDR=$(get_new_address)
   # generatetoaddress returns an array with the single block hash
   #$(bitcoin-cli -regtest -rpcwallet="$RPCWALLET" generatetoaddress 1 "$ADDR")
-$(sudo -u $(whoami) ~/.fullynoded/BitcoinCore/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" generatetoaddress 1 "$ADDR")
+$(sudo -u $(whoami) ~/.fullynoded/$IMPLEMENTATION/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" generatetoaddress 1 "$ADDR")
   #printf "Block %3d → %s  (hash: %s)\n" "$i" "$ADDR"
 done
 

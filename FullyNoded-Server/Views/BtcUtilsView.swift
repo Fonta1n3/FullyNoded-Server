@@ -234,7 +234,8 @@ struct BtcUtilsView: View {
             "RPCWALLET" : wallet,
             "PREFIX" : env["PREFIX"]!,
             "DATADIR" : env["DATADIR"]!,
-            "NUMBER_OF_BLOCKS": numberOfBlocks
+            "NUMBER_OF_BLOCKS": numberOfBlocks,
+            "IMPLEMENTATION": "BitcoinCore"
         ]
         
         ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
