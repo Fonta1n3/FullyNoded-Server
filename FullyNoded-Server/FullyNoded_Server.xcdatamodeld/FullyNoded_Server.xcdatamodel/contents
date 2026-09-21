@@ -14,9 +14,6 @@
         <attribute name="prefix" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="String"/>
     </entity>
-    <entity name="BitcoinKnotsRPCCreds" representedClassName="BitcoinKnotsRPCCreds" syncable="YES" codeGenerationType="class">
-        <attribute name="password" optional="YES" attributeType="Binary"/>
-    </entity>
     <entity name="BitcoinRPCCreds" representedClassName="BitcoinRPCCreds" syncable="YES" codeGenerationType="class">
         <attribute name="password" optional="YES" attributeType="Binary"/>
     </entity>

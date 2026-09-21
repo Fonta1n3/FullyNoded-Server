@@ -22,7 +22,7 @@ fi
 
 # ---- 2. Helper: get a fresh bech32 address -------------------------
 get_new_address() {
-  sudo -u $(whoami) ~/.fullynoded/$IMPLEMENTATION/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" getnewaddress "" "bech32"
+  sudo -u $(whoami) ~/.fullynoded/$IMPLEMENTATION/$PREFIX/bin/bitcoin-cli -regtest -datadir="$DATADIR" -rpcwallet="$RPCWALLET" getnewaddress "" "bech32m"
 }
 
 # ---- 3. Start timing ------------------------------------------------

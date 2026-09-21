@@ -59,7 +59,7 @@ class BitcoinConf {
     }
     
     static func getBitcoinConf(completion: @escaping ((conf: [String]?, error: Bool)) -> Void) {
-        let path = URL(fileURLWithPath: "\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf")
+        let path = URL(fileURLWithPath: "\(Defaults.shared.bitcoinDataDir)/bitcoin.conf")
         guard let bitcoinConf = try? String(contentsOf: path, encoding: .utf8) else {
             completion((nil, false))
             return
@@ -77,9 +77,9 @@ class BitcoinConf {
     }
     
     class func setBitcoinConf(_ bitcoinConf: String) -> Bool {
-        createDirectory(Defaults.shared.bitcoinCoreDataDir)
+        createDirectory(Defaults.shared.bitcoinDataDir)
         
-        return writeFile("\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf", bitcoinConf)
+        return writeFile("\(Defaults.shared.bitcoinDataDir)/bitcoin.conf", bitcoinConf)
     }
     
     class func createDirectory(_ path: String) {

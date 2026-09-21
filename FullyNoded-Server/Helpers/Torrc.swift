@@ -68,8 +68,8 @@ class Torrc {
     ControlPort 9051
     ## If you enable the controlport, be sure to enable one of these
     ## authentication methods, to prevent attackers from accessing it.
-    HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
-    CookieAuthentication 0
+    #HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
+    CookieAuthentication 1
 
     ############### This section is just for location-hidden services ###
 
@@ -104,22 +104,6 @@ class Torrc {
     HiddenServiceDir \(torPath())/host/bitcoin/rpc/testnet4/
     HiddenServiceVersion 3
     HiddenServicePort 48332 127.0.0.1:48332
-    
-    HiddenServiceDir \(torPath())/host/knots/rpc/main/
-    HiddenServiceVersion 3
-    HiddenServicePort 8662 127.0.0.1:8662
-
-    HiddenServiceDir \(torPath())/host/knots/rpc/test/
-    HiddenServiceVersion 3
-    HiddenServicePort 18662 127.0.0.1:18662
-
-    HiddenServiceDir \(torPath())/host/knots/rpc/regtest/
-    HiddenServiceVersion 3
-    HiddenServicePort 18663 127.0.0.1:18663
-
-    HiddenServiceDir \(torPath())/host/knots/rpc/signet/
-    HiddenServiceVersion 3
-    HiddenServicePort 38662 127.0.0.1:38662
     
     HiddenServiceDir \(torPath())/host/cln/rpc/
     HiddenServiceVersion 3

@@ -50,7 +50,7 @@ struct ContentView: View {
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
         "prefix": "bitcoin-27.2",
-        "dataDir": Defaults.shared.bitcoinCoreDataDir,
+        "dataDir": Defaults.shared.bitcoinDataDir,
         "chain": Defaults.shared.chain
     ])
     
@@ -513,7 +513,7 @@ struct ContentView: View {
                     "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
                     "version": "27.2",
                     "prefix": "bitcoin-27.2",
-                    "dataDir": Defaults.shared.bitcoinCoreDataDir,
+                    "dataDir": Defaults.shared.bitcoinDataDir,
                     "chain": Defaults.shared.chain
                 ]
                 
@@ -527,7 +527,7 @@ struct ContentView: View {
                         "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                         "VERSION": self.bitcoinEnvValues.version,
                         "PREFIX": self.bitcoinEnvValues.prefix,
-                        "DATADIR": Defaults.shared.bitcoinCoreDataDir,
+                        "DATADIR": Defaults.shared.bitcoinDataDir,
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
@@ -545,7 +545,7 @@ struct ContentView: View {
                 "BINARY_NAME": self.bitcoinEnvValues.binaryName,
                 "VERSION": self.bitcoinEnvValues.version,
                 "PREFIX": self.bitcoinEnvValues.prefix,
-                "DATADIR": Defaults.shared.bitcoinCoreDataDir,
+                "DATADIR": Defaults.shared.bitcoinDataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
                         

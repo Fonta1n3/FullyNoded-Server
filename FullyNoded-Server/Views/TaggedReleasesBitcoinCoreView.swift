@@ -19,7 +19,7 @@ struct TaggedReleasesBitcoinCoreView: View {
     @State private var isAnimating = false
     @State private var showError = false
     @State private var message = ""
-    @State private var bitcoinCoreDataDir = Defaults.shared.bitcoinCoreDataDir
+    @State private var bitcoinCoreDataDir = Defaults.shared.bitcoinDataDir
     @State private var fnDataDirectory = Defaults.shared.fnDataDir
     @State private var txIndex = Defaults.shared.txindex
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
@@ -239,7 +239,7 @@ struct TaggedReleasesBitcoinCoreView: View {
                 "binaryName": "bitcoin-\(version)-arm64-apple-darwin.tar.gz",
                 "version": version,
                 "prefix": "bitcoin-\(version)",
-                "dataDir": Defaults.shared.bitcoinCoreDataDir,
+                "dataDir": Defaults.shared.bitcoinDataDir,
                 "chain": Defaults.shared.chain
             ]
             

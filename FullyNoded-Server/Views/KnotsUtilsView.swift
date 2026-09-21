@@ -44,7 +44,7 @@ struct KnotsUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -113,7 +113,7 @@ struct KnotsUtilsView: View {
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.bitcoinKnotsDataDir,
+                    "DATADIR": Defaults.shared.bitcoinDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -217,7 +217,7 @@ struct KnotsUtilsView: View {
     }
     
     private func chooseWalletToMineTo() {
-        BitcoinKnotsRPC.shared.command(method: "listwallets", params: [:]) { (result, error) in
+        BitcoinRPC.shared.command(method: "listwallets", params: [:]) { (result, error) in
             guard let result = result as? [String] else {
                 showMessage(message: error ?? "Can't cast bitcoin-cli result as [String].")
                 return
@@ -228,8 +228,8 @@ struct KnotsUtilsView: View {
     }
     
     private var defaultPath: String {
-        let chain = Defaults.shared.knotsChain
-        let root = Defaults.shared.bitcoinKnotsDataDir
+        let chain = Defaults.shared.chain
+        let root = Defaults.shared.bitcoinDataDir
         var url = root
         if chain != "main" {
             url += "/\(chain)/wallets"
@@ -291,7 +291,7 @@ struct KnotsUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinKnotsDataDir
+        let dataDir = Defaults.shared.bitcoinDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -368,9 +368,9 @@ struct KnotsUtilsView: View {
             return
         }
         
-        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
             guard updated else {
-                showMessage(message: "BitcoinKnotsRPCCreds update failed")
+                showMessage(message: "BitcoinRPCCreds update failed")
                 return
             }
             
@@ -443,17 +443,17 @@ struct KnotsUtilsView: View {
     }
     
     private func debugLogPath() -> String? {
-        let chain = Defaults.shared.knotsChain
+        let chain = Defaults.shared.chain
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/signet/debug.log"
         default:
             break
         }
@@ -461,7 +461,7 @@ struct KnotsUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinKnotsDataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinDataDir)
     }
     
     private func verify() {

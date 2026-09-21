@@ -127,7 +127,7 @@ struct QuickConnectView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinCoreDataDir
+        let dataDir = Defaults.shared.bitcoinDataDir
         return dataDir + "/bitcoin.conf"
     }
     

@@ -39,7 +39,6 @@
 		0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */; };
 		0A6C58532EB47EE2000FB22E /* MineBlocks.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A6C58522EB47EE2000FB22E /* MineBlocks.command */; };
 		0A6C58552EB49770000FB22E /* DropDownAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6C58542EB49770000FB22E /* DropDownAlert.swift */; };
-		0A7DFAC92E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */; };
 		0A9822E12CA4263E008DB52E /* GithubReleases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E02CA4263E008DB52E /* GithubReleases.swift */; };
 		0A9822E32CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */; };
 		0AA43FD02CCE1B3D0049D4AD /* BlockchainInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */; };
@@ -95,6 +94,8 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
+		5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */; };
+		5955E7413053A8A500C4B1E5 /* P256K in Frameworks */ = {isa = PBXBuildFile; productRef = 5955E7403053A8A500C4B1E5 /* P256K */; };
 		595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 595B518F2DC936C0002FD7E5 /* DeleteWallet.command */; };
 		595B51922DC93EA6002FD7E5 /* WalletPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51912DC93EA6002FD7E5 /* WalletPicker.swift */; };
 		595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51932DC9416E002FD7E5 /* FilePickerView.swift */; };
@@ -102,7 +103,6 @@
 		595B51982DD280DD002FD7E5 /* JMSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595B51972DD280DD002FD7E5 /* JMSessionView.swift */; };
 		5963C3842D5E4291007C89DC /* ConfigureJM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5963C3832D5E4291007C89DC /* ConfigureJM.swift */; };
 		599E9C982DDEC17B00BFA551 /* BitcoinKnotsEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C972DDEC17B00BFA551 /* BitcoinKnotsEnv.swift */; };
-		599E9C9A2DDECBA300BFA551 /* BitcoinKnotsRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */; };
 		599E9C9C2DDECED100BFA551 /* ConfigureKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */; };
 		599E9C9E2DDED1C100BFA551 /* KnotsConf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */; };
 		599E9CA02DE774D700BFA551 /* KnotsUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */; };
@@ -116,7 +116,7 @@
 		59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF92D400BB500110A12 /* DownloadHelper.swift */; };
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
 		59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */; };
-		BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */; };
+		FB827B4A45F2BAF6CBA4B33E /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -153,7 +153,6 @@
 		0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ExtractKnotsTarball.command; sourceTree = "<group>"; };
 		0A6C58522EB47EE2000FB22E /* MineBlocks.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = MineBlocks.command; sourceTree = "<group>"; };
 		0A6C58542EB49770000FB22E /* DropDownAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownAlert.swift; sourceTree = "<group>"; };
-		0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsQuickConnectView.swift; sourceTree = "<group>"; };
 		0A9822E02CA4263E008DB52E /* GithubReleases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubReleases.swift; sourceTree = "<group>"; };
 		0A9822E22CA42BEC008DB52E /* TaggedReleasesBitcoinCoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedReleasesBitcoinCoreView.swift; sourceTree = "<group>"; };
 		0AA43FCF2CCE1B3D0049D4AD /* BlockchainInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainInfo.swift; sourceTree = "<group>"; };
@@ -201,7 +200,7 @@
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
-		1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		59028E182E259CC2005BB904 /* StartKnots.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartKnots.command; sourceTree = "<group>"; };
 		590A1B5E2D52B258006393E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BtcUtilsView.swift; sourceTree = "<group>"; };
@@ -212,6 +211,7 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
+		5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentsScanner.swift; sourceTree = "<group>"; };
 		595B518F2DC936C0002FD7E5 /* DeleteWallet.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
 		595B51912DC93EA6002FD7E5 /* WalletPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPicker.swift; sourceTree = "<group>"; };
 		595B51932DC9416E002FD7E5 /* FilePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePickerView.swift; sourceTree = "<group>"; };
@@ -219,7 +219,6 @@
 		595B51972DD280DD002FD7E5 /* JMSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JMSessionView.swift; sourceTree = "<group>"; };
 		5963C3832D5E4291007C89DC /* ConfigureJM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureJM.swift; sourceTree = "<group>"; };
 		599E9C972DDEC17B00BFA551 /* BitcoinKnotsEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnotsEnv.swift; sourceTree = "<group>"; };
-		599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnotsRPC.swift; sourceTree = "<group>"; };
 		599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureKnots.swift; sourceTree = "<group>"; };
 		599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsConf.swift; sourceTree = "<group>"; };
 		599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnotsUtilsView.swift; sourceTree = "<group>"; };
@@ -233,8 +232,8 @@
 		59CD1FF92D400BB500110A12 /* DownloadHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadHelper.swift; sourceTree = "<group>"; };
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
 		59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnots.swift; sourceTree = "<group>"; };
-		D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
+		78978D98CB16B065CF1CEADC /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
+		D939958C5863682C3FC6C957 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,7 +241,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BF3EE5E9CBA2EF2BFB961A21 /* Pods_FullyNoded_Server.framework in Frameworks */,
+				FB827B4A45F2BAF6CBA4B33E /* Pods_FullyNoded_Server.framework in Frameworks */,
+				5955E7413053A8A500C4B1E5 /* P256K in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -272,7 +272,6 @@
 				595B51932DC9416E002FD7E5 /* FilePickerView.swift */,
 				595B51972DD280DD002FD7E5 /* JMSessionView.swift */,
 				599E9C9F2DE774D700BFA551 /* KnotsUtilsView.swift */,
-				0A7DFAC82E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift */,
 				0A6C58542EB49770000FB22E /* DropDownAlert.swift */,
 				0AD202422ED173C3006286DD /* ConfigView.swift */,
 				0AD202462ED1A59B006286DD /* TorLogView.swift */,
@@ -327,10 +326,10 @@
 				0AD7BE182CBD919600428D02 /* JMRPC.swift */,
 				5963C3832D5E4291007C89DC /* ConfigureJM.swift */,
 				595B51912DC93EA6002FD7E5 /* WalletPicker.swift */,
-				599E9C992DDECBA300BFA551 /* BitcoinKnotsRPC.swift */,
 				599E9C9B2DDECED100BFA551 /* ConfigureKnots.swift */,
 				599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */,
 				0AD202442ED1A577006286DD /* TorLogMonitor.swift */,
+				5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -341,7 +340,7 @@
 				0AA692332C7F831D00366192 /* FullyNoded-Server */,
 				0AA692322C7F831D00366192 /* Products */,
 				A2BB46EEFE020407EAA5D643 /* Pods */,
-				B46C201EBCA0A4648795DD2E /* Frameworks */,
+				C23A240855A6FB943CED3FCB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -436,16 +435,16 @@
 		A2BB46EEFE020407EAA5D643 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */,
-				DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */,
+				D939958C5863682C3FC6C957 /* Pods-FullyNoded-Server.debug.xcconfig */,
+				78978D98CB16B065CF1CEADC /* Pods-FullyNoded-Server.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		B46C201EBCA0A4648795DD2E /* Frameworks */ = {
+		C23A240855A6FB943CED3FCB /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D69717EDC523941317071BC8 /* Pods_FullyNoded_Server.framework */,
+				1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -457,19 +456,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0AA692452C7F831F00366192 /* Build configuration list for PBXNativeTarget "FullyNoded-Server" */;
 			buildPhases = (
-				E9ADCC8307D7D482E667D07F /* [CP] Check Pods Manifest.lock */,
+				6C531FC6578DB740F90CE5B4 /* [CP] Check Pods Manifest.lock */,
 				0AA6922D2C7F831D00366192 /* Sources */,
 				0AA6922E2C7F831D00366192 /* Frameworks */,
 				0AA6922F2C7F831D00366192 /* Resources */,
-				4BCFDEABA43396A1A63A65D4 /* [CP] Embed Pods Frameworks */,
+				5858B553354D94442AFB25EF /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = "FullyNoded-Server";
-			packageProductDependencies = (
-			);
 			productName = "FullyNoded-Server";
 			productReference = 0AA692312C7F831D00366192 /* FullyNoded-Server.app */;
 			productType = "com.apple.product-type.application";
@@ -499,6 +496,7 @@
 			);
 			mainGroup = 0AA692282C7F831D00366192;
 			packageReferences = (
+				5955E73F3053A8A500C4B1E5 /* XCRemoteSwiftPackageReference "swift-secp256k1" */,
 			);
 			productRefGroup = 0AA692322C7F831D00366192 /* Products */;
 			projectDirPath = "";
@@ -568,7 +566,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		4BCFDEABA43396A1A63A65D4 /* [CP] Embed Pods Frameworks */ = {
+		5858B553354D94442AFB25EF /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -576,16 +574,20 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E9ADCC8307D7D482E667D07F /* [CP] Check Pods Manifest.lock */ = {
+		6C531FC6578DB740F90CE5B4 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -622,6 +624,7 @@
 				59A2E1912D6EB25900F0C194 /* BlockchainInfoView.swift in Sources */,
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
+				5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */,
 				0AF736212D00D0900026FE0A /* Help.swift in Sources */,
 				599E9C982DDEC17B00BFA551 /* BitcoinKnotsEnv.swift in Sources */,
 				59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */,
@@ -633,7 +636,6 @@
 				0A5CE8CA2C89EB8100534A8D /* BitcoinConf.swift in Sources */,
 				599E9C9C2DDECED100BFA551 /* ConfigureKnots.swift in Sources */,
 				0AA692492C7F874900366192 /* BitcoinCore.swift in Sources */,
-				0A7DFAC92E2EEFD6008EE9E6 /* KnotsQuickConnectView.swift in Sources */,
 				0AD7BE1D2CBD923300428D02 /* JMWallet.swift in Sources */,
 				59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */,
 				595B51942DC9416E002FD7E5 /* FilePickerView.swift in Sources */,
@@ -651,7 +653,6 @@
 				0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */,
 				595B51922DC93EA6002FD7E5 /* WalletPicker.swift in Sources */,
 				0AA692352C7F831D00366192 /* FullyNoded_ServerApp.swift in Sources */,
-				599E9C9A2DDECBA300BFA551 /* BitcoinKnotsRPC.swift in Sources */,
 				599E9C9E2DDED1C100BFA551 /* KnotsConf.swift in Sources */,
 				0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */,
 				0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */,
@@ -797,7 +798,7 @@
 		};
 		0AA692462C7F831F00366192 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1B8BA5D0924A1AE2EC951616 /* Pods-FullyNoded-Server.debug.xcconfig */;
+			baseConfigurationReference = D939958C5863682C3FC6C957 /* Pods-FullyNoded-Server.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -840,7 +841,7 @@
 		};
 		0AA692472C7F831F00366192 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DEFA9324C99AAF1DC60AC76C /* Pods-FullyNoded-Server.release.xcconfig */;
+			baseConfigurationReference = 78978D98CB16B065CF1CEADC /* Pods-FullyNoded-Server.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -903,6 +904,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5955E73F3053A8A500C4B1E5 /* XCRemoteSwiftPackageReference "swift-secp256k1" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/21-DOT-DEV/swift-secp256k1";
+			requirement = {
+				kind = exactVersion;
+				version = 0.23.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5955E7403053A8A500C4B1E5 /* P256K */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5955E73F3053A8A500C4B1E5 /* XCRemoteSwiftPackageReference "swift-secp256k1" */;
+			productName = P256K;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		0AA692382C7F831D00366192 /* FullyNoded_Server.xcdatamodeld */ = {

@@ -39,7 +39,7 @@ struct BitcoinKnots: View {
                 }
                 Spacer()
                 Button {
-                    openWindow(id: "KnotsQuickConnect")
+                    openWindow(id: "QuickConnect")
                 } label: {
                     Image(systemName: "qrcode")
                 }
@@ -229,7 +229,7 @@ struct BitcoinKnots: View {
                 "BINARY_NAME": envValues.binaryName,
                 "VERSION": envValues.version,
                 "PREFIX": envValues.prefix,
-                "DATADIR": Defaults.shared.bitcoinKnotsDataDir,
+                "DATADIR": Defaults.shared.bitcoinDataDir,
                 "CHAIN": envValues.chain
             ]
             isKnotsRunning()
@@ -237,15 +237,15 @@ struct BitcoinKnots: View {
     }
     
     private func updateChain(chain: String) {
-        var port = "8662"
+        var port = "8332"
         switch chain {
-        case "signet": port = "38662"
-        case "regtest": port = "18663"
-        case "test": port = "18662"
-        default: port = "8662"
+        case "signet": port = "38332"
+        case "regtest": port = "18443"
+        case "test": port = "18332"
+        default: port = "8332"
         }
-        UserDefaults.standard.setValue(port, forKey: "knotsPort")
-        UserDefaults.standard.setValue(chain.lowercased(), forKey: "knotsChain")
+        UserDefaults.standard.setValue(port, forKey: "port")
+        UserDefaults.standard.setValue(chain.lowercased(), forKey: "chain")
         self.env["CHAIN"] = chain
         self.blockchainInfo = nil
         self.logOutput = ""
@@ -283,7 +283,7 @@ struct BitcoinKnots: View {
     private func stopKnots() {
         isAnimating = true
         statusText = "Stopping..."
-        BitcoinKnotsRPC.shared.command(method: "stop", params: [:]) { (result, error) in
+        BitcoinRPC.shared.command(method: "stop", params: [:]) { (result, error) in
             updateTimer(interval: 3.0)
             
             guard let result = result as? String else {
@@ -331,17 +331,17 @@ struct BitcoinKnots: View {
     }
     
     private func debugLogPath() -> String? {
-        let chain = Defaults.shared.knotsChain
+        let chain = Defaults.shared.chain
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/signet/debug.log"
         default:
             break
         }
@@ -352,7 +352,7 @@ struct BitcoinKnots: View {
         isAnimating = true
         statusText = "Refreshing..."
         
-        BitcoinKnotsRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
+        BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in
             showKnotsLog()
             guard error == nil, let result = result as? [String: Any] else {
                 if let error = error {

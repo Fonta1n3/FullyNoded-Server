@@ -19,7 +19,7 @@ struct TaggedReleasesBitcoinKnotsView: View {
     @State private var isAnimating = false
     @State private var showError = false
     @State private var message = ""
-    @State private var bitcoinKnotsDataDir = Defaults.shared.bitcoinKnotsDataDir
+    @State private var bitcoinKnotsDataDir = Defaults.shared.bitcoinDataDir
     @State private var fnDataDirectory = Defaults.shared.fnDataDir
     @State private var txIndex = Defaults.shared.txindex
     @State private var taggedRelease: TaggedReleaseElement = .init(url: nil, assetsURL: nil, uploadURL: nil, htmlURL: nil, id: 0, author: nil, nodeID: nil, tagName: "", targetCommitish: nil, name: nil, draft: nil, prerelease: nil, createdAt: nil, publishedAt: nil, tarballURL: "", zipballURL: nil, body: nil)
@@ -229,8 +229,8 @@ struct TaggedReleasesBitcoinKnotsView: View {
                 "binaryName": "bitcoin-\(version)-arm64-apple-darwin.tar.gz",
                 "version": version,
                 "prefix": "bitcoin-\(version)",
-                "dataDir": Defaults.shared.bitcoinKnotsDataDir,
-                "chain": Defaults.shared.knotsChain
+                "dataDir": Defaults.shared.bitcoinDataDir,
+                "chain": Defaults.shared.chain
             ]
             
             DataManager.saveEntity(entityName: .bitcoinKnotsEnv, dict: dict) { saved in
@@ -274,14 +274,14 @@ struct TaggedReleasesBitcoinKnotsView: View {
         let root = "https://bitcoinknots.org/files/"
         versionNumberInt = "\(arr[0])"
         let sha256sumsUrl = "\(root)\(versionNumberInt!).x/\(processedVersion)/SHA256SUMS"
-        print("sha256sumsUrl: \(sha256sumsUrl)")
+        //print("sha256sumsUrl: \(sha256sumsUrl)")
         let sha256sumsSigUrl = "\(root)\(versionNumberInt!).x/\(processedVersion)/SHA256SUMS.asc"
-        print("sha256sumsSigUrl: \(sha256sumsSigUrl)")
+        //print("sha256sumsSigUrl: \(sha256sumsSigUrl)")
         let macOsUrl = "https://bitcoinknots.org/files/\(versionNumberInt!).x/\(processedVersion)/bitcoin-\(processedVersion)-\(arch)-apple-darwin.tar.gz"
-        print("versionNumberInt: \(versionNumberInt!)")
-        print("macOsUrl: \(macOsUrl)")
-        print("taggedName: \(tagName)")
-        print("processedVersion: \(processedVersion)")
+//        print("versionNumberInt: \(versionNumberInt!)")
+//        print("macOsUrl: \(macOsUrl)")
+//        print("taggedName: \(tagName)")
+//        print("processedVersion: \(processedVersion)")
         
         
         
