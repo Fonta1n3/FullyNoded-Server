@@ -41,7 +41,7 @@ class ConfigureKnots {
                             return
                         }
                         if UserDefaults.standard.object(forKey: "knotsPort") == nil {
-                            UserDefaults.standard.set("8662", forKey: "knotsPort")
+                            UserDefaults.standard.set("8332", forKey: "knotsPort")
                         }
                         
                         var updatedKnotsConf = existingKnotsConf.joined(separator: "\n")
@@ -150,14 +150,14 @@ class ConfigureKnots {
     }
     
     class func updateRpcCreds(encryptedPass: Data, rpcUser: String, completion: @escaping (Bool) -> Void) {
-        DataManager.retrieve(entityName: .knotsRpcCreds) { existingCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { existingCreds in
             if let _ = existingCreds {
-                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(updated)
                 }
             } else {
-                DataManager.saveEntity(entityName: .knotsRpcCreds, dict: ["password": encryptedPass]) { saved in
+                DataManager.saveEntity(entityName: .rpcCreds, dict: ["password": encryptedPass]) { saved in
                     UserDefaults.standard.set("FullyNoded-Server", forKey: "rpcuser")
                     completion(saved)
                 }

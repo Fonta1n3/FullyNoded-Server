@@ -34,11 +34,11 @@ struct Settings: View {
                         InfoRow(label: "Binary name", value: bitcoinEnvValues.binaryName)
                         InfoRow(label: "Version", value: bitcoinEnvValues.version)
                         InfoRow(label: "Prefix", value: bitcoinEnvValues.prefix)
-                        InfoRow(label: "Data Directory", value: Defaults.shared.bitcoinCoreDataDir)
+                        InfoRow(label: "Data Directory", value: Defaults.shared.bitcoinDataDir)
                         InfoRow(label: "bitcoind path", value: "/Users/\(NSUserName())/.fullynoded/BitcoinCore/\(bitcoinEnvValues.prefix)/bin/bitcoind")
                             .font(.system(.caption, design: .monospaced))
                             .foregroundColor(.secondary)
-                        InfoRow(label: "Default RPC Ports", value: "main: 83322 | signet: 38332 | regtest: 18443 | testnet: 18332")
+                        InfoRow(label: "Default RPC Ports", value: "main: 8332 | signet: 38332 | regtest: 18443 | testnet: 18332 | testnet4: 48332")
                             .foregroundColor(.secondary)
                     }
 
@@ -47,11 +47,11 @@ struct Settings: View {
                         InfoRow(label: "Binary name", value: knotsEnvValues.binaryName)
                         InfoRow(label: "Version", value: knotsEnvValues.version)
                         InfoRow(label: "Prefix", value: knotsEnvValues.prefix)
-                        InfoRow(label: "Data Directory", value: Defaults.shared.bitcoinKnotsDataDir)
+                        InfoRow(label: "Data Directory", value: Defaults.shared.bitcoinDataDir)
                         InfoRow(label: "bitcoind path", value: "/Users/\(userName)/.fullynoded/BitcoinKnots/\(knotsEnvValues.prefix)/bin/bitcoind")
                             .font(.system(.caption, design: .monospaced))
                             .foregroundColor(.secondary)
-                        InfoRow(label: "Default RPC Ports", value: "main: 8662 | signet: 38662 | regtest: 18663 | testnet: 18662")
+                        InfoRow(label: "Default RPC Ports", value: "main: 8332 | signet: 38332 | regtest: 18443 | testnet: 18332")
                             .foregroundColor(.secondary)
                     }
 

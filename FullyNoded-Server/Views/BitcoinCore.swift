@@ -23,7 +23,7 @@ struct BitcoinCore: View {
     @State private var env: [String: String] = [:]
     @State private var blockchainInfo: BlockchainInfo? = nil
     @State private var timerForBitcoinStatus = Timer.publish(every: 15.0, on: .main, in: .common).autoconnect()
-    private var chains = ["main", "test", "signet", "regtest"]
+    private var chains = ["main", "test", "signet", "regtest", "testnet4"]
     
     
     var body: some View {
@@ -235,17 +235,17 @@ struct BitcoinCore: View {
         }
     }
     
-    private func updateCLNConfig(rpcpass: String) {
-        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        guard let conf = conf(stringPath: lightningConfPath) else { return }
-        let arr = conf.split(separator: "\n")
-        for item in arr {
-            if item.hasPrefix("bitcoin-rpcpassword=") {
-                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
-                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-            }
-        }
-    }
+//    private func updateCLNConfig(rpcpass: String) {
+//        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//        guard let conf = conf(stringPath: lightningConfPath) else { return }
+//        let arr = conf.split(separator: "\n")
+//        for item in arr {
+//            if item.hasPrefix("bitcoin-rpcpassword=") {
+//                let newConf = conf.replacingOccurrences(of: item, with: "bitcoin-rpcpassword=" + rpcpass)
+//                try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+//            }
+//        }
+//    }
     
     private func initialLoad() {
         selectedChain = UserDefaults.standard.string(forKey: "chain") ?? "main"
@@ -256,7 +256,7 @@ struct BitcoinCore: View {
                 "BINARY_NAME": envValues.binaryName,
                 "VERSION": envValues.version,
                 "PREFIX": envValues.prefix,
-                "DATADIR": Defaults.shared.bitcoinCoreDataDir,
+                "DATADIR": Defaults.shared.bitcoinDataDir,
                 "CHAIN": envValues.chain
             ]
             isBitcoinCoreRunning()
@@ -269,6 +269,7 @@ struct BitcoinCore: View {
         case "signet": port = "38332"
         case "regtest": port = "18443"
         case "test": port = "18332"
+        case "testnet4": port = "48332"
         default: port = "8332"
         }
         UserDefaults.standard.setValue(port, forKey: "port")
@@ -284,7 +285,7 @@ struct BitcoinCore: View {
             isBitcoinCoreRunning()
             showBitcoinLog()
         }
-        updateLightningConfNetwork(chain: chain)
+        //updateLightningConfNetwork(chain: chain)
         updateJMConfNetwork(chain: chain)
     }
     
@@ -317,30 +318,30 @@ struct BitcoinCore: View {
         }
     }
     
-    private func updateLightningConfNetwork(chain: String) {
-        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
-        if fileExists(path: lightningConfPath) {
-            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
-                    let string = String(data: conf, encoding: .utf8) else {
-                return
-            }
-            let arr = string.split(separator: "\n")
-            guard arr.count > 0  else { return }
-            for item in arr {
-                if item.hasPrefix("network=") {
-                    let existingNetworkArr = item.split(separator: "=")
-                    if existingNetworkArr.count == 2 {
-                        var network = chain
-                        if network == "main" {
-                            network = "bitcoin"
-                        }
-                        let newConf = string.replacingOccurrences(of: item, with: "network=" + network)
-                        try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
-                    }
-                }
-            }
-        }
-    }
+//    private func updateLightningConfNetwork(chain: String) {
+//        let lightningConfPath = "/Users/\(NSUserName())/.lightning/config"
+//        if fileExists(path: lightningConfPath) {
+//            guard let conf = try? Data(contentsOf: URL(fileURLWithPath: lightningConfPath)),
+//                    let string = String(data: conf, encoding: .utf8) else {
+//                return
+//            }
+//            let arr = string.split(separator: "\n")
+//            guard arr.count > 0  else { return }
+//            for item in arr {
+//                if item.hasPrefix("network=") {
+//                    let existingNetworkArr = item.split(separator: "=")
+//                    if existingNetworkArr.count == 2 {
+//                        var network = chain
+//                        if network == "main" {
+//                            network = "bitcoin"
+//                        }
+//                        let newConf = string.replacingOccurrences(of: item, with: "network=" + network)
+//                        try? newConf.write(to: URL(fileURLWithPath: lightningConfPath), atomically: false, encoding: .utf8)
+//                    }
+//                }
+//            }
+//        }
+//    }
     
     private func updateTimer(interval: Double) {
         timerForBitcoinStatus.upstream.connect().cancel()
@@ -350,7 +351,11 @@ struct BitcoinCore: View {
     private func startBitcoinCore() {
         isAnimating = true
         statusText = "Starting..."
+        
         ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
+            if let errorMessage = errorMessage {
+                showMessage(message: errorMessage)
+            }
            updateTimer(interval: 3.0)
         }
     }
@@ -416,13 +421,15 @@ struct BitcoinCore: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/signet/debug.log"
+        case "testnet4":
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet4/debug.log"
         default:
             break
         }

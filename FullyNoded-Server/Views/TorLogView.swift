@@ -24,8 +24,8 @@ struct TorLogView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            //.padding()
         }
+        .textSelection(.enabled)
         .background(Color.black)
         .scrollTargetBehavior(.paging)
         .defaultScrollAnchor(.bottom)

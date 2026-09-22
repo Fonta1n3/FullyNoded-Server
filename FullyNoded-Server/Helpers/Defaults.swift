@@ -13,7 +13,7 @@ class Defaults {
     private init() {}
     
     private func getBitcoinConf(completion: @escaping ((conf: [String]?, error: Bool)) -> Void) {
-        let path = URL(fileURLWithPath: bitcoinCoreDataDir + "/bitcoin.conf")
+        let path = URL(fileURLWithPath: bitcoinDataDir + "/bitcoin.conf")
         
         guard let bitcoinConf = try? String(contentsOf: path, encoding: .utf8) else {
             completion((nil, false))
@@ -99,16 +99,12 @@ class Defaults {
         return ud.object(forKey: "fnDataDir") as? String ?? "/Users/\(NSUserName())/.fullynoded"
     }
     
-    var bitcoinCoreDataDir: String {
+    var bitcoinDataDir: String {
         return ud.object(forKey: "dataDir") as? String ?? "/Users/\(NSUserName())/Library/Application Support/Bitcoin"
     }
     
-    var bitcoinKnotsDataDir: String {
-        return ud.object(forKey: "knotsDataDir") as? String ?? "/Users/\(NSUserName())/.knots"
-    }
-    
     var blocksDir: String {
-        return ud.object(forKey: "blocksDir") as? String ?? bitcoinCoreDataDir
+        return ud.object(forKey: "blocksDir") as? String ?? bitcoinDataDir
     }
     
     var isPrivate: Int {
@@ -145,8 +141,8 @@ class Defaults {
         return ud.string(forKey: "chain") ?? "signet"
     }
     
-    var knotsChain: String {
-        return ud.string(forKey: "knotsChain") ?? "signet"
-    }
+//    var knotsChain: String {
+//        return ud.string(forKey: "knotsChain") ?? "signet"
+//    }
 
 }

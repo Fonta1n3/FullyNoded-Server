@@ -43,7 +43,7 @@ struct BtcUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.bitcoinCoreDataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -112,7 +112,7 @@ struct BtcUtilsView: View {
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.bitcoinCoreDataDir,
+                    "DATADIR": Defaults.shared.bitcoinDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -194,7 +194,7 @@ struct BtcUtilsView: View {
     
     private var defaultPath: String {
         let chain = Defaults.shared.chain
-        let root = Defaults.shared.bitcoinCoreDataDir
+        let root = Defaults.shared.bitcoinDataDir
         var url = root
         if chain != "main" {
             url += "/\(chain)/wallets"
@@ -228,13 +228,15 @@ struct BtcUtilsView: View {
     }
     
     private func mine(wallet: String, numberOfBlocks: String) {
+        print("mine: \(wallet)")
         isLoading = true
         
         let mineEnv = [
             "RPCWALLET" : wallet,
             "PREFIX" : env["PREFIX"]!,
             "DATADIR" : env["DATADIR"]!,
-            "NUMBER_OF_BLOCKS": numberOfBlocks
+            "NUMBER_OF_BLOCKS": numberOfBlocks,
+            "IMPLEMENTATION": "BitcoinCore"
         ]
         
         ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
@@ -288,7 +290,7 @@ struct BtcUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinCoreDataDir
+        let dataDir = Defaults.shared.bitcoinDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -443,13 +445,15 @@ struct BtcUtilsView: View {
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinCoreDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/signet/debug.log"
+        case "testnet4":
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet4/debug.log"
         default:
             break
         }
@@ -457,7 +461,7 @@ struct BtcUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinCoreDataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinDataDir)
     }
     
     private func verify() {

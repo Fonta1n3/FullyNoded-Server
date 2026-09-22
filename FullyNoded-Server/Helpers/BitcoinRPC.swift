@@ -15,7 +15,6 @@ class BitcoinRPC {
     
     func command(method: String, params: [String: Any], completion: @escaping ((result: Any?, error: String?)) -> Void) {
         let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
-        
         let nodeIp = "127.0.0.1:\(port)"
         let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
         

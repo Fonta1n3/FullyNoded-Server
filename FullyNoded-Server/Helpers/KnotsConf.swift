@@ -28,26 +28,24 @@ class KnotsConf {
         fallbackfee=0.00009
         blocksdir=\(d.blocksDir)
         deprecatedrpc=create_bdb
-        [test]
-        rpcport=18662
-        [main]
-        rpcport=8662
-        [signet]
-        rpcport=38662
-        [regtest]
-        rpcport=18663
+        proxy=127.0.0.1:19850
+        listen=1
+        listenonion=1
+        debug=tor
+        datacarriersize=0
+        permitbaremultisig=0
         """
     }
     
     static func saveCreds(rpcuser: String, encryptedPass: Data) {
-        DataManager.retrieve(entityName: .knotsRpcCreds) { existingCreds in
+        DataManager.retrieve(entityName: .rpcCreds) { existingCreds in
             if let _ = existingCreds {
-                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
+                DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
                     guard updated else { return }
                     UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
                 }
             } else {
-                DataManager.saveEntity(entityName: .knotsRpcCreds, dict: ["password": encryptedPass]) { saved in
+                DataManager.saveEntity(entityName: .rpcCreds, dict: ["password": encryptedPass]) { saved in
                     guard saved else { return }
                     UserDefaults.standard.setValue(rpcuser, forKey: "rpcuser")
                 }
@@ -61,7 +59,7 @@ class KnotsConf {
     }
     
     static func getKnotsConf(completion: @escaping ((conf: [String]?, error: Bool)) -> Void) {
-        let path = URL(fileURLWithPath: "\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf")
+        let path = URL(fileURLWithPath: "\(Defaults.shared.bitcoinDataDir)/bitcoin.conf")
         guard let bitcoinConf = try? String(contentsOf: path, encoding: .utf8) else {
             completion((nil, false))
             return
@@ -79,9 +77,9 @@ class KnotsConf {
     }
     
     class func setKnotsConf(_ bitcoinConf: String) -> Bool {
-        createDirectory(Defaults.shared.bitcoinKnotsDataDir)
+        createDirectory(Defaults.shared.bitcoinDataDir)
         
-        return writeFile("\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf", bitcoinConf)
+        return writeFile("\(Defaults.shared.bitcoinDataDir)/bitcoin.conf", bitcoinConf)
     }
     
     class func createDirectory(_ path: String) {

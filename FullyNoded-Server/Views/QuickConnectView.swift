@@ -15,7 +15,6 @@ struct QuickConnectView: View {
     @State private var message = ""
     @State private var fullyNodedUrl: String?
     @State private var unifyUrl: String?
-    @State private var fnBcoreUrl: String?
     @State private var onionAddress: String?
     
     var body: some View {
@@ -74,12 +73,6 @@ struct QuickConnectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
-                if let fnBcoreUrl = fnBcoreUrl {
-                    Link("Connect Fully Noded - Bitcoin Core (locally)", destination: URL(string: fnBcoreUrl)!)
-                        .padding([.leading])
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
                 if let unifyUrl = unifyUrl {
                     Link("Connect Unify (locally)", destination: URL(string: unifyUrl)!)
                         .padding([.leading, .bottom])
@@ -134,7 +127,7 @@ struct QuickConnectView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinCoreDataDir
+        let dataDir = Defaults.shared.bitcoinDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -203,6 +196,8 @@ struct QuickConnectView: View {
              onionHost = hiddenServices[3] + ":" + "38332"
          case "regtest":
              onionHost = hiddenServices[4] + ":" + "18443"
+         case "testnet4":
+             onionHost = hiddenServices[5] + ":" + "48332"
          default:
              break
          }
@@ -221,7 +216,6 @@ struct QuickConnectView: View {
             let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
             self.fullyNodedUrl = "btcrpc://xxx:xxx@localhost:\(port)"
             self.unifyUrl = "unify://xxx:xxx@localhost:\(port)"
-            self.fnBcoreUrl = "fnbtccore://xxx:xxx@localhost:\(port)"
         }
     }
 }

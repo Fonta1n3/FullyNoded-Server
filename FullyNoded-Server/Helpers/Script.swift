@@ -121,7 +121,6 @@ public enum SCRIPT: String {
         case .launchInstaller:
             return "LaunchInstaller"
         case .hasBitcoinShutdownCompleted, .isBitcoindRunning, .didBitcoindStart, .didKnotsStart:
-            // need to update this for knots and bitcoind incase running simultaneously
             return "IsProcessRunning"
         case .installHomebrew:
             return "LaunchBrewInstall"

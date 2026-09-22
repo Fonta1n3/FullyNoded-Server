@@ -12,11 +12,20 @@ struct KnotsUtilsView: View {
     @State private var promptToDeleteWallet = false
     @State private var isShowingPicker = false
     @State private var walletToDeletePath: String?
+    @State private var promptToMineRegtestBlocks = false
     @State private var showError = false
     @State private var message = ""
     @State private var env: [String: String] = [:]
     @State private var promptToRefreshRpcAuth = false
     @State private var promptToReindex = false
+    @State private var selectedWallet = ""
+    @State private var wallets: [String] = []
+    @State private var sheetID = UUID()
+    @State private var isLoading = false
+    @State private var showMiningAlert = false
+    @State private var selectedBlocks = "100"
+    
+    let blockOptions = ["1", "10", "50", "100", "500", "1000"]
     
     //var refresh: () -> Void
     
@@ -35,7 +44,7 @@ struct KnotsUtilsView: View {
                 }
                 .padding(.leading)
                 Button {
-                    openFile(file: "\(Defaults.shared.bitcoinKnotsDataDir)/bitcoin.conf")
+                    openFile(file: "\(Defaults.shared.bitcoinDataDir)/bitcoin.conf")
                 } label: {
                     Text("bitcoin.conf")
                 }
@@ -69,6 +78,21 @@ struct KnotsUtilsView: View {
                     Image(systemName: "exclamationmark.triangle")
                     Text("Delete a Wallet")
                 }
+                if env["CHAIN"] == "regtest" {
+                    Button {
+                        promptToMineRegtestBlocks = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .scaleEffect(0.5)
+                            }
+                            Text(isLoading ? "Mining..." : "Mine regtest blocks")
+                        }
+                    }
+                    .disabled(isLoading)
+                }
             }
             .padding([.leading, .trailing])
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -89,7 +113,7 @@ struct KnotsUtilsView: View {
                     "BINARY_NAME": envValues.binaryName,
                     "VERSION": envValues.version,
                     "PREFIX": envValues.prefix,
-                    "DATADIR": Defaults.shared.bitcoinKnotsDataDir,
+                    "DATADIR": Defaults.shared.bitcoinDataDir,
                     "CHAIN": envValues.chain
                 ]
             }
@@ -142,14 +166,70 @@ struct KnotsUtilsView: View {
                 Button("Select Wallet Directory", action: { isShowingPicker = true })
                 Text("Once deleted the wallet is gone forever!")
             }
+            .alert("Start mining?", isPresented: $promptToMineRegtestBlocks) {
+                Button("Select a wallet to mine to.", action: { chooseWalletToMineTo() })
+                Button("Cancel", role: .cancel, action: {})
+            } message: {
+                Text("In order to test a wallet in regtest you need some bitcoins to send and receive, this makes it easy. 100 blocks will be mined in about 20 seconds. First you will need to select a wallet to mine to. 100 blocks are mined as it takes 100 confirmations before a coinbase utxo is spendable.")
+            }
             .alert(message, isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             }
+            .sheet(isPresented: $showMiningAlert) {
+                MineBlocksSheet(
+                    isPresented: $showMiningAlert,
+                    selectedWallet: $selectedWallet,
+                    selectedBlocks: $selectedBlocks,
+                    wallets: wallets,
+                    blockOptions: blockOptions,
+                    onConfirm: {
+                        mine(wallet: selectedWallet, numberOfBlocks: selectedBlocks)
+                    }
+                )
+            }
+            .onChange(of: wallets) {
+                sheetID = UUID()
+            }
+    }
+    
+    private func mine(wallet: String, numberOfBlocks: String) {
+        isLoading = true
+        let mineEnv = [
+            "RPCWALLET" : wallet,
+            "PREFIX" : env["PREFIX"]!,
+            "DATADIR" : env["DATADIR"]!,
+            "NUMBER_OF_BLOCKS": numberOfBlocks,
+            "IMPLEMENTATION": "BitcoinKnots"
+        ]
+        
+        ScriptUtil.runScript(script: .mineBlocks, env: mineEnv, args: nil) { (output, _, errorMessage) in
+            if let errorMessage = errorMessage {
+                showMessage(message: errorMessage)
+            }
+            guard let output = output else {
+                isLoading = false
+                showMessage(message: errorMessage ?? "We did not get a response from your node...")
+                return
+            }
+            isLoading = false
+            showMessage(message: output)
+        }
+    }
+    
+    private func chooseWalletToMineTo() {
+        BitcoinRPC.shared.command(method: "listwallets", params: [:]) { (result, error) in
+            guard let result = result as? [String] else {
+                showMessage(message: error ?? "Can't cast bitcoin-cli result as [String].")
+                return
+            }
+            wallets = result
+            showMiningAlert = true
+        }
     }
     
     private var defaultPath: String {
-        let chain = Defaults.shared.knotsChain
-        let root = Defaults.shared.bitcoinKnotsDataDir
+        let chain = Defaults.shared.chain
+        let root = Defaults.shared.bitcoinDataDir
         var url = root
         if chain != "main" {
             url += "/\(chain)/wallets"
@@ -211,7 +291,7 @@ struct KnotsUtilsView: View {
     }
     
     private func bitcoinConfPath() -> String {
-        let dataDir = Defaults.shared.bitcoinKnotsDataDir
+        let dataDir = Defaults.shared.bitcoinDataDir
         return dataDir + "/bitcoin.conf"
     }
     
@@ -288,9 +368,9 @@ struct KnotsUtilsView: View {
             return
         }
         
-        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .knotsRpcCreds) { updated in
+        DataManager.update(keyToUpdate: "password", newValue: encryptedPass, entity: .rpcCreds) { updated in
             guard updated else {
-                showMessage(message: "BitcoinKnotsRPCCreds update failed")
+                showMessage(message: "BitcoinRPCCreds update failed")
                 return
             }
             
@@ -363,17 +443,17 @@ struct KnotsUtilsView: View {
     }
     
     private func debugLogPath() -> String? {
-        let chain = Defaults.shared.knotsChain
+        let chain = Defaults.shared.chain
         var debugLogPath: String?
         switch chain {
         case "main":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/debug.log"
         case "test":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/testnet3/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/testnet3/debug.log"
         case "regtest":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/regtest/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/regtest/debug.log"
         case "signet":
-            debugLogPath = "\(Defaults.shared.bitcoinKnotsDataDir)/signet/debug.log"
+            debugLogPath = "\(Defaults.shared.bitcoinDataDir)/signet/debug.log"
         default:
             break
         }
@@ -381,7 +461,7 @@ struct KnotsUtilsView: View {
     }
     
     private func openDataDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinKnotsDataDir)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Defaults.shared.bitcoinDataDir)
     }
     
     private func verify() {
