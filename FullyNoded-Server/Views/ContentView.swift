@@ -19,6 +19,7 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
+    @State private var useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
     @State private var bitcoinKnotsInstalled = false
     @State private var torVersion = "v0.4.8.21"
     @State private var promptToShowPythonGuide = false
@@ -87,18 +88,18 @@ struct ContentView: View {
                                         jmTaggedReleases: []
                                     )
                                 }
-//                            } else if service.name == "Bitcoin Knots" {
-//                                if bitcoinKnotsInstalled {
-//                                    BitcoinKnots()
-//                                } else {
-//                                    Home(
-//                                        showBitcoinCoreInstallButton: false,
-//                                        showBitcoinKnotsInstallButton: true,
-//                                        env: env,
-//                                        showJoinMarketInstallButton: false,
-//                                        jmTaggedReleases: []
-//                                    )
-//                                }
+                            } else if service.name == "Bitcoin Knots" {
+                                if bitcoinKnotsInstalled {
+                                    BitcoinKnots()
+                                } else {
+                                    Home(
+                                        showBitcoinCoreInstallButton: false,
+                                        showBitcoinKnotsInstallButton: true,
+                                        env: env,
+                                        showJoinMarketInstallButton: false,
+                                        jmTaggedReleases: []
+                                    )
+                                }
                                 
                                 
 //                            } else if service.name == "Core Lightning" {
@@ -271,28 +272,28 @@ struct ContentView: View {
                                     }
                                 }
                                 
-//                                if service.name == "Bitcoin Knots" {
-//                                    if bitcoinKnotsInstalled {
-//                                        Image(systemName: "checkmark")
-//                                            .foregroundStyle(.green)
-//                                    } else {
-//                                        Image(systemName: "xmark")
-//                                            .foregroundStyle(.gray)
-//                                        EmptyView()
-//                                            .onReceive(timerForBitcoinKnotsInstall) { _ in
-//                                                DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
-//                                                    guard let bitcoinKnotsEnv = bitcoinKnotsEnv else { return }
-//                                                    let envValues = BitcoinKnotsEnvValues(dictionary: bitcoinKnotsEnv)
-//                                                    self.knotsEnvValues = envValues
-//                                                    let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinKnots/\(envValues.prefix)/bin/bitcoind"
-//                                                    if FileManager.default.fileExists(atPath: tempPath) {
-//                                                        bitcoinKnotsInstalled = true
-//                                                        self.timerForBitcoinKnotsInstall.upstream.connect().cancel()
-//                                                    }
-//                                                }
-//                                            }
-//                                    }
-//                                }
+                                if service.name == "Bitcoin Knots" {
+                                    if bitcoinKnotsInstalled {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.gray)
+                                        EmptyView()
+                                            .onReceive(timerForBitcoinKnotsInstall) { _ in
+                                                DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
+                                                    guard let bitcoinKnotsEnv = bitcoinKnotsEnv else { return }
+                                                    let envValues = BitcoinKnotsEnvValues(dictionary: bitcoinKnotsEnv)
+                                                    self.knotsEnvValues = envValues
+                                                    let tempPath = "/Users/\(NSUserName())/.fullynoded/BitcoinKnots/\(envValues.prefix)/bin/bitcoind"
+                                                    if FileManager.default.fileExists(atPath: tempPath) {
+                                                        bitcoinKnotsInstalled = true
+                                                        self.timerForBitcoinKnotsInstall.upstream.connect().cancel()
+                                                    }
+                                                }
+                                            }
+                                    }
+                                }
                                 
 //                                if service.name == "Core Lightning" {
 //                                    if lightningInstalled {
@@ -531,7 +532,12 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    if useKnots {
+                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+                    } else {
+                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    }
                     checkForBitcoin()
                 }
                 
@@ -548,11 +554,19 @@ struct ContentView: View {
                 "DATADIR": Defaults.shared.bitcoinDataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
+            
+            if useKnots {
+                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+            } else {
+                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+            }
                         
-            services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+            
             checkForBitcoin()
         }
     }
+
+    
     
     private func checkForBitcoin() {
         ScriptUtil.runScript(script: .checkForBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
