@@ -19,6 +19,7 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
+    @State private var useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
     @State private var bitcoinKnotsInstalled = false
     @State private var torVersion = "v0.4.8.21"
     @State private var promptToShowPythonGuide = false
@@ -531,7 +532,12 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    services = [bitcoinCore, bitcoinKnots,/* coreLightning, */joinMarket, tor, settings, help]
+                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    if useKnots {
+                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+                    } else {
+                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    }
                     checkForBitcoin()
                 }
                 
@@ -548,11 +554,19 @@ struct ContentView: View {
                 "DATADIR": Defaults.shared.bitcoinDataDir,
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
+            
+            if useKnots {
+                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+            } else {
+                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+            }
                         
-            services = [bitcoinCore, bitcoinKnots,/* coreLightning, */joinMarket, tor, settings, help]
+            
             checkForBitcoin()
         }
     }
+
+    
     
     private func checkForBitcoin() {
         ScriptUtil.runScript(script: .checkForBitcoin, env: env, args: nil) { (output, rawData, errorMessage) in
