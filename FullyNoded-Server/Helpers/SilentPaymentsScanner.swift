@@ -116,159 +116,159 @@ extension BitcoinRPC {
 
 // MARK: - One-shot import
 
-enum SilentPaymentImport {
-    static func importScriptPubKey(
-        walletName: String,
-        scanPublicKey: String,
-        spendPublicKey: String? = nil,
-        scriptPubKeyHex: String,
-        timestamp: UInt64? = nil,
-        label: String? = nil,
-        completion: @escaping ((result: Any?, error: String?)) -> Void
-    ) {
-        let spk = norm(scriptPubKeyHex)
-
-        guard spk.count == 68, spk.hasPrefix("5120") else {
-            completion((nil, "Not a silent-payment P2TR scriptPubKey: \(scriptPubKeyHex)"))
-            return
-        }
-
-        let xonly = String(spk.dropFirst(4))
-
-        BitcoinRPC.shared.command(
-            method: "getdescriptorinfo",
-            params: ["descriptor": "rawtr(\(xonly))"],
-            wallet: walletName
-        ) { result, error in
-            if let error = error {
-                completion((nil, error))
-                return
-            }
-
-            guard
-                let info = result as? [String: Any],
-                let descriptor = info["descriptor"] as? String
-            else {
-                completion((nil, "getdescriptorinfo returned no descriptor."))
-                return
-            }
-
-            var item: [String: Any] = [
-                "desc": descriptor,
-                "timestamp": timestamp.map { $0 as Any } ?? "now",
-                "internal": false,
-                "active": false
-            ]
-
-            var tag = "sp scan=\(norm(scanPublicKey))"
-            if let spend = spendPublicKey {
-                tag += " spend=\(norm(spend))"
-            }
-            if let label = label, !label.isEmpty {
-                tag += " \(label)"
-            }
-            item["label"] = tag
-
-            BitcoinRPC.shared.command(
-                method: "importdescriptors",
-                params: ["requests": [item]],
-                wallet: walletName
-            ) { importResult, importError in
-                if let importError = importError {
-                    completion((nil, importError))
-                    return
-                }
-
-                if let arr = importResult as? [[String: Any]],
-                   let first = arr.first,
-                   let success = first["success"] as? Bool,
-                   !success {
-                    let msg = (first["error"] as? [String: Any])?["message"] as? String
-                        ?? "importdescriptors failed"
-                    completion((importResult, msg))
-                    return
-                }
-
-                completion((importResult, nil))
-            }
-        }
-    }
-
-    static func importScriptPubKeys(
-        walletName: String,
-        scanPublicKey: String,
-        spendPublicKey: String? = nil,
-        scriptPubKeys: [String],
-        timestamp: UInt64? = nil,
-        completion: @escaping ((result: Any?, error: String?)) -> Void
-    ) {
-        var remaining = scriptPubKeys
-        var collected: [Any] = []
-
-        func next() {
-            guard let spk = remaining.first else {
-                completion((collected, nil))
-                return
-            }
-            remaining.removeFirst()
-
-            importScriptPubKey(
-                walletName: walletName,
-                scanPublicKey: scanPublicKey,
-                spendPublicKey: spendPublicKey,
-                scriptPubKeyHex: spk,
-                timestamp: timestamp
-            ) { result, error in
-                if let error = error {
-                    completion((collected, error))
-                    return
-                }
-                if let result = result {
-                    collected.append(result)
-                }
-                next()
-            }
-        }
-
-        next()
-    }
-
-    static func norm(_ hex: String) -> String {
-        hex.trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "0x", with: "")
-    }
-}
+//enum SilentPaymentImport {
+//    static func importScriptPubKey(
+//        walletName: String,
+//        scanPublicKey: String,
+//        spendPublicKey: String? = nil,
+//        scriptPubKeyHex: String,
+//        timestamp: UInt64? = nil,
+//        label: String? = nil,
+//        completion: @escaping ((result: Any?, error: String?)) -> Void
+//    ) {
+//        let spk = norm(scriptPubKeyHex)
+//
+//        guard spk.count == 68, spk.hasPrefix("5120") else {
+//            completion((nil, "Not a silent-payment P2TR scriptPubKey: \(scriptPubKeyHex)"))
+//            return
+//        }
+//
+//        let xonly = String(spk.dropFirst(4))
+//
+//        BitcoinRPC.shared.command(
+//            method: "getdescriptorinfo",
+//            params: ["descriptor": "rawtr(\(xonly))"],
+//            wallet: walletName
+//        ) { result, error in
+//            if let error = error {
+//                completion((nil, error))
+//                return
+//            }
+//
+//            guard
+//                let info = result as? [String: Any],
+//                let descriptor = info["descriptor"] as? String
+//            else {
+//                completion((nil, "getdescriptorinfo returned no descriptor."))
+//                return
+//            }
+//
+//            var item: [String: Any] = [
+//                "desc": descriptor,
+//                "timestamp": timestamp.map { $0 as Any } ?? "now",
+//                "internal": false,
+//                "active": false
+//            ]
+//
+//            var tag = "sp scan=\(norm(scanPublicKey))"
+//            if let spend = spendPublicKey {
+//                tag += " spend=\(norm(spend))"
+//            }
+//            if let label = label, !label.isEmpty {
+//                tag += " \(label)"
+//            }
+//            item["label"] = tag
+//
+//            BitcoinRPC.shared.command(
+//                method: "importdescriptors",
+//                params: ["requests": [item]],
+//                wallet: walletName
+//            ) { importResult, importError in
+//                if let importError = importError {
+//                    completion((nil, importError))
+//                    return
+//                }
+//
+//                if let arr = importResult as? [[String: Any]],
+//                   let first = arr.first,
+//                   let success = first["success"] as? Bool,
+//                   !success {
+//                    let msg = (first["error"] as? [String: Any])?["message"] as? String
+//                        ?? "importdescriptors failed"
+//                    completion((importResult, msg))
+//                    return
+//                }
+//
+//                completion((importResult, nil))
+//            }
+//        }
+//    }
+//
+//    static func importScriptPubKeys(
+//        walletName: String,
+//        scanPublicKey: String,
+//        spendPublicKey: String? = nil,
+//        scriptPubKeys: [String],
+//        timestamp: UInt64? = nil,
+//        completion: @escaping ((result: Any?, error: String?)) -> Void
+//    ) {
+//        var remaining = scriptPubKeys
+//        var collected: [Any] = []
+//
+//        func next() {
+//            guard let spk = remaining.first else {
+//                completion((collected, nil))
+//                return
+//            }
+//            remaining.removeFirst()
+//
+//            importScriptPubKey(
+//                walletName: walletName,
+//                scanPublicKey: scanPublicKey,
+//                spendPublicKey: spendPublicKey,
+//                scriptPubKeyHex: spk,
+//                timestamp: timestamp
+//            ) { result, error in
+//                if let error = error {
+//                    completion((collected, error))
+//                    return
+//                }
+//                if let result = result {
+//                    collected.append(result)
+//                }
+//                next()
+//            }
+//        }
+//
+//        next()
+//    }
+//
+//    static func norm(_ hex: String) -> String {
+//        hex.trimmingCharacters(in: .whitespacesAndNewlines)
+//            .lowercased()
+//            .replacingOccurrences(of: "0x", with: "")
+//    }
+//}
 
 // MARK: - Start it
 
-enum SilentPaymentImportRunner {
-    static func importOutputs(
-        walletName: String,
-        scanPublicKey: String,
-        spendPublicKey: String?,
-        scriptPubKeys: [String],
-        completion: @escaping ((result: Any?, error: String?)) -> Void
-    ) {
-        let fresh = scriptPubKeys
-            .map { SilentPaymentImport.norm($0) }
-            .filter { $0.count == 68 && $0.hasPrefix("5120") }
-
-        guard !fresh.isEmpty else {
-            completion(([], nil))
-            return
-        }
-
-        SilentPaymentImport.importScriptPubKeys(
-            walletName: walletName,
-            scanPublicKey: scanPublicKey,
-            spendPublicKey: spendPublicKey,
-            scriptPubKeys: fresh,
-            timestamp: nil, // importScriptPubKey already uses "now" when nil
-            completion: completion
-        )
-    }
-}
+//enum SilentPaymentImportRunner {
+//    static func importOutputs(
+//        walletName: String,
+//        scanPublicKey: String,
+//        spendPublicKey: String?,
+//        scriptPubKeys: [String],
+//        completion: @escaping ((result: Any?, error: String?)) -> Void
+//    ) {
+//        let fresh = scriptPubKeys
+//            .map { SilentPaymentImport.norm($0) }
+//            .filter { $0.count == 68 && $0.hasPrefix("5120") }
+//
+//        guard !fresh.isEmpty else {
+//            completion(([], nil))
+//            return
+//        }
+//
+//        SilentPaymentImport.importScriptPubKeys(
+//            walletName: walletName,
+//            scanPublicKey: scanPublicKey,
+//            spendPublicKey: spendPublicKey,
+//            scriptPubKeys: fresh,
+//            timestamp: nil, // importScriptPubKey already uses "now" when nil
+//            completion: completion
+//        )
+//    }
+//}
 
 /*
  SilentPaymentImportRunner.start(
@@ -802,15 +802,17 @@ final class SilentPaymentService {
                     finishBlock()
                     return
                 }
+                
+                print("found scriptPubKeys we can spend for: \(scriptPubKeys)")
 
-                SilentPaymentImportRunner.importOutputs(
-                    walletName: walletName,
-                    scanPublicKey: scanPublicKeyHex,
-                    spendPublicKey: spendPublicKeyHex,
-                    scriptPubKeys: scriptPubKeys
-                ) { _, _ in
-                    finishBlock()
-                }
+//                SilentPaymentImportRunner.importOutputs(
+//                    walletName: walletName,
+//                    scanPublicKey: scanPublicKeyHex,
+//                    spendPublicKey: spendPublicKeyHex,
+//                    scriptPubKeys: scriptPubKeys
+//                ) { _, _ in
+//                    finishBlock()
+//                }
             }
         }
     }
