@@ -62,7 +62,7 @@
 		31E244AF1C7F702F37197FDD26812CD2 /* Pods-FullyNoded-Server-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-FullyNoded-Server-umbrella.h"; sourceTree = "<group>"; };
 		3AB13A2E123932B5F38BAE59277EACF8 /* TORCircuit.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORCircuit.h; path = Tor/Classes/Core/TORCircuit.h; sourceTree = "<group>"; };
 		3CCFFBD33E5A793203E2468B904D290F /* Tor.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = Tor.modulemap; sourceTree = "<group>"; };
-		41FF711CDB2B04B00F24F31EE402014D /* Pods-FullyNoded-Server */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-FullyNoded-Server"; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		41FF711CDB2B04B00F24F31EE402014D /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		44A41B122D98E4E9A68B53F5C5A5ED58 /* TORControlCommand.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORControlCommand.h; path = Tor/Classes/Core/TORControlCommand.h; sourceTree = "<group>"; };
 		4EDDB637FA184B0EFC0B9FBCAA5CCC46 /* Tor-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Tor-prefix.pch"; sourceTree = "<group>"; };
 		504BB971CC5580E0D79C72EBCAE25DDD /* Tor-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Tor-umbrella.h"; sourceTree = "<group>"; };
@@ -80,12 +80,12 @@
 		88D87D734750FAC6F11519B245BE9BCB /* NSCharacterSet+PredefinedSets.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = "NSCharacterSet+PredefinedSets.m"; path = "Tor/Classes/Core/NSCharacterSet+PredefinedSets.m"; sourceTree = "<group>"; };
 		8D9C760AFCF510E7E5720B81A17C4F77 /* TORLogging.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORLogging.h; path = Tor/Classes/CTor/TORLogging.h; sourceTree = "<group>"; };
 		98202F2B203E71FC5AADED8860A7A256 /* TOROnionAuth.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TOROnionAuth.h; path = Tor/Classes/Core/TOROnionAuth.h; sourceTree = "<group>"; };
-		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		9EE00D34B275026D4656C738BED5A001 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Tor; path = Tor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Tor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1132BEAC9AAEFFD591602A5BF61DA55 /* Tor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Tor.release.xcconfig; sourceTree = "<group>"; };
 		B1694CF6E383426DBAA97EC912BC3952 /* TORThread.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORThread.h; path = Tor/Classes/CTor/TORThread.h; sourceTree = "<group>"; };
-		B9B9CBD78AC14355C9C42C538F951620 /* tor.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; path = tor.xcframework; sourceTree = "<group>"; };
+		B9B9CBD78AC14355C9C42C538F951620 /* tor.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; path = tor.xcframework; sourceTree = "<group>"; };
 		BDEDD15E5FE627CC92FE7425AD5975CD /* TORNode.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORNode.h; path = Tor/Classes/Core/TORNode.h; sourceTree = "<group>"; };
 		C2704ADAF0EE818349B789BF272B4A3F /* Pods-FullyNoded-Server-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FullyNoded-Server-acknowledgements.plist"; sourceTree = "<group>"; };
 		C8CD3F67755DAD3B93FD3A8EE2C0D1B9 /* TORControlReplyCode.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = TORControlReplyCode.h; path = Tor/Classes/Core/TORControlReplyCode.h; sourceTree = "<group>"; };
@@ -248,15 +248,14 @@
 				DE1BFCF4085FC3B26D9A74EF6B46E2A3 /* CTor */,
 				401CEDCAA44B2B33AEE0E3534F43D59F /* Support Files */,
 			);
-			name = Tor;
 			path = Tor;
 			sourceTree = "<group>";
 		};
 		E99F98CA3454DE64AF137CA76464EDFA /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				41FF711CDB2B04B00F24F31EE402014D /* Pods-FullyNoded-Server */,
-				ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor */,
+				41FF711CDB2B04B00F24F31EE402014D /* Pods_FullyNoded_Server.framework */,
+				ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -312,7 +311,7 @@
 			);
 			name = Tor;
 			productName = Tor;
-			productReference = ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor */;
+			productReference = ADA9ABFC8E11DBA59D385A40C3B2BEF4 /* Tor.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		CCAEB1112512922056583357CDAD0AEF /* Pods-FullyNoded-Server */ = {
@@ -331,7 +330,7 @@
 			);
 			name = "Pods-FullyNoded-Server";
 			productName = Pods_FullyNoded_Server;
-			productReference = 41FF711CDB2B04B00F24F31EE402014D /* Pods-FullyNoded-Server */;
+			productReference = 41FF711CDB2B04B00F24F31EE402014D /* Pods_FullyNoded_Server.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -352,8 +351,6 @@
 				en,
 			);
 			mainGroup = CF1408CF629C7361332E53B88F7BD30C;
-			minimizedProjectReferenceProxies = 0;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = E99F98CA3454DE64AF137CA76464EDFA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -390,9 +387,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Tor/Tor-xcframeworks-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy XCFrameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Tor/Tor-xcframeworks-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -672,7 +673,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MODULEMAP_FILE = "Target Support Files/Tor/Tor.modulemap";
 				PRODUCT_MODULE_NAME = Tor;
 				PRODUCT_NAME = Tor;
@@ -711,7 +712,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MODULEMAP_FILE = "Target Support Files/Tor/Tor.modulemap";
 				PRODUCT_MODULE_NAME = Tor;
 				PRODUCT_NAME = Tor;

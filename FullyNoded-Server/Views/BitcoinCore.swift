@@ -189,7 +189,23 @@ struct BitcoinCore: View {
         )
         .onAppear(perform: {
             initialLoad()
-        })        
+            
+//            SilentPaymentService.shared.onFound = { outputs in print("received", outputs) }
+//            SilentPaymentService.shared.onError = { error in print(error) }
+//
+//            do {
+//                try SilentPaymentService.shared.start(
+//                    walletName: "sp-watch",
+//                    scanPrivateKeyHex: "e1…32-byte-hex…",
+//                    scanPublicKeyHex: "03…",
+//                    spendPublicKeyHex: "02…",
+//                    birthdayHeight: 840_000,                 // only used the first time
+//                    extraLabels: []                          // add m ≥ 1 if you hand out labeled addresses
+//                )
+//            } catch {
+//                print("SP keys invalid: \(error)")
+//            }
+        })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
