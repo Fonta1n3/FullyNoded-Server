@@ -94,22 +94,22 @@ struct BitcoinCore: View {
                 if isRunning {
                     if isAnimating {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Cypher.amber)
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Cypher.accent)
                         Text("Running")
                     }
                     
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Cypher.amber)
                         Text(statusText)
                     } else {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Cypher.danger)
                         Text("Stopped")
                     }
                 }
@@ -137,7 +137,7 @@ struct BitcoinCore: View {
                             Text(blockchainInfo.progressString)
                         } icon: {
                             Image(systemName: "checkmark.seal.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Cypher.accent)
                         }
                         .padding([.leading])
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -180,31 +180,14 @@ struct BitcoinCore: View {
             }
         }
         .padding([.top])
-        .cornerRadius(8)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
+            Rectangle()
+                .stroke(Cypher.line, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding([.leading, .trailing, .bottom])
         )
         .onAppear(perform: {
             initialLoad()
-            
-//            SilentPaymentService.shared.onFound = { outputs in print("received", outputs) }
-//            SilentPaymentService.shared.onError = { error in print(error) }
-//
-//            do {
-//                try SilentPaymentService.shared.start(
-//                    walletName: "sp-watch",
-//                    scanPrivateKeyHex: "e1…32-byte-hex…",
-//                    scanPublicKeyHex: "03…",
-//                    spendPublicKeyHex: "02…",
-//                    birthdayHeight: 840_000,                 // only used the first time
-//                    extraLabels: []                          // add m ≥ 1 if you hand out labeled addresses
-//                )
-//            } catch {
-//                print("SP keys invalid: \(error)")
-//            }
         })
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}

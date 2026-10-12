@@ -72,11 +72,10 @@ struct SupportCard<Content: View>: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.gray.opacity(0.1)))  // Assuming you have the extension from before
-            .cornerRadius(12)
+            .background(Cypher.panel)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.separator, lineWidth: 0.5)
+                Rectangle()
+                    .stroke(Cypher.line, lineWidth: 1)
             )
         }
     }

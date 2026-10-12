@@ -50,12 +50,12 @@
 //                if isRunning {
 //                    if isAnimating {
 //                        Image(systemName: "circle.fill")
-//                            .foregroundStyle(.orange)
+//                            .foregroundStyle(Cypher.amber)
 //                            .padding(.leading)
 //                        Text("Stopping...")
 //                    } else {
 //                        Image(systemName: "circle.fill")
-//                            .foregroundStyle(.green)
+//                            .foregroundStyle(Cypher.accent)
 //                            .padding(.leading)
 //                        Text("Running")
 //                    }
@@ -63,12 +63,12 @@
 //                } else {
 //                    if isAnimating {
 //                        Image(systemName: "circle.fill")
-//                            .foregroundStyle(.orange)
+//                            .foregroundStyle(Cypher.amber)
 //                            .padding(.leading)
 //                        Text("Starting...")
 //                    } else {
 //                        Image(systemName: "circle.fill")
-//                            .foregroundStyle(.red)
+//                            .foregroundStyle(Cypher.danger)
 //                            .padding(.leading)
 //                        Text("Stopped")
 //                    }
@@ -96,8 +96,8 @@
 //        .padding()
 //        .cornerRadius(8)
 //        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(.secondary, lineWidth: 1)
+//            Rectangle()
+//                .stroke(Cypher.line, lineWidth: 1)
 //                .frame(maxWidth: .infinity, alignment: .leading)
 //                .padding([.leading, .trailing])
 //        )
@@ -115,8 +115,8 @@
 //        .padding()
 //        .cornerRadius(8)
 //        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(.secondary, lineWidth: 1)
+//            Rectangle()
+//                .stroke(Cypher.line, lineWidth: 1)
 //                .frame(maxWidth: .infinity, alignment: .leading)
 //                .padding([.leading, .trailing])
 //        )
@@ -153,8 +153,8 @@
 //        .padding()
 //        .cornerRadius(8)
 //        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(.secondary, lineWidth: 1)
+//            Rectangle()
+//                .stroke(Cypher.line, lineWidth: 1)
 //                .frame(maxWidth: .infinity, alignment: .leading)
 //                .padding([.leading, .trailing])
 //        )
@@ -246,8 +246,8 @@
 //        .padding()
 //        .cornerRadius(8)
 //        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(.secondary, lineWidth: 1)
+//            Rectangle()
+//                .stroke(Cypher.line, lineWidth: 1)
 //                .frame(maxWidth: .infinity, alignment: .leading)
 //                .padding([.leading, .trailing])
 //        )

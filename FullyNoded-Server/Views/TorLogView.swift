@@ -26,16 +26,16 @@ struct TorLogView: View {
             }
         }
         .textSelection(.enabled)
-        .background(Color.black)
+        .background(Cypher.panel)
         .scrollTargetBehavior(.paging)
         .defaultScrollAnchor(.bottom)
         .onChange(of: monitor.lines) { }
     }
     
     private func color(for line: String) -> Color {
-        if line.contains("Warn") { return .orange }
-        if line.contains("Err") { return .red }
-        if line.contains("Bootstrapped 100%") { return .green }
-        return .gray
+        if line.contains("Warn") { return Cypher.amber }
+        if line.contains("Err") { return Cypher.danger }
+        if line.contains("Bootstrapped 100%") { return Cypher.accent }
+        return Cypher.dim
     }
 }

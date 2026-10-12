@@ -29,6 +29,11 @@ class TorClient: NSObject, URLSessionDelegate {
     
     public var showProgress: (((Int)) -> Void)?
     public var torConnected: (((Bool)) -> Void)?
+    /// Called on the main queue with the running tor's version (e.g. "0.4.9.3"), read from
+    /// the control port, so it always matches the bundled tor.
+    public var showVersion: ((String) -> Void)?
+    /// The running tor's version, once known.
+    public private(set) var version: String?
     
     static let sharedInstance = TorClient()
     private var config: TorConfiguration = TorConfiguration()
@@ -111,7 +116,18 @@ class TorClient: NSObject, URLSessionDelegate {
                         print("error = \(error.localizedDescription)")
                         return
                     }
-                    
+
+                    // "GETINFO version" → e.g. "0.4.9.3 (git-…)": keep the version number.
+                    controller?.getInfoForKeys(["version"]) { [weak self] values in
+                        guard let self = self,
+                              let version = values.first?.split(separator: " ").first.map(String.init),
+                              !version.isEmpty else { return }
+                        DispatchQueue.main.async {
+                            self.version = version
+                            self.showVersion?(version)
+                        }
+                    }
+
                     var progressObs: Any? = nil
                     progressObs = controller?.addObserver(forStatusEvents: { [weak self]
                         (type: String, severity: String, action: String, arguments: [String : String]?) -> Bool in
