@@ -26,7 +26,10 @@
 //  * All state lives on one private serial queue, so there are no data races.
 //  * Progress (next height, recent block hashes, pending rescan) is saved to
 //    UserDefaults after every block, so the service resumes where it left off
-//    after the app restarts.
+//    after the app restarts. FN-Server persists nothing about found outputs
+//    (txids, tweaks, labels). Each imported output's wallet label in Core carries
+//    its scan key, label and tweak ("sp scan=… k=… m=… t=…"), which Fully Noded
+//    reads to recognise and sign it without fetching blocks.
 //  * A block only counts as scanned once it was fetched AND any matches were
 //    imported. Any failure (node down, busy, 503, wallet not loaded) is retried
 //    with exponential backoff instead of skipping the block.
@@ -78,7 +81,7 @@ enum SPError: Error, CustomStringConvertible {
             // Wrong rpcuser/rpcpassword.
             case 401: return "HTTP 401: RPC credentials are incorrect. If you changed them in bitcoin.conf, restart the node."
             // rpcwhitelist blocks one of the methods we use.
-            case 403: return "HTTP 403: an RPC method is not in your bitcoin.conf rpcwhitelist (needs getblockcount, getblockhash, getblock, getdescriptorinfo, importdescriptors, rescanblockchain, loadwallet)."
+            case 403: return "HTTP 403: an RPC method is not in your bitcoin.conf rpcwhitelist (needs getblockchaininfo, listwalletdir, getblockcount, getblockhash, getblock, getdescriptorinfo, importdescriptors, rescanblockchain, loadwallet)."
             // Core's RPC work queue is full. Transient, retried.
             case 503: return "HTTP 503: node RPC work queue is full, will retry."
             default: return "HTTP \(code) from node."
@@ -96,6 +99,25 @@ enum SPRPCCode {
     static let walletNotFound = -18
     // "Wallet … is already loaded".
     static let walletAlreadyLoaded = -35
+    // Node is starting up (loading blocks, verifying…).
+    static let inWarmup = -28
+}
+
+
+// MARK: - Networks
+
+// FN-Server's chain names are the ones getblockchaininfo reports ("main", "test",
+// "testnet4", "signet", "regtest"). Each network's node listens on Core's default RPC port.
+enum SPChain {
+    static func port(for chain: String) -> String {
+        switch chain {
+        case "signet": return "38332"
+        case "regtest": return "18443"
+        case "test": return "18332"
+        case "testnet4": return "48332"
+        default: return "8332"
+        }
+    }
 }
 
 
@@ -118,13 +140,16 @@ extension BitcoinRPC {
         params: [String: Any],
         // Wallet to target (/wallet/<name>), or nil for node-level RPCs.
         wallet: String? = nil,
+        // Network whose node to call, or nil for the network selected in FN-Server.
+        // The scanner always passes its own, so switching networks can't redirect it.
+        chain: String? = nil,
         // Seconds without any response data before URLSession gives up.
         timeout: TimeInterval = 120,
         // Called once, on a URLSession background queue.
         completion: @escaping (Result<Any, SPError>) -> Void
     ) {
-        // RPC port from settings, default mainnet 8332.
-        let port = UserDefaults.standard.string(forKey: "port") ?? "8332"
+        // That network's RPC port, else the port from settings (default mainnet 8332).
+        let port = chain.map(SPChain.port(for:)) ?? UserDefaults.standard.string(forKey: "port") ?? "8332"
         // RPC username from settings.
         let user = UserDefaults.standard.string(forKey: "rpcuser") ?? "FullyNoded-Server"
 
@@ -233,11 +258,11 @@ extension BitcoinRPC {
 // MARK: - Models
 
 // Everything you need to know about one found output, including what you need
-// to spend it later. Codable so it can be saved.
-// Privacy note: tweakHex/labelTweakHex can't spend anything without b_spend, but
-// together with the txid they identify outputs as yours. They're saved in
-// UserDefaults, which is a plain-text plist on disk.
-struct SPFoundOutput: Codable, Equatable {
+// to spend it later. Only lives in memory (passed to importdescriptors and the
+// onFound callback); it is never written to disk by FN-Server. The scan key, label
+// and tweak go into the imported output's wallet label, which is how Fully Noded
+// recognises the input when spending it.
+struct SPFoundOutput: Equatable {
     // Txid of the paying transaction (RPC display order).
     let txid: String
     // Output index in that tx.
@@ -257,6 +282,8 @@ struct SPFoundOutput: Codable, Equatable {
     let blockHash: String
     // Block header time (unix seconds).
     let blockTime: Int
+    // Output amount in BTC (nil if the block data didn't include it).
+    var amount: Double? = nil
 
     // Watch-only descriptor (no checksum) for importdescriptors.
     var descriptor: String { "rawtr(\(String(scriptPubKeyHex.dropFirst(4))))" }
@@ -776,6 +803,28 @@ enum SilentPaymentCrypto {
         SPHash.tagged("BIP0352/Label", bScan + SPHash.ser32(m))
     }
 
+    /// For diagnosis: the x-only output keys these keys would expect at k = 0 for a tx with
+    /// these inputs, unlabeled and for each label (e.g. change, m = 0). Public values.
+    static func expectedOutputs(
+        keys: SPScanKeys,
+        inputPubkeysCompressed: [String],
+        inputs: [(txid: String, vout: UInt32)]
+    ) throws -> (unlabeled: String, labeled: [(m: UInt32, xonly: String)]) {
+        let aSum = try sumCompressedPubkeys(inputPubkeysCompressed)
+        guard let smallest = inputs
+            .compactMap({ outpointBytes(txidBE: $0.txid, vout: $0.vout) })
+            .min(by: { $0.lexicographicallyPrecedes($1) })
+        else { throw SPError.badResponse("no input outpoints") }
+        let ih = inputHash(smallestOutpoint: smallest, aSumCompressed: aSum)
+        let tweakedScan = try keys.scanPriv.multiply(Array(ih))
+        let aSumPub = try P256K.Signing.PublicKey(dataRepresentation: aSum, format: .compressed)
+        let sharedPoint = Data(try aSumPub.multiply(Array(tweakedScan.dataRepresentation), format: .compressed).dataRepresentation)
+        let t0 = SPHash.tagged("BIP0352/SharedSecret", sharedPoint + SPHash.ser32(0))
+        let unlabeled = SPHex.encode(Data(try keys.spendPub.add(Array(t0)).xonly.bytes))
+        let labeled = try keys.labels.map { ($0.m, SPHex.encode(Data(try $0.spend.add(Array(t0)).xonly.bytes))) }
+        return (unlabeled, labeled)
+    }
+
     // Scan one tx. Returns every matching output with its t_k, k and label.
     static func scanTransaction(
         // Pre-parsed b_scan / B_spend / labels.
@@ -867,10 +916,11 @@ enum SilentPaymentScanner {
     static func scanBlock(
         height: Int,
         keys: SPScanKeys,
+        chain: String,
         completion: @escaping (Result<SPBlockScan, SPError>) -> Void
     ) {
         // Height → block hash.
-        BitcoinRPC.shared.spCommand(method: "getblockhash", params: ["height": height]) { result in
+        BitcoinRPC.shared.spCommand(method: "getblockhash", params: ["height": height], chain: chain) { result in
             let hash: String
             switch result {
             case .failure(let e):
@@ -890,6 +940,7 @@ enum SilentPaymentScanner {
             BitcoinRPC.shared.spCommand(
                 method: "getblock",
                 params: ["blockhash": hash, "verbosity": 3],
+                chain: chain,
                 timeout: 300
             ) { result in
                 switch result {
@@ -1015,7 +1066,8 @@ enum SilentPaymentScanner {
                 labelTweakHex: m.label.map { SPHex.encode($0.tweak) },
                 blockHeight: blockHeight,
                 blockHash: blockHash,
-                blockTime: blockTime
+                blockTime: blockTime,
+                amount: vouts.first { (($0["n"] as? NSNumber)?.intValue) == m.vout }?["value"] as? Double
             )
         }
     }
@@ -1031,9 +1083,8 @@ struct SPScanState: Codable {
     // height → hash of recently scanned blocks, for reorg detection.
     var recentHashes: [Int: String] = [:]
     // Lowest height with a found output that the wallet hasn't rescanned yet.
+    // (Just a height: no txids, tweaks or other output metadata are persisted.)
     var pendingRescanFrom: Int?
-    // Every output found so far.
-    var found: [SPFoundOutput] = []
 
     // How many recent block hashes to keep (reorgs deeper than this aren't handled).
     static let reorgDepth = 200
@@ -1065,6 +1116,12 @@ final class SilentPaymentService {
     // run exit instead of running a second loop in parallel.
     private var generation = 0
     // Current config.
+    // The network the keys were set up on. Every RPC goes to this network's node,
+    // whichever network is selected in FN-Server.
+    private var chain = "main"
+    // Whether the node answering on that network's port reported this chain since
+    // the last start / error. Nothing is scanned until it has.
+    private var chainVerified = false
     private var walletName = ""
     private var scanPublicKeyHex = ""
     private var keys: SPScanKeys?
@@ -1073,7 +1130,13 @@ final class SilentPaymentService {
     private var stateKey = ""
     // Current retry delay (exponential backoff, reset on success).
     private var retryDelay: TimeInterval = 5
+    // Live status for the UI (see status()). In memory only.
+    private var lastTip: Int?
+    private var lastErrorText: String?
+    private var isRescanning = false
     private let maxRetryDelay: TimeInterval = 300
+    // Retry interval while the node is unreachable or warming up (no backoff).
+    private let nodeDownPollInterval: TimeInterval = 5
 
     // Enforce singleton.
     private init() {}
@@ -1082,6 +1145,7 @@ final class SilentPaymentService {
     /// If a saved state exists for this wallet + key pair it resumes from it;
     /// otherwise it starts at `birthdayHeight` (the first block that could pay you).
     func start(
+        chain: String,
         walletName: String,
         scanPrivateKeyHex: String,
         scanPublicKeyHex: String,
@@ -1105,6 +1169,8 @@ final class SilentPaymentService {
             // Stop any previous run first.
             self.generation += 1
             self.running = true
+            self.chain = chain
+            self.chainVerified = false
             self.walletName = walletName
             self.scanPublicKeyHex = scanPublicKeyHex.lowercased()
             self.keys = parsed
@@ -1112,8 +1178,67 @@ final class SilentPaymentService {
             self.retryDelay = 5
             // Resume saved progress, or start at the birthday.
             self.state = Self.loadState(key: key) ?? SPScanState(nextHeight: max(birthdayHeight, 0))
+            // Re-save right away: state written by older builds also held every found
+            // output (txids + tweaks). Decoding ignores that field, so this rewrite
+            // purges it from UserDefaults.
+            self.saveState()
             self.log("started at height \(self.state.nextHeight)")
             self.step(self.generation)
+        }
+    }
+
+    /// Throws away saved progress and scans again from `height` with the current keys.
+    /// Safe to repeat: importing an output that's already in the wallet changes nothing,
+    /// and every output found queues a wallet rescan from its block, so the wallet's
+    /// history is filled in too. Requires a prior `start(...)` (the keys).
+    func rescan(fromHeight height: Int) {
+        queue.async {
+            guard self.keys != nil, !self.stateKey.isEmpty else { return }
+            self.generation += 1
+            self.running = true
+            self.chainVerified = false
+            self.retryDelay = 5
+            self.lastErrorText = nil
+            self.state = SPScanState(nextHeight: max(height, 0))
+            self.saveState()
+            self.log("rescanning from height \(self.state.nextHeight)")
+            self.step(self.generation)
+        }
+    }
+
+    // Whether the scan loop is running. Call from outside the service queue (e.g. the UI).
+    var isRunning: Bool {
+        queue.sync { running }
+    }
+
+    // Snapshot of what the scanner is doing, for status displays.
+    struct Status {
+        let isRunning: Bool
+        // The network being scanned.
+        let chain: String
+        let walletName: String
+        // Last fully scanned (and imported) height, nil before the first block.
+        let scannedHeight: Int?
+        // Chain tip at the last check.
+        let tipHeight: Int?
+        // Waiting for / running the wallet rescan that picks up historical outputs.
+        let pendingRescanFrom: Int?
+        let isRescanning: Bool
+        // Last error (cleared once the node answers again); the service keeps retrying.
+        let lastError: String?
+    }
+
+    // Thread-safe status snapshot. Call from outside the service queue (e.g. the UI).
+    func status() -> Status {
+        queue.sync {
+            Status(isRunning: running,
+                   chain: chain,
+                   walletName: walletName,
+                   scannedHeight: state.nextHeight > 0 ? state.nextHeight - 1 : nil,
+                   tipHeight: lastTip,
+                   pendingRescanFrom: state.pendingRescanFrom,
+                   isRescanning: isRescanning,
+                   lastError: lastErrorText)
         }
     }
 
@@ -1124,11 +1249,6 @@ final class SilentPaymentService {
             self.generation += 1
             self.log("stopped")
         }
-    }
-
-    // All outputs found so far (thread-safe snapshot).
-    func foundOutputs() -> [SPFoundOutput] {
-        queue.sync { state.found }
     }
 
     // MARK: Loop
@@ -1148,19 +1268,39 @@ final class SilentPaymentService {
 
     // A transient failure: report it, wait, and retry the SAME step. Never skips.
     private func retry(_ gen: Int, _ error: SPError) {
-        log("error: \(error), retrying in \(Int(retryDelay))s")
+        // Node not running (connection refused, timeout) or still starting up: polling it is
+        // free, so keep a short fixed interval and resume within seconds once it's back.
+        // Anything else (bad creds, whitelist, wrong network, busy node…) backs off.
+        let nodeUnavailable: Bool
+        switch error {
+        case .transport: nodeUnavailable = true
+        case .rpc(let code, _): nodeUnavailable = code == SPRPCCode.inWarmup
+        default: nodeUnavailable = false
+        }
+        let delay = nodeUnavailable ? nodeDownPollInterval : retryDelay
+        log("error: \(error), retrying in \(Int(delay))s")
+        lastErrorText = error.description
+        isRescanning = false
+        // The node may have been stopped or replaced: check its network again first.
+        chainVerified = false
         let cb = onError
         DispatchQueue.main.async { cb?(error) }
-        schedule(gen, after: retryDelay)
-        retryDelay = min(retryDelay * 2, maxRetryDelay)
+        schedule(gen, after: delay)
+        if !nodeUnavailable {
+            retryDelay = min(retryDelay * 2, maxRetryDelay)
+        }
     }
 
     // One iteration: get the tip, then either scan the next block or (when caught
     // up) finish any pending rescan and wait for the next block.
     private func step(_ gen: Int) {
         guard isCurrent(gen) else { return }
+        guard chainVerified else {
+            verifyChain(gen)
+            return
+        }
 
-        BitcoinRPC.shared.spCommand(method: "getblockcount", params: [:]) { [weak self] result in
+        BitcoinRPC.shared.spCommand(method: "getblockcount", params: [:], chain: chain) { [weak self] result in
             guard let self = self else { return }
             // Hop back onto our queue before touching state.
             self.queue.async {
@@ -1174,6 +1314,8 @@ final class SilentPaymentService {
                         self.retry(gen, .badResponse("getblockcount returned \(value)"))
                         return
                     }
+                    self.lastTip = tip
+                    self.lastErrorText = nil
                     if self.state.nextHeight <= tip {
                         // Behind the tip: scan the next block.
                         self.processBlock(self.state.nextHeight, tip: tip, gen: gen)
@@ -1191,11 +1333,64 @@ final class SilentPaymentService {
         }
     }
 
+    // Before scanning: the node on this network's port must really be on this network
+    // (e.g. not another network's node on a custom rpcport). Otherwise its blocks would be
+    // taken for ours: progress would move along the wrong chain and real blocks be skipped.
+    // A mismatch is retried like any error, without advancing.
+    private func verifyChain(_ gen: Int) {
+        let expected = chain
+        BitcoinRPC.shared.spCommand(method: "getblockchaininfo", params: [:], chain: expected) { [weak self] result in
+            guard let self = self else { return }
+            self.queue.async {
+                guard self.isCurrent(gen) else { return }
+                switch result {
+                case .failure(let e):
+                    self.retry(gen, e)
+                case .success(let value):
+                    guard let actual = (value as? [String: Any])?["chain"] as? String else {
+                        self.retry(gen, .badResponse("getblockchaininfo returned no chain"))
+                        return
+                    }
+                    guard actual == expected else {
+                        self.retry(gen, .config("The node on port \(SPChain.port(for: expected)) is on \(actual), but these keys were set up for \(expected). Waiting for the \(expected) node."))
+                        return
+                    }
+                    self.verifyWallet(gen)
+                }
+            }
+        }
+    }
+
+    // The wallet must be on this network's node too. Fully Noded wallets exist on one
+    // network only, so this also catches keys pinned to the wrong test network.
+    private func verifyWallet(_ gen: Int) {
+        let wallet = walletName
+        let chain = self.chain
+        BitcoinRPC.shared.spCommand(method: "listwalletdir", params: [:], chain: chain) { [weak self] result in
+            guard let self = self else { return }
+            self.queue.async {
+                guard self.isCurrent(gen) else { return }
+                switch result {
+                case .failure(let e):
+                    self.retry(gen, e)
+                case .success(let value):
+                    let names = ((value as? [String: Any])?["wallets"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
+                    guard names.contains(wallet) else {
+                        self.retry(gen, .config("Wallet \"\(wallet)\" isn't on the \(chain) node, so nothing is scanned. If your keys are for another network, select it in Bitcoin Core, then Stop and Resume."))
+                        return
+                    }
+                    self.chainVerified = true
+                    self.step(gen)
+                }
+            }
+        }
+    }
+
     // Scan one height, handle reorgs, import matches, then advance.
     private func processBlock(_ height: Int, tip: Int, gen: Int) {
         guard let keys = keys else { return }
 
-        SilentPaymentScanner.scanBlock(height: height, keys: keys) { [weak self] result in
+        SilentPaymentScanner.scanBlock(height: height, keys: keys, chain: chain) { [weak self] result in
             guard let self = self else { return }
             self.queue.async {
                 guard self.isCurrent(gen) else { return }
@@ -1212,9 +1407,8 @@ final class SilentPaymentService {
                        let parent = block.previousHash, parent != expected {
                         self.log("reorg detected at height \(height - 1), stepping back")
                         self.state.recentHashes[height - 1] = nil
-                        // Drop outputs we recorded from the orphaned block. Their
-                        // descriptors stay imported, which is harmless (watch-only).
-                        self.state.found.removeAll { $0.blockHash == expected }
+                        // Descriptors imported from the orphaned block stay in the
+                        // wallet, which is harmless (watch-only).
                         self.state.nextHeight = height - 1
                         self.saveState()
                         self.queue.async { self.step(gen) }
@@ -1228,7 +1422,7 @@ final class SilentPaymentService {
                     }
 
                     // Found outputs: import them, and only advance once that worked.
-                    self.log("found \(block.outputs.count) output(s) at height \(height): \(block.outputs.map { $0.outpoint })")
+                    self.log("found \(block.outputs.count) output(s) at height \(height)")
                     self.importOutputs(block.outputs) { importResult in
                         self.queue.async {
                             guard self.isCurrent(gen) else { return }
@@ -1238,9 +1432,6 @@ final class SilentPaymentService {
                                 // the import retried (re-importing is idempotent).
                                 self.retry(gen, e)
                             case .success:
-                                // Record outputs (de-duplicated by outpoint).
-                                let known = Set(self.state.found.map { $0.outpoint })
-                                self.state.found += block.outputs.filter { !known.contains($0.outpoint) }
                                 // Remember the lowest height the wallet must rescan from.
                                 self.state.pendingRescanFrom = min(self.state.pendingRescanFrom ?? height, height)
                                 let cb = self.onFound
@@ -1281,12 +1472,14 @@ final class SilentPaymentService {
         // URLSession's queue and must not read service state.
         let wallet = walletName
         let scanPub = scanPublicKeyHex
+        let chain = self.chain
         // Add checksums one at a time via getdescriptorinfo (a node-level RPC).
         var remaining = outputs
         var requests: [[String: Any]] = []
+        var labels: [(desc: String, label: String)] = []
 
         func sendImport() {
-            Self.walletCall(wallet: wallet, method: "importdescriptors", params: ["requests": requests], timeout: 600) { result in
+            Self.walletCall(wallet: wallet, chain: chain, method: "importdescriptors", params: ["requests": requests], timeout: 600) { result in
                 switch result {
                 case .failure(let e):
                     completion(.failure(e))
@@ -1301,7 +1494,35 @@ final class SilentPaymentService {
                         completion(.failure(.rpc(code: 0, message: msg)))
                         return
                     }
-                    completion(.success(()))
+                    // Core 30 rejects "label" inside importdescriptors for these non-ranged
+                    // rawtr() imports ("Internal addresses should not have a label"), so the
+                    // label is attached afterwards with setlabel on the output's address.
+                    applyLabels(labels, index: 0)
+                }
+            }
+        }
+
+        func applyLabels(_ items: [(desc: String, label: String)], index: Int) {
+            guard index < items.count else {
+                completion(.success(()))
+                return
+            }
+            let item = items[index]
+            BitcoinRPC.shared.spCommand(method: "deriveaddresses", params: ["descriptor": item.desc], chain: chain) { result in
+                switch result {
+                case .failure(let e):
+                    completion(.failure(e))
+                case .success(let value):
+                    guard let address = (value as? [String])?.first else {
+                        completion(.failure(.badResponse("deriveaddresses returned no address")))
+                        return
+                    }
+                    Self.walletCall(wallet: wallet, chain: chain, method: "setlabel", params: ["address": address, "label": item.label], timeout: 120) { labelResult in
+                        switch labelResult {
+                        case .failure(let e): completion(.failure(e))
+                        case .success: applyLabels(items, index: index + 1)
+                        }
+                    }
                 }
             }
         }
@@ -1312,7 +1533,7 @@ final class SilentPaymentService {
                 return
             }
             remaining.removeFirst()
-            BitcoinRPC.shared.spCommand(method: "getdescriptorinfo", params: ["descriptor": out.descriptor]) { result in
+            BitcoinRPC.shared.spCommand(method: "getdescriptorinfo", params: ["descriptor": out.descriptor], chain: chain) { result in
                 switch result {
                 case .failure(let e):
                     completion(.failure(e))
@@ -1321,17 +1542,22 @@ final class SilentPaymentService {
                         completion(.failure(.badResponse("getdescriptorinfo returned no descriptor")))
                         return
                     }
-                    // Label shows up in listunspent / listtransactions. The scan PUBKEY
-                    // is public (it's part of the SP address), so it's safe to include.
+                    // Label shows up in listunspent / listtransactions / getaddressinfo.
+                    // Fully Noded reads it to recognise its silent payment inputs without
+                    // fetching any blocks: scan = B_scan (public, part of the SP address),
+                    // m = label, t = the output's tweak t_k. t_k can't spend anything
+                    // without b_spend, and Fully Noded only signs if b_spend + t_k
+                    // (+ label) reproduces the output key.
                     var label = "sp scan=\(scanPub) k=\(out.k)"
                     if let m = out.label { label += " m=\(m)" }
+                    label += " t=\(out.tweakHex)"
                     requests.append([
                         "desc": desc,
                         "timestamp": "now",
                         "internal": false,
-                        "active": false,
-                        "label": label
+                        "active": false
                     ])
+                    labels.append((desc: desc, label: label))
                     nextChecksum()
                 }
             }
@@ -1344,11 +1570,12 @@ final class SilentPaymentService {
     // historical outputs (and any later spends of them).
     private func rescan(from height: Int, gen: Int) {
         log("rescanning wallet \(walletName) from height \(height)")
+        isRescanning = true
         // Core sends nothing until the rescan finishes, so allow a long idle time.
         // If it still times out, Core keeps rescanning. The retry then gets "Wallet is
         // currently rescanning" (backoff) until it finishes, and a quick second rescan
         // completes the job.
-        Self.walletCall(wallet: walletName, method: "rescanblockchain", params: ["start_height": height], timeout: 6 * 3600) { [weak self] result in
+        Self.walletCall(wallet: walletName, chain: chain, method: "rescanblockchain", params: ["start_height": height], timeout: 6 * 3600) { [weak self] result in
             guard let self = self else { return }
             self.queue.async {
                 guard self.isCurrent(gen) else { return }
@@ -1362,6 +1589,7 @@ final class SilentPaymentService {
                     }
                     self.saveState()
                     self.retryDelay = 5
+                    self.isRescanning = false
                     self.log("rescan complete")
                     self.queue.async { self.step(gen) }
                 }
@@ -1373,15 +1601,15 @@ final class SilentPaymentService {
     // (after a node restart, wallets without load_on_startup are unloaded).
     // Static and takes the wallet name as a parameter, so it never reads service
     // state from a URLSession callback queue.
-    private static func walletCall(wallet: String, method: String, params: [String: Any], timeout: TimeInterval, completion: @escaping (Result<Any, SPError>) -> Void) {
-        BitcoinRPC.shared.spCommand(method: method, params: params, wallet: wallet, timeout: timeout) { result in
+    private static func walletCall(wallet: String, chain: String, method: String, params: [String: Any], timeout: TimeInterval, completion: @escaping (Result<Any, SPError>) -> Void) {
+        BitcoinRPC.shared.spCommand(method: method, params: params, wallet: wallet, chain: chain, timeout: timeout) { result in
             // Anything other than "wallet not loaded" goes straight back.
             guard case .failure(.rpc(let code, _)) = result, code == SPRPCCode.walletNotFound else {
                 completion(result)
                 return
             }
             // Not loaded → loadwallet, then try the original call once more.
-            BitcoinRPC.shared.spCommand(method: "loadwallet", params: ["filename": wallet], timeout: 600) { loadResult in
+            BitcoinRPC.shared.spCommand(method: "loadwallet", params: ["filename": wallet], chain: chain, timeout: 600) { loadResult in
                 if case .failure(let e) = loadResult {
                     // "Already loaded" (e.g. loaded by someone else meanwhile) is fine;
                     // anything else (wallet doesn't exist…) is a real error.
@@ -1392,7 +1620,7 @@ final class SilentPaymentService {
                         return
                     }
                 }
-                BitcoinRPC.shared.spCommand(method: method, params: params, wallet: wallet, timeout: timeout, completion: completion)
+                BitcoinRPC.shared.spCommand(method: method, params: params, wallet: wallet, chain: chain, timeout: timeout, completion: completion)
             }
         }
     }
@@ -1432,6 +1660,7 @@ final class SilentPaymentService {
 
   do {
       try SilentPaymentService.shared.start(
+          chain: "main",                           // the network's node is always used
           walletName: "sp-watch",
           scanPrivateKeyHex: "e1…32-byte-hex…",
           scanPublicKeyHex: "03…",
