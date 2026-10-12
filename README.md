@@ -34,6 +34,8 @@ directories.
 - Easily connect local and remote wallets with the Quick Connect button. If Fully Noded, Unify, FN-Join Market (the wallets) are 
 installed locally you can connect to them with one click, or scan the QR code to connect remotely.
 - In the help section there are links for installing all Fully Noded apps/wallets which can be used with FNS.
+- 🧪 Scans your node for **silent payments** (BIP352) sent to you and imports them, watch-only, into your Fully Noded 
+wallet so Fully Noded can see and spend them (experimental, see [Silent Payments](#silent-payments-bip352)).
 
 
 ## How?
@@ -72,6 +74,33 @@ and does not do anything at all unless you click one of the menu bar app options
     - [Downloading and configuring](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Views/JoinMarketTaggedReleases.swift)
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
+## Silent Payments (BIP352)
+> 🧪 Experimental, in development on the `Silent-Payments` branch. Test with small amounts.
+
+A silent payment address (`sp1…`) is one static address you can share anywhere, yet every payment to it lands on a new, 
+unlinkable Taproot output. Finding those payments means checking every transaction with your *scan key*. FNS does that 
+with your own node, so no third party ever learns which payments are yours.
+
+1. In **Fully Noded** open your signer: copy the *Silent Payment Address* and export the *SP Scan Private Key* (QR, 
+authentication required).
+2. In **FNS** go to Bitcoin Core → Utilities → **Silent Payments**:
+    - pick your Fully Noded wallet (the one you'll spend from);
+    - import the scan private key and your `sp1…` address by camera QR, QR image or paste (the spend public key is read 
+    from the address, and the scan key is checked against it);
+    - choose a start height (the first block that could contain a payment to you) and tap *Start scanning*.
+3. FNS follows the chain block by block in the background, imports every payment to you as a watch-only `rawtr()` 
+descriptor and rescans the wallet once caught up. It resumes automatically when FNS launches. The scanner status is shown 
+in the Bitcoin Core view.
+4. To spend, use that wallet in **Fully Noded** as usual: its transaction verifier recognises the silent payment inputs and 
+signs them with your spend key, which never leaves Fully Noded.
+
+What FNS holds: the scan private key and your address, encrypted in the Keychain (*Forget keys* deletes them), and scan 
+progress (block heights) in its settings. It never stores which outputs it found and never has your spend key, so it 
+can see payments but can't spend them. Requires Bitcoin Core 25+ and an unpruned node from your start height onward. The 
+camera is only used to scan QR codes and macOS asks for permission the first time.
+
+Full technical details: [SilentPayments.md](./SilentPayments.md).
+
 ## Security
 If connecting to a remote wallet usage of Tor is recommended, Fully Noded apps allow you to generate Tor authentication keys which
 make your remote connection more secure.
@@ -104,6 +133,7 @@ config will be commented out, of course this can easily be overridden by opening
     - Open debug.log.
     - Quick Connect for Fully Noded and Unify - Payjoin Wallet.
     - Reindex.
+    - Silent payments scanner (experimental): import keys, background scanning, status.
     
 - Join Market
     - Installation.
