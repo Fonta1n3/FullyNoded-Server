@@ -27,9 +27,9 @@
 //  * Progress (next height, recent block hashes, pending rescan) is saved to
 //    UserDefaults after every block, so the service resumes where it left off
 //    after the app restarts. FN-Server persists nothing about found outputs
-//    (txids, tweaks, labels). Each imported output's wallet label in Core carries
-//    its scan key, label and tweak ("sp scan=… k=… m=… t=…"), which Fully Noded
-//    reads to recognise and sign it without fetching blocks.
+//    (txids, tweaks, labels). Each imported output gets an informational wallet
+//    label in Core ("sp scan=… k=… [m=…]"); Fully Noded doesn't rely on it, it
+//    proves each output from the chain and keeps its own tweaks.
 //  * A block only counts as scanned once it was fetched AND any matches were
 //    imported. Any failure (node down, busy, 503, wallet not loaded) is retried
 //    with exponential backoff instead of skipping the block.
@@ -259,9 +259,8 @@ extension BitcoinRPC {
 
 // Everything you need to know about one found output, including what you need
 // to spend it later. Only lives in memory (passed to importdescriptors and the
-// onFound callback); it is never written to disk by FN-Server. The scan key, label
-// and tweak go into the imported output's wallet label, which is how Fully Noded
-// recognises the input when spending it.
+// onFound callback); it is never written to disk by FN-Server, nor put in the
+// imported output's wallet label (only the scan key, k and label m are).
 struct SPFoundOutput: Equatable {
     // Txid of the paying transaction (RPC display order).
     let txid: String
@@ -909,15 +908,23 @@ enum SilentPaymentCrypto {
 
 // MARK: - Block scanner (stateless: fetch one block, return its matches)
 
+/// One block as fetched (verbosity 3), before scanning.
+struct SPRawBlock {
+    let height: Int
+    let hash: String
+    let previousHash: String?
+    let time: Int
+    let txs: [[String: Any]]
+}
+
 enum SilentPaymentScanner {
-    // Fetch block `height` with prevouts and scan every tx in it.
-    // Fails (instead of returning []) on ANY RPC or data problem, so the caller
+    // Fetch block `height` with prevouts (getblockhash + getblock verbosity 3).
+    // Fails (instead of returning nothing) on ANY RPC or data problem, so the caller
     // can retry the same height rather than silently skipping a block.
-    static func scanBlock(
+    static func fetchBlock(
         height: Int,
-        keys: SPScanKeys,
         chain: String,
-        completion: @escaping (Result<SPBlockScan, SPError>) -> Void
+        completion: @escaping (Result<SPRawBlock, SPError>) -> Void
     ) {
         // Height → block hash.
         BitcoinRPC.shared.spCommand(method: "getblockhash", params: ["height": height], chain: chain) { result in
@@ -955,24 +962,58 @@ enum SilentPaymentScanner {
                         completion(.failure(.badResponse("getblock \(hash) had no tx/time")))
                         return
                     }
-                    let prevHash = block["previousblockhash"] as? String
-
-                    // Scan every tx. scanTx throws only when the block data is unusable
-                    // (e.g. no prevouts), which fails the whole block.
-                    do {
-                        var found: [SPFoundOutput] = []
-                        for tx in txs {
-                            found += try scanTx(tx, keys: keys, blockHeight: height, blockHash: hash, blockTime: time)
-                        }
-                        completion(.success(SPBlockScan(hash: hash, previousHash: prevHash, time: time, outputs: found)))
-                    } catch let e as SPError {
-                        completion(.failure(e))
-                    } catch {
-                        completion(.failure(.badResponse("\(error)")))
-                    }
+                    completion(.success(SPRawBlock(height: height, hash: hash,
+                                                   previousHash: block["previousblockhash"] as? String,
+                                                   time: time, txs: txs)))
                 }
             }
         }
+    }
+
+    /// Scans every tx of a fetched block, in parallel across the CPU cores (each tx's check
+    /// is independent; results are put back in tx order). Fails if any tx's data is unusable
+    /// (e.g. no prevouts), which fails the whole block so the height is retried. Blocking:
+    /// call it off the service queue.
+    static func scan(_ block: SPRawBlock, keys: SPScanKeys) -> Result<SPBlockScan, SPError> {
+        let txs = block.txs
+        let count = txs.count
+
+        final class Results: @unchecked Sendable {
+            var found: [[SPFoundOutput]]
+            var error: SPError?
+            let lock = NSLock()
+            init(count: Int) { found = Array(repeating: [], count: count) }
+        }
+        let results = Results(count: count)
+
+        // A few chunks per core keeps the cores busy when some txs are much bigger than others.
+        let chunks = max(1, min(count, ProcessInfo.processInfo.activeProcessorCount * 4))
+        let chunkSize = (count + chunks - 1) / max(chunks, 1)
+        DispatchQueue.concurrentPerform(iterations: chunks) { chunk in
+            let lower = chunk * chunkSize
+            let upper = min(lower + chunkSize, count)
+            guard lower < upper else { return }
+            var local: [(index: Int, outputs: [SPFoundOutput])] = []
+            for i in lower..<upper {
+                do {
+                    let outputs = try scanTx(txs[i], keys: keys, blockHeight: block.height, blockHash: block.hash, blockTime: block.time)
+                    if !outputs.isEmpty { local.append((i, outputs)) }
+                } catch {
+                    results.lock.lock()
+                    if results.error == nil { results.error = (error as? SPError) ?? .badResponse("\(error)") }
+                    results.lock.unlock()
+                    return
+                }
+            }
+            guard !local.isEmpty else { return }
+            results.lock.lock()
+            for item in local { results.found[item.index] = item.outputs }
+            results.lock.unlock()
+        }
+
+        if let error = results.error { return .failure(error) }
+        return .success(SPBlockScan(hash: block.hash, previousHash: block.previousHash, time: block.time,
+                                    outputs: results.found.flatMap { $0 }))
     }
 
     // Pull inputs and outputs from one decoded tx and run the BIP352 check.
@@ -1134,6 +1175,18 @@ final class SilentPaymentService {
     private var lastTip: Int?
     private var lastErrorText: String?
     private var isRescanning = false
+    // The next block, fetched while the current one is scanned (one block ahead). Only used
+    // for exactly that height and run; anything else (reorg, rescan, restart) discards it.
+    private struct Prefetch {
+        let height: Int
+        let gen: Int
+        var done = false
+        var result: Result<SPRawBlock, SPError>?
+        var waiter: ((Result<SPRawBlock, SPError>) -> Void)?
+    }
+    private var prefetch: Prefetch?
+    // Height this run (start / rescan) began at, for progress displays.
+    private var runStartHeight: Int?
     private let maxRetryDelay: TimeInterval = 300
     // Retry interval while the node is unreachable or warming up (no backoff).
     private let nodeDownPollInterval: TimeInterval = 5
@@ -1142,8 +1195,9 @@ final class SilentPaymentService {
     private init() {}
 
     /// Start following the chain. Validates the keys up front (throws on bad keys).
-    /// If a saved state exists for this wallet + key pair it resumes from it;
-    /// otherwise it starts at `birthdayHeight` (the first block that could pay you).
+    /// If a saved state exists for this network + wallet + key pair it resumes from it
+    /// (unless `fromBirthday`); otherwise it starts at `birthdayHeight` (the first block that
+    /// could pay you).
     func start(
         chain: String,
         walletName: String,
@@ -1151,6 +1205,7 @@ final class SilentPaymentService {
         scanPublicKeyHex: String,
         spendPublicKeyHex: String,
         birthdayHeight: Int,
+        fromBirthday: Bool = false,
         extraLabels: [UInt32] = []
     ) throws {
         // Parse and validate once. A typo now throws here instead of looking like
@@ -1160,14 +1215,16 @@ final class SilentPaymentService {
             spendPublicKeyHex: spendPublicKeyHex,
             extraLabels: extraLabels
         )
-        // State key per (wallet, scan pub, spend pub), hashed so no key material
-        // appears in the defaults key.
-        let id = SPHex.encode(Data(SHA256.hash(data: Data("\(walletName)|\(scanPublicKeyHex.lowercased())|\(spendPublicKeyHex.lowercased())".utf8)))).prefix(16)
+        // State key per (network, wallet, scan pub, spend pub), hashed so no key material
+        // appears in the defaults key. The network is part of it so progress made on one chain
+        // is never resumed on another (heights and block hashes mean nothing there).
+        let id = SPHex.encode(Data(SHA256.hash(data: Data("\(chain)|\(walletName)|\(scanPublicKeyHex.lowercased())|\(spendPublicKeyHex.lowercased())".utf8)))).prefix(16)
         let key = "sp_state_\(id)"
 
         queue.async {
             // Stop any previous run first.
             self.generation += 1
+            self.prefetch = nil
             self.running = true
             self.chain = chain
             self.chainVerified = false
@@ -1176,8 +1233,11 @@ final class SilentPaymentService {
             self.keys = parsed
             self.stateKey = key
             self.retryDelay = 5
-            // Resume saved progress, or start at the birthday.
-            self.state = Self.loadState(key: key) ?? SPScanState(nextHeight: max(birthdayHeight, 0))
+            // Resume saved progress, or start at the birthday (also when asked to: a start
+            // height the user just changed).
+            self.lastErrorText = nil
+            self.state = (fromBirthday ? nil : Self.loadState(key: key)) ?? SPScanState(nextHeight: max(birthdayHeight, 0))
+            self.runStartHeight = self.state.nextHeight
             // Re-save right away: state written by older builds also held every found
             // output (txids + tweaks). Decoding ignores that field, so this rewrite
             // purges it from UserDefaults.
@@ -1195,11 +1255,13 @@ final class SilentPaymentService {
         queue.async {
             guard self.keys != nil, !self.stateKey.isEmpty else { return }
             self.generation += 1
+            self.prefetch = nil
             self.running = true
             self.chainVerified = false
             self.retryDelay = 5
             self.lastErrorText = nil
             self.state = SPScanState(nextHeight: max(height, 0))
+            self.runStartHeight = self.state.nextHeight
             self.saveState()
             self.log("rescanning from height \(self.state.nextHeight)")
             self.step(self.generation)
@@ -1226,6 +1288,8 @@ final class SilentPaymentService {
         let isRescanning: Bool
         // Last error (cleared once the node answers again); the service keeps retrying.
         let lastError: String?
+        // Height this run began at (progress = scanned since then / tip since then).
+        let startHeight: Int?
     }
 
     // Thread-safe status snapshot. Call from outside the service queue (e.g. the UI).
@@ -1238,7 +1302,8 @@ final class SilentPaymentService {
                    tipHeight: lastTip,
                    pendingRescanFrom: state.pendingRescanFrom,
                    isRescanning: isRescanning,
-                   lastError: lastErrorText)
+                   lastError: lastErrorText,
+                   startHeight: runStartHeight)
         }
     }
 
@@ -1247,6 +1312,7 @@ final class SilentPaymentService {
         queue.async {
             self.running = false
             self.generation += 1
+            self.prefetch = nil
             self.log("stopped")
         }
     }
@@ -1386,17 +1452,82 @@ final class SilentPaymentService {
         }
     }
 
+    // MARK: Fetching (one block ahead)
+
+    // Block `height` (from the prefetch if it's that one), then start fetching the next while
+    // this one is scanned off the queue. Call on the queue; completion on any queue.
+    private func fetchAndScan(height: Int, tip: Int, gen: Int, keys: SPScanKeys,
+                              completion: @escaping (Result<SPBlockScan, SPError>) -> Void) {
+        rawBlock(height, gen: gen) { [weak self] fetched in
+            guard let self = self else { return }
+            switch fetched {
+            case .failure(let e):
+                completion(.failure(e))
+            case .success(let block):
+                if self.isCurrent(gen), height < tip { self.startPrefetch(height + 1, gen: gen) }
+                DispatchQueue.global(qos: .utility).async {
+                    completion(SilentPaymentScanner.scan(block, keys: keys))
+                }
+            }
+        }
+    }
+
+    // The block at `height`: the prefetched one if it's that height of this run (waiting for it
+    // if it's still in flight), else fetched now. On the queue; completion on the queue.
+    private func rawBlock(_ height: Int, gen: Int, completion: @escaping (Result<SPRawBlock, SPError>) -> Void) {
+        if var pending = prefetch, pending.height == height, pending.gen == gen {
+            if pending.done, let result = pending.result {
+                prefetch = nil
+                completion(result)
+            } else {
+                pending.waiter = completion
+                prefetch = pending
+            }
+            return
+        }
+        prefetch = nil
+        SilentPaymentScanner.fetchBlock(height: height, chain: chain) { [weak self] result in
+            self?.queue.async { completion(result) }
+        }
+    }
+
+    // Starts fetching `height` in the background. On the queue.
+    private func startPrefetch(_ height: Int, gen: Int) {
+        guard prefetch == nil else { return }
+        prefetch = Prefetch(height: height, gen: gen)
+        SilentPaymentScanner.fetchBlock(height: height, chain: chain) { [weak self] result in
+            guard let self = self else { return }
+            self.queue.async {
+                // Discarded meanwhile (a rewind or a new run): drop it.
+                guard var pending = self.prefetch, pending.height == height, pending.gen == gen, !pending.done else { return }
+                if let waiter = pending.waiter {
+                    self.prefetch = nil
+                    waiter(result)
+                } else {
+                    pending.done = true
+                    pending.result = result
+                    self.prefetch = pending
+                }
+            }
+        }
+    }
+
     // Scan one height, handle reorgs, import matches, then advance.
     private func processBlock(_ height: Int, tip: Int, gen: Int) {
         guard let keys = keys else { return }
 
-        SilentPaymentScanner.scanBlock(height: height, keys: keys, chain: chain) { [weak self] result in
+        fetchAndScan(height: height, tip: tip, gen: gen, keys: keys) { [weak self] result in
             guard let self = self else { return }
             self.queue.async {
                 guard self.isCurrent(gen) else { return }
                 switch result {
                 case .failure(let e):
                     // Don't advance: this exact height is retried.
+                    if case .rpc(_, let message) = e, message.lowercased().contains("pruned") {
+                        // Retrying can't bring a pruned block back: say what to do.
+                        self.retry(gen, .config("Block \(height) isn't on your node any more (it's pruned). Rescan from your node's earliest available block, or Save & restart with a later start height."))
+                        return
+                    }
                     self.retry(gen, e)
 
                 case .success(let block):
@@ -1542,15 +1673,12 @@ final class SilentPaymentService {
                         completion(.failure(.badResponse("getdescriptorinfo returned no descriptor")))
                         return
                     }
-                    // Label shows up in listunspent / listtransactions / getaddressinfo.
-                    // Fully Noded reads it to recognise its silent payment inputs without
-                    // fetching any blocks: scan = B_scan (public, part of the SP address),
-                    // m = label, t = the output's tweak t_k. t_k can't spend anything
-                    // without b_spend, and Fully Noded only signs if b_spend + t_k
-                    // (+ label) reproduces the output key.
+                    // Informational label (listunspent / listtransactions / getaddressinfo):
+                    // scan = B_scan (public, part of the SP address), k, and the label m.
+                    // The tweak isn't included: Fully Noded proves each output from the
+                    // chain and keeps its own copy, so nothing reads it from here.
                     var label = "sp scan=\(scanPub) k=\(out.k)"
                     if let m = out.label { label += " m=\(m)" }
-                    label += " t=\(out.tweakHex)"
                     requests.append([
                         "desc": desc,
                         "timestamp": "now",

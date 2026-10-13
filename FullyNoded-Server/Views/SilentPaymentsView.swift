@@ -86,7 +86,8 @@ enum SPConfigStore {
         try? start(config)
     }
 
-    static func start(_ config: SPConfig) throws {
+    /// `fromBirthday`: ignore saved progress and scan from the config's start height.
+    static func start(_ config: SPConfig, fromBirthday: Bool = false) throws {
         guard let chain = config.resolvedChain else {
             throw SPError.config("These keys are for a test network, but which one wasn't saved. Select that network in Bitcoin Core, then press Resume.")
         }
@@ -96,7 +97,8 @@ enum SPConfigStore {
             scanPrivateKeyHex: config.scanPrivateKeyHex,
             scanPublicKeyHex: config.scanPublicKeyHex,
             spendPublicKeyHex: config.spendPublicKeyHex,
-            birthdayHeight: config.birthdayHeight
+            birthdayHeight: config.birthdayHeight,
+            fromBirthday: fromBirthday
         )
         // Older config with an sp1… address: it can only be mainnet, so record it now and later
         // network switches can't change it. A tsp1… one stays inferred from the selected test
@@ -540,7 +542,42 @@ final class SilentPaymentsModel: ObservableObject {
     @Published var alertMessage: String?
     @Published var isBusy = false
 
-    private var chain: String { Defaults.shared.chain }
+    /// The network this setup is for (getblockchaininfo's chain name). Every setup RPC goes to
+    /// this network's node, independent of the Bitcoin Core network picker.
+    @Published private(set) var network: String = UserDefaults.standard.string(forKey: "chain") ?? "main"
+    private var networkInitialized = false
+
+    static let networks = ["main", "test", "testnet4", "signet", "regtest"]
+
+    static func networkName(_ chain: String) -> String {
+        switch chain {
+        case "main": return "Mainnet"
+        case "test": return "Testnet3"
+        case "testnet4": return "Testnet4"
+        case "signet": return "Signet"
+        case "regtest": return "Regtest"
+        default: return chain
+        }
+    }
+
+    /// Switches the setup to another network: its wallets and start height are loaded from
+    /// that network's node (nothing from the previous network carries over).
+    func selectNetwork(_ chain: String) {
+        guard chain != network else { return }
+        network = chain
+        wallets = []
+        // The saved wallet / start height only belong to the saved setup's network.
+        if let saved = savedConfig, saved.resolvedChain == chain {
+            selectedWallet = saved.walletName
+            birthdayInput = "\(saved.birthdayHeight)"
+        } else {
+            selectedWallet = ""
+            birthdayInput = ""
+        }
+        startHeightNote = nil
+        refreshWallets()
+        if birthdayInput.isEmpty { useCurrentTip() }
+    }
 
     // MARK: Derived validation
 
@@ -558,9 +595,11 @@ final class SilentPaymentsModel: ObservableObject {
         guard let address = address else {
             return (false, "Not a valid silent payment address (sp1… / tsp1…).")
         }
-        let expected = chain == "main" ? "sp" : "tsp"
+        let expected = network == "main" ? "sp" : "tsp"
         if address.hrp != expected {
-            return (false, "That is a \(address.hrp == "sp" ? "mainnet" : "test network") address but this node is on \(chain).")
+            return (false, address.hrp == "sp"
+                    ? "That is a mainnet address, but \(Self.networkName(network)) is selected above."
+                    : "That is a test network address, but Mainnet is selected above. Select the test network it's for.")
         }
         // Scan key known (typed now or saved earlier): it must belong to this address.
         if let scanPub = effectiveScanKey?.pub, scanPub != address.scanPub {
@@ -633,6 +672,7 @@ final class SilentPaymentsModel: ObservableObject {
     /// The form differs from the saved setup (Save & restart applies it).
     var hasUnsavedChanges: Bool {
         guard let saved = savedConfig else { return false }
+        if network != saved.resolvedChain { return true }
         if selectedWallet != saved.walletName { return true }
         if (address?.address ?? addressInput) != (saved.address ?? "") { return true }
         if Int(birthdayInput) != saved.birthdayHeight { return true }
@@ -656,12 +696,15 @@ final class SilentPaymentsModel: ObservableObject {
             alertMessage = "That Fully Noded link doesn't contain a valid silent payment address and scan private key."
             return true
         }
+        // An sp1… address can only be mainnet. (tsp1… could be any test network: the address
+        // card asks for it if Mainnet is selected.)
+        if address?.hrp == "sp" { selectNetwork("main") }
         // Exported from a Fully Noded wallet: select that wallet on the node.
         if let wallet = link.wallet {
             selectedWallet = wallet
             if !wallets.contains(wallet) { wallets.append(wallet) }
             refreshWallets()
-            BitcoinRPC.shared.spCommand(method: "listwallets", params: [:]) { result in
+            BitcoinRPC.shared.spCommand(method: "listwallets", params: [:], chain: network) { result in
                 DispatchQueue.main.async {
                     guard case .success(let value) = result,
                           let loaded = value as? [String], !loaded.contains(wallet) else { return }
@@ -684,6 +727,10 @@ final class SilentPaymentsModel: ObservableObject {
         tipHeight = status.tipHeight
         lastError = status.lastError
         savedConfig = SPConfigStore.load()
+        if !networkInitialized {
+            networkInitialized = true
+            if let chain = savedConfig?.resolvedChain { network = chain }
+        }
         // Prefill from the saved setup only where the form is empty: the model is shared, so a
         // link opened just before the window appeared (or edits on another screen) must survive.
         if let saved = savedConfig {
@@ -715,8 +762,10 @@ final class SilentPaymentsModel: ObservableObject {
     // MARK: Node
 
     func refreshWallets() {
-        BitcoinRPC.shared.spCommand(method: "listwallets", params: [:]) { result in
+        let chain = network
+        BitcoinRPC.shared.spCommand(method: "listwallets", params: [:], chain: chain) { result in
             DispatchQueue.main.async {
+                guard chain == self.network else { return }   // switched meanwhile
                 switch result {
                 case .success(let value):
                     self.wallets = (value as? [String] ?? []).sorted()
@@ -725,7 +774,7 @@ final class SilentPaymentsModel: ObservableObject {
                         self.wallets.append(self.selectedWallet)
                     }
                 case .failure(let error):
-                    self.alertMessage = "Unable to list wallets: \(error.description)"
+                    self.alertMessage = "Unable to list wallets on \(Self.networkName(chain)): \(error.description). Is that network's node running?"
                 }
             }
         }
@@ -742,7 +791,7 @@ final class SilentPaymentsModel: ObservableObject {
     /// input's prevout). An unpruned node has everything, so it's the earliest block that
     /// could hold a silent payment: taproot activation on mainnet, 0 on test networks.
     func useEarliestAvailable() {
-        earliestAvailableHeight { height, note in
+        earliestAvailableHeight(chain: network) { height, note in
             self.birthdayInput = "\(height)"
             self.startHeightNote = note
         }
@@ -933,8 +982,10 @@ final class SilentPaymentsModel: ObservableObject {
     }
 
     func useCurrentTip() {
-        BitcoinRPC.shared.spCommand(method: "getblockcount", params: [:]) { result in
+        let chain = network
+        BitcoinRPC.shared.spCommand(method: "getblockcount", params: [:], chain: chain) { result in
             DispatchQueue.main.async {
+                guard chain == self.network else { return }   // switched meanwhile
                 if case .success(let value) = result, let height = value as? Int {
                     self.birthdayInput = "\(height)"
                 }
@@ -956,9 +1007,10 @@ final class SilentPaymentsModel: ObservableObject {
                               address: address.address)
         isBusy = true
 
-        // Record the network from the node itself: the scanner stays on it whatever is
-        // selected later.
-        BitcoinRPC.shared.spCommand(method: "getblockchaininfo", params: [:]) { result in
+        // The selected network's node, which must report that network; it's saved with the keys
+        // and the scanner stays on it whatever is selected later.
+        let selected = network
+        BitcoinRPC.shared.spCommand(method: "getblockchaininfo", params: [:], chain: selected) { result in
             DispatchQueue.main.async {
                 guard case .success(let value) = result,
                       let chain = (value as? [String: Any])?["chain"] as? String else {
@@ -968,6 +1020,17 @@ final class SilentPaymentsModel: ObservableObject {
                     } else {
                         self.alertMessage = "Unable to read the node's network."
                     }
+                    return
+                }
+                let info = value as? [String: Any] ?? [:]
+                if info["pruned"] as? Bool == true, let pruneHeight = info["pruneheight"] as? Int, config.birthdayHeight < pruneHeight {
+                    self.isBusy = false
+                    self.alertMessage = "Your node is pruned: block \(pruneHeight.formatted()) is the oldest it still has, so it can't scan from \(config.birthdayHeight.formatted()). Use a start height of \(pruneHeight.formatted()) or later (Earliest available fills it in)."
+                    return
+                }
+                guard chain == selected else {
+                    self.isBusy = false
+                    self.alertMessage = "The node on \(Self.networkName(selected))'s port reports \(chain). Check which node is running there."
                     return
                 }
                 guard (chain == "main") == (address.hrp == "sp") else {
@@ -1001,8 +1064,11 @@ final class SilentPaymentsModel: ObservableObject {
     }
 
     private func launch(_ config: SPConfig) {
+        // A start height that differs from the saved one (or a different network) is meant to
+        // take effect now: scan from it instead of resuming earlier progress.
+        let fromBirthday = savedConfig.map { $0.birthdayHeight != config.birthdayHeight || $0.resolvedChain != config.chain } ?? true
         do {
-            try SPConfigStore.start(config)
+            try SPConfigStore.start(config, fromBirthday: fromBirthday)
         } catch {
             alertMessage = "Unable to start: \(error)"
             return
@@ -1086,6 +1152,7 @@ struct SilentPaymentsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 scannerCard
+                networkCard
                 walletCard
                 scanKeyCard
                 addressCard
@@ -1258,7 +1325,7 @@ struct SilentPaymentsView: View {
             }
             if let saved = model.savedConfig {
                 // Wallet names are long hashes: one line, middle truncated, full name on hover.
-                Text("wallet \(saved.walletName)")
+                Text("\(saved.resolvedChain.map { SilentPaymentsModel.networkName($0) } ?? "?") · wallet \(saved.walletName)")
                     .font(Cypher.mono(11))
                     .foregroundStyle(Cypher.dim)
                     .lineLimit(1)
@@ -1396,6 +1463,26 @@ struct SilentPaymentsView: View {
 
     private static func shortWallet(_ name: String) -> String {
         name.count > 28 ? "\(name.prefix(18))…\(name.suffix(6))" : name
+    }
+
+    private var networkCard: some View {
+        card("Network",
+             footer: "The node this setup uses: its wallets, start height and the blocks scanned. Separate from the Bitcoin Core network picker, and saved with the keys.") {
+            Picker("Network", selection: Binding(get: { model.network }, set: { model.selectNetwork($0) })) {
+                ForEach(SilentPaymentsModel.networks, id: \.self) { chain in
+                    Text(SilentPaymentsModel.networkName(chain)).tag(chain)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            if let saved = model.savedConfig, let savedChain = saved.resolvedChain, savedChain != model.network {
+                Label("Your saved setup scans \(SilentPaymentsModel.networkName(savedChain)). Save & restart to move it to \(SilentPaymentsModel.networkName(model.network)).",
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(Cypher.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     private var walletCard: some View {
@@ -1620,22 +1707,64 @@ struct SPSidebarStatusIcon: View {
         if !SPConfigStore.isConfigured {
             Image(systemName: "xmark")
                 .foregroundStyle(Cypher.dim)
+                .help("No silent payment keys imported")
         } else {
             let status = SilentPaymentService.shared.status()
             if !status.isRunning {
                 Image(systemName: "xmark")
                     .foregroundStyle(Cypher.amber)
-            } else if status.lastError != nil {
+                    .help("Not scanning")
+            } else if let error = status.lastError {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(Cypher.amber)
+                    .help(error)
+            } else if status.isRescanning {
+                SPPulseIcon(systemName: "arrow.triangle.2.circlepath", color: Cypher.amber, pulsing: true, period: 1.2, size: 11)
+                    .help("Rescanning the wallet to add the payments found")
             } else if let tip = status.tipHeight, (status.scannedHeight ?? 0) >= tip {
                 Image(systemName: "checkmark")
                     .foregroundStyle(Cypher.accent)
+                    .help("Up to date at block \(tip.formatted())")
             } else {
-                ProgressView()
-                    .scaleEffect(0.5)
+                SPSidebarScanRing(status: status)
             }
         }
+    }
+}
+
+/// Sidebar badge while the scanner catches up: a ring filling with the share of blocks
+/// scanned since this run began, around a pulsing magnifying glass.
+struct SPSidebarScanRing: View {
+    let status: SilentPaymentService.Status
+
+    /// nil until the tip is known (the ring then just pulses).
+    private var fraction: Double? {
+        guard let tip = status.tipHeight else { return nil }
+        let first = status.startHeight ?? tip
+        let scanned = (status.scannedHeight ?? first - 1) + 1
+        let total = max(tip + 1 - first, 1)
+        return min(max(Double(scanned - first) / Double(total), 0), 1)
+    }
+
+    private var helpText: String {
+        guard let tip = status.tipHeight else { return "Connecting to your node…" }
+        let next = (status.scannedHeight ?? (status.startHeight ?? tip) - 1) + 1
+        let percent = fraction.map { " (\(Int($0 * 100))%)" } ?? ""
+        return "Scanning block \(next.formatted()) of \(tip.formatted())\(percent)"
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Cypher.accent.opacity(0.2), lineWidth: 2)
+            Circle()
+                .trim(from: 0, to: fraction ?? 0)
+                .stroke(Cypher.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            SPPulseIcon(systemName: "magnifyingglass", color: Cypher.accent, pulsing: true, period: 1.6, size: 7)
+        }
+        .frame(width: 16, height: 16)
+        .help(helpText)
     }
 }
 
@@ -1780,16 +1909,17 @@ struct SPPulseIcon: View {
     let color: Color
     let pulsing: Bool
     let period: Double
+    var size: CGFloat = 16
 
     var body: some View {
         TimelineView(.animation(paused: !pulsing)) { context in
             let phase = pulsing ? (sin(context.date.timeIntervalSinceReferenceDate * 2 * .pi / period) + 1) / 2 : 1
             Image(systemName: systemName)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: size, weight: .semibold))
                 .foregroundStyle(color)
                 .opacity(0.45 + 0.55 * phase)
-                .shadow(color: color.opacity(0.6 * phase), radius: 6)
-                .frame(width: 22, height: 22)
+                .shadow(color: color.opacity(0.6 * phase), radius: size * 0.375)
+                .frame(width: size * 1.375, height: size * 1.375)
         }
     }
 }
