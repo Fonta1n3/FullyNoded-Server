@@ -81,23 +81,28 @@ A silent payment address (`sp1…`) is one static address you can share anywhere
 unlinkable Taproot output. Finding those payments means checking every transaction with your *scan key*. FNS does that 
 with your own node, so no third party ever learns which payments are yours.
 
-1. In **Fully Noded** open your signer: copy the *Silent Payment Address* and export the *SP Scan Private Key* (QR, 
-authentication required).
-2. In **FNS** go to Bitcoin Core → Utilities → **Silent Payments**:
-    - pick your Fully Noded wallet (the one you'll spend from);
-    - import the scan private key and your `sp1…` address by camera QR, QR image or paste (the spend public key is read 
-    from the address, and the scan key is checked against it);
-    - choose a start height (the first block that could contain a payment to you) and tap *Start scanning*.
-3. FNS follows the chain block by block in the background, imports every payment to you as a watch-only `rawtr()` 
-descriptor and rescans the wallet once caught up. It resumes automatically when FNS launches. The scanner status is shown 
-in the Bitcoin Core view.
+1. In **Fully Noded** open the wallet you'll spend from, go to its *Silent payments* section and tap **FN-SERVER LINK** 
+(authentication required). It's one QR / `fnsp://` link with your silent payment address, your scan private key and the 
+wallet's name on your node. (From a signer: *SP Scan Private Key* → *Fully Noded Server QR*.)
+2. In **FNS** open **Silent Payments** (sidebar, or Bitcoin Core → Utilities):
+    - *Import from Fully Noded*: *Paste link* (Copy Text in Fully Noded; Universal Clipboard brings it to your Mac), 
+    *QR image…* or *Scan QR*. That fills the address, scan key and wallet. You can also enter them one by one (camera QR, 
+    QR image or paste); the spend public key is read from the address and the scan key is checked against it;
+    - check the network, choose a start height (the first block that could contain a payment to you, or *Earliest 
+    available*) and click *Start scanning*.
+3. FNS follows the chain in the background (one block fetched ahead, each block's transactions checked in parallel), 
+imports every payment to you as a watch-only `rawtr()` descriptor, shows a card for each one and rescans the wallet once 
+caught up. It resumes automatically when FNS launches. The icon on the sidebar's Silent Payments row shows the scanner's 
+state; *History* lists every payment imported, *Rescan* scans again, and *Check a transaction* explains whether a given 
+transaction pays you.
 4. To spend, use that wallet in **Fully Noded** as usual: its transaction verifier recognises the silent payment inputs and 
 signs them with your spend key, which never leaves Fully Noded.
 
-What FNS holds: the scan private key and your address, encrypted in the Keychain (*Forget keys* deletes them), and scan 
-progress (block heights) in its settings. It never stores which outputs it found and never has your spend key, so it 
-can see payments but can't spend them. Requires Bitcoin Core 25+ and an unpruned node from your start height onward. The 
-camera is only used to scan QR codes and macOS asks for permission the first time.
+What FNS holds: the scan private key, your address, the wallet and network, encrypted in the Keychain (*Forget keys* 
+deletes them), and scan progress (block heights) in its settings. It never stores which outputs it found and never has 
+your spend key, so it can see payments but can't spend them. Requires Bitcoin Core 25+ and the blocks from your start 
+height onward (a pruned node works if it still has them). The camera is only used to scan QR codes and macOS asks for 
+permission the first time.
 
 Full technical details: [SilentPayments.md](./SilentPayments.md).
 
