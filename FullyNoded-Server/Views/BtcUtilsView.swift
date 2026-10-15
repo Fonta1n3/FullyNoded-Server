@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BtcUtilsView: View {
+    @Environment(\.openWindow) private var openWindow
     @State private var promptToSelectWallet = false
     @State private var promptToDeleteWallet = false
     @State private var isShowingPicker = false
@@ -72,6 +73,12 @@ struct BtcUtilsView: View {
                     }
                 }
                 Button {
+                    openWindow(id: "SilentPayments")
+                } label: {
+                    Image(systemName: "eye.slash")
+                    Text("Silent Payments")
+                }
+                Button {
                     promptToSelectWallet = true
                 } label: {
                     Image(systemName: "exclamationmark.triangle")
@@ -97,10 +104,9 @@ struct BtcUtilsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
-        .cornerRadius(8)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
+            Rectangle()
+                .stroke(Cypher.line, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding([.leading, .trailing])
         )

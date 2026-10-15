@@ -21,33 +21,81 @@ struct FullyNoded_ServerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .overlay { SPImportedCard() }
+                .cypherTheme()
                 .onAppear {
                     if UserDefaults.standard.value(forKey: "encKeyFullyNodedServer") as? String == nil {
                         UserDefaults.standard.setValue(Crypto.privKeyData().base64EncodedString(), forKey: "encKeyFullyNodedServer")
                     }
                     initialLoad()
+                    // Callbacks first (they raise the "silent payment received" alert),
+                    // then keep scanning if keys were imported before.
+                    _ = SilentPaymentsModel.shared
+                    SPConfigStore.resumeIfConfigured()
                 }
+                // fnsp:// links (Fully Noded's silent payment export): fill the form and show it
+                // so the user can check it and start scanning.
+                .onOpenURL { url in
+                    guard SilentPaymentsModel.shared.applyImportLink(url.absoluteString) else { return }
+                    openWindow(id: "SilentPayments")
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                // Reuse the open main window for links instead of opening another one.
+                .handlesExternalEvents(preferring: ["fnsp"], allowing: ["*"])
         }
+        // Links are handled by this window (created on a cold start, so the usual launch work
+        // runs); every other window ignores them.
+        .handlesExternalEvents(matching: ["fnsp"])
         Window("Utilities", id: "Utilities-JM") {
             JMUtilsView()
+                .cypherPage()
+                .cypherTheme()
         }
+        .handlesExternalEvents(matching: [])
         Window("QuickConnect", id: "QuickConnect-JM") {
             JMQuickConnectView()
+                .cypherPage()
+                .cypherTheme()
         }
+        .handlesExternalEvents(matching: [])
         Window("Utilities", id: "Utilities") {
             BtcUtilsView()
+                .cypherPage()
+                .cypherTheme()
         }
+        .handlesExternalEvents(matching: [])
         Window("Utilities", id: "Utilities-Knots") {
             KnotsUtilsView()
+                .cypherPage()
+                .cypherTheme()
         }
+        .handlesExternalEvents(matching: [])
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
+                .cypherPage()
+                .cypherTheme()
         }
+        .handlesExternalEvents(matching: [])
+        Window("Silent Payments", id: "SilentPayments") {
+            SilentPaymentsView()
+                .cypherPage()
+                .cypherTheme()
+        }
+        .handlesExternalEvents(matching: [])
         Window("Blockchain Info", id: "BlockchainInfo") {
             if let blockchainInfo = blockchainInfo {
                 BlockchainInfoView(blockchainInfo: blockchainInfo)
+                    .cypherPage()
+                    .cypherTheme()
             }
         }
+        .handlesExternalEvents(matching: [])
+        Window("Silent Payment History", id: "SPHistory") {
+            SPHistoryView()
+                .cypherPage()
+                .cypherTheme()
+        }
+        .handlesExternalEvents(matching: [])
         MenuBarExtra() {
             Button("Start core") {
                 ScriptUtil.runScript(script: .startBitcoin, env: env, args: nil) { (_, _, _) in }
@@ -59,6 +107,9 @@ struct FullyNoded_ServerApp: App {
                     }
                     isRunning = false
                 }
+            }
+            Button("Silent payment history") {
+                openWindow(id: "SPHistory")
             }
             Button("Info") {
                 BitcoinRPC.shared.command(method: "getblockchaininfo", params: [:]) { (result, error) in

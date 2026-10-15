@@ -40,7 +40,7 @@ struct ConfigTextView: View {
                     Pasteboard.write(configString)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Cypher.accent)
                 }
                 .buttonStyle(.plain)
                 .help("Copy to clipboard")
@@ -52,11 +52,10 @@ struct ConfigTextView: View {
                     .foregroundColor(.primary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .backgroundStyle(.background)
-                    .cornerRadius(8)
+                    .background(Cypher.bg)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(white: 0.8), lineWidth: 1)
+                        Rectangle()
+                            .stroke(Cypher.line, lineWidth: 1)
                     )
                     // Optional: Syntax highlighting using a simple approach
                     // For full syntax highlighting, consider integrating Highlightr or similar
@@ -66,9 +65,8 @@ struct ConfigTextView: View {
             .padding()
         }
         .padding()
-        .backgroundStyle(.background)
-        .cornerRadius(12)
-        .shadow(radius: 2)
+        .background(Cypher.panel)
+        .overlay(Rectangle().stroke(Cypher.line, lineWidth: 1))
     }
 }
 
