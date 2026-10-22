@@ -16,6 +16,14 @@ struct Help: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 8)
 
+                    SupportCard(title: "Setup Assistant", systemImage: "wand.and.stars") {
+                        Button("Run the Setup Assistant again") {
+                            NotificationCenter.default.post(name: .showSetupAssistant, object: nil)
+                        }
+                        Text("Check this Mac, change the network or implementation, install a node and connect Fully Noded.")
+                            .foregroundStyle(.secondary)
+                    }
+
                     // Support Section
                     SupportCard(title: "Need support?", systemImage: "questionmark.circle") {
                         LinkRow(text: "Let us know about an issue, bug, feature request or general comments here.", destination: URL(string: "https://github.com/Fonta1n3/FullyNoded-Server/issues/new")!)
