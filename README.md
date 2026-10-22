@@ -34,6 +34,8 @@ directories.
 - Easily connect local and remote wallets with the Quick Connect button. If Fully Noded, Unify, FN-Join Market (the wallets) are 
 installed locally you can connect to them with one click, or scan the QR code to connect remotely.
 - In the help section there are links for installing all Fully Noded apps/wallets which can be used with FNS.
+- ⚡ **Nostr Connect**: the fast way to connect Fully Noded. Its RPC calls travel end-to-end encrypted through a nostr relay 
+(built in, or a public one) instead of Tor, so connections take about a second (see [Nostr Connect](#nostr-connect)).
 - 🧪 Scans your node for **silent payments** (BIP352) sent to you and imports them, watch-only, into your Fully Noded 
 wallet so Fully Noded can see and spend them (experimental, see [Silent Payments](#silent-payments-bip352)).
 
@@ -74,6 +76,18 @@ and does not do anything at all unless you click one of the menu bar app options
     - [Downloading and configuring](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Views/JoinMarketTaggedReleases.swift)
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
+## Nostr Connect
+
+A fast alternative to Tor for Fully Noded. Fully Noded encrypts each RPC call to this Mac (NIP-44) and publishes it as an 
+ephemeral nostr event; FNS's bridge decrypts it, asks your local Bitcoin Core and sends the encrypted answer back. Run the 
+built-in relay for your local network or VPN (e.g. Tailscale), or add a public relay to reach your node from anywhere. Relays 
+only ever see ciphertext, and only devices you pair can use your node. With **Encrypt connections (wss://)** on (macOS 15+), 
+the built-in relay uses TLS with a self-signed certificate made by openssl and pinned in the pairing link.
+
+Open **Nostr Connect** in the sidebar, set up a relay, tap **Pair Fully Noded** and scan the QR in Fully Noded.
+
+Full details: [NostrConnect.md](./NostrConnect.md).
+
 ## Silent Payments (BIP352)
 > 🧪 Experimental, in development on the `Silent-Payments` branch. Test with small amounts.
 

@@ -32,6 +32,8 @@ struct FullyNoded_ServerApp: App {
                     // then keep scanning if keys were imported before.
                     _ = SilentPaymentsModel.shared
                     SPConfigStore.resumeIfConfigured()
+                    // Nostr Connect: relay and bridge back on if they were.
+                    NostrConnectModel.shared.startIfConfigured()
                 }
                 // fnsp:// links (Fully Noded's silent payment export): fill the form and show it
                 // so the user can check it and start scanning.
@@ -46,6 +48,13 @@ struct FullyNoded_ServerApp: App {
         // Links are handled by this window (created on a cold start, so the usual launch work
         // runs); every other window ignores them.
         .handlesExternalEvents(matching: ["fnsp"])
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Setup Assistant…") {
+                    NotificationCenter.default.post(name: .showSetupAssistant, object: nil)
+                }
+            }
+        }
         Window("Utilities", id: "Utilities-JM") {
             JMUtilsView()
                 .cypherPage()
@@ -72,6 +81,13 @@ struct FullyNoded_ServerApp: App {
         .handlesExternalEvents(matching: [])
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
+                .cypherPage()
+                .cypherTheme()
+        }
+        .handlesExternalEvents(matching: [])
+        // Opened from the Setup Assistant (the sidebar page is the same view).
+        Window("Nostr Connect", id: "NostrConnect") {
+            NostrConnectView()
                 .cypherPage()
                 .cypherTheme()
         }

@@ -47,6 +47,7 @@ struct ContentView: View {
     @State private var taggedReleases: TaggedReleases? = nil
     @State private var showTorrc = false
     @State private var showTorLog = true
+    @State private var showSetupAssistant = false
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
@@ -67,6 +68,7 @@ struct ContentView: View {
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
     private let silentPayments = Service(name: "Silent Payments", id: UUID())
+    private let nostrConnect = Service(name: "Nostr Connect", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
     private let help = Service(name: "Help", id: UUID())
     private let settings = Service(name: "Settings", id: UUID())
@@ -146,6 +148,8 @@ struct ContentView: View {
                                 }
                             } else if service.name == "Silent Payments" {
                                 SilentPaymentsView()
+                            } else if service.name == "Nostr Connect" {
+                                NostrConnectView()
                             } else if service.name == "Tor" {
                                 FNIcon()
                                 HStack() {
@@ -342,6 +346,10 @@ struct ContentView: View {
                                 if service.name == "Silent Payments" {
                                     SPSidebarStatusIcon()
                                 }
+
+                                if service.name == "Nostr Connect" {
+                                    NostrConnectSidebarIcon()
+                                }
                                 
                                 if service.name == "Tor" {
                                     if torProgress < 100.0 {
@@ -404,11 +412,23 @@ struct ContentView: View {
             }
         
         .onAppear(perform: {
-            if isInitialLoad {
-                bootTor()
-            }
-            checkForXcode()
+            guard isInitialLoad else { return }
+            bootTor()
+            // The sidebar doesn't wait for the developer tool checks (only JoinMarket needs them).
+            getSavedValues()
+            presentSetupAssistantIfNeeded()
         })
+        .sheet(isPresented: $showSetupAssistant) {
+            SetupAssistantView {
+                // New implementation / network / install: reload what the sidebar shows.
+                useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
+                getSavedValues()
+            }
+            .cypherTheme()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSetupAssistant)) { _ in
+            showSetupAssistant = true
+        }
 //        .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
 //            Button("OK") {
 //                installLightning()
@@ -421,10 +441,11 @@ struct ContentView: View {
         .alert("Python 3.10-3.12 is a Join Market dependency. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
                     Link("Open Python install guide", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
         }
-        .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
-            Button("OK", role: .cancel) {
+        .alert("Install Homebrew? Join Market's installation relies on it.", isPresented: $promptToInstallBrew) {
+            Button("Install Homebrew") {
                 ScriptUtil.runScript(script: .installHomebrew, env: nil, args: nil) { (_, _, _) in }
             }
+            Button("Not now", role: .cancel) {}
         }
         .alert("Install Xcode Command Line Tools? This is required for Fully Noded - Server to function.", isPresented: $promptToInstallXcode, actions: {
             Button("OK", role: .cancel) {
@@ -489,7 +510,36 @@ struct ContentView: View {
                 promptToInstallBrew = true
                 return
             }
-            getSavedValues()
+        }
+    }
+    
+    /// First run (setup never finished or skipped, and no node installed): open the Setup
+    /// Assistant, which covers the developer tools too. Otherwise the usual tool prompts.
+    private func presentSetupAssistantIfNeeded() {
+        guard !SetupAssistant.isComplete else {
+            checkForXcode()
+            return
+        }
+        NodeImplementation.core.installedEnv { coreEnv in
+            NodeImplementation.knots.installedEnv { knotsEnv in
+                DispatchQueue.main.async {
+                    if coreEnv == nil && knotsEnv == nil {
+                        showSetupAssistant = true
+                    } else {
+                        // Set up before the assistant existed: don't open it by itself.
+                        SetupAssistant.isComplete = true
+                        checkForXcode()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func rebuildServices() {
+        if useKnots {
+            services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, nostrConnect, tor, settings, help]
+        } else {
+            services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, nostrConnect, tor, settings, help]
         }
     }
     
@@ -568,12 +618,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    if useKnots {
-                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    } else {
-                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    }
+                    rebuildServices()
                     checkForBitcoin()
                 }
                 
@@ -591,13 +636,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
             
-            if useKnots {
-                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
-            } else {
-                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-            }
-                        
-            
+            rebuildServices()
             checkForBitcoin()
         }
     }
