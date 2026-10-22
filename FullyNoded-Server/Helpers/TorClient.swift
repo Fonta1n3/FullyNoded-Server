@@ -34,8 +34,19 @@ class TorClient: NSObject, URLSessionDelegate {
     public var showVersion: ((String) -> Void)?
     /// The running tor's version, once known.
     public private(set) var version: String?
+    /// Bootstrap progress, 0–100 (main queue).
+    public private(set) var progress = 0
+    /// Why tor couldn't be started or controlled, if it couldn't.
+    public private(set) var lastError: String?
+    /// Turned off with Stop: tor keeps running in this process with its network disabled.
+    /// (An in-process tor can't be shut down and started again, so Stop/Start toggle
+    /// `DisableNetwork` instead.)
+    public private(set) var isPaused = false
     
     static let sharedInstance = TorClient()
+    static let socksPort = 19850
+    /// The control connection is up, so tor can be stopped and started.
+    var canPause: Bool { controller?.isConnected ?? false }
     private var config: TorConfiguration = TorConfiguration()
     private var thread: TorThread?
     private var controller: TorController?
@@ -51,11 +62,18 @@ class TorClient: NSObject, URLSessionDelegate {
     
     
     // Start the tor client.
+    /// Starts tor once per launch; later calls only turn its network back on if it was stopped.
     func start(delegate: OnionManagerDelegate?) {
+        if thread != nil {
+            if isPaused { resume() }
+            return
+        }
         weak var weakDelegate = delegate
         state = .started
+        progress = 0
+        lastError = nil
         
-        let proxyPort = 19850
+        let proxyPort = Self.socksPort
         
         sessionConfiguration.connectionProxyDictionary = [kCFProxyTypeKey: kCFProxyTypeSOCKS,
                                           kCFStreamPropertySOCKSProxyHost: "localhost",
@@ -97,11 +115,7 @@ class TorClient: NSObject, URLSessionDelegate {
             // Connect Tor controller.
             do {
                 if !(controller?.isConnected ?? false) {
-                    do {
-                        try controller?.connect()
-                    } catch {
-                        print("error=\(error)")
-                    }
+                    try controller?.connect()
                 }
                 
                 let cookie = try Data(
@@ -113,7 +127,10 @@ class TorClient: NSObject, URLSessionDelegate {
                     guard let self = self else { return }
                     
                     if let error = error {
-                        print("error = \(error.localizedDescription)")
+                        DispatchQueue.main.async {
+                            self.lastError = "Couldn't authenticate to tor's control port: \(error.localizedDescription)"
+                            self.state = .none
+                        }
                         return
                     }
 
@@ -133,9 +150,11 @@ class TorClient: NSObject, URLSessionDelegate {
                         (type: String, severity: String, action: String, arguments: [String : String]?) -> Bool in
                         guard let self = self else { return false }
                         if arguments != nil {
-                            if arguments!["PROGRESS"] != nil {
-                                let progress = Int(arguments!["PROGRESS"]!)!
-                                showProgress?((progress))
+                            if let progress = arguments?["PROGRESS"].flatMap({ Int($0) }) {
+                                DispatchQueue.main.async {
+                                    self.progress = progress
+                                    self.showProgress?((progress))
+                                }
                                 weakDelegate?.torConnProgress(progress)
                                 if progress >= 100 {
                                     controller?.removeObserver(progressObs)
@@ -149,13 +168,11 @@ class TorClient: NSObject, URLSessionDelegate {
                     var observer: Any? = nil
                     observer = controller?.addObserver(forCircuitEstablished: { [weak self] established in
                         guard let self = self else { return }
-                        if established {
-                            state = .connected
-                            weakDelegate?.torConnFinished()
-                            controller?.removeObserver(observer)
-
-                        } else if state == .refreshing {
-                            state = .connected
+                        if established || state == .refreshing {
+                            DispatchQueue.main.async {
+                                self.state = .connected
+                                self.progress = 100
+                            }
                             weakDelegate?.torConnFinished()
                             controller?.removeObserver(observer)
                         }
@@ -173,6 +190,7 @@ class TorClient: NSObject, URLSessionDelegate {
                         let established = values[1].trimmingCharacters(in: .whitespaces) == "1"
                         DispatchQueue.main.async {
                             if let progress = progress {
+                                self.progress = progress
                                 self.showProgress?(progress)
                                 weakDelegate?.torConnProgress(progress)
                                 if progress >= 100 { self.controller?.removeObserver(progressObs) }
@@ -187,17 +205,146 @@ class TorClient: NSObject, URLSessionDelegate {
                 }
             } catch {
                 weakDelegate?.torConnDifficulties()
-                state = .none
+                self.state = .none
+                self.lastError = "Couldn't connect to tor's control port: \(error.localizedDescription)"
             }
         }
     }
-    
-    func resign() {
-        controller?.disconnect()
-        controller = nil
-        thread?.cancel()
-        thread = nil
-        state = .stopped
+
+    /// Takes tor offline (no circuits, onion services unreachable) without ending it.
+    func pause(completion: ((Bool) -> Void)? = nil) {
+        guard let controller = controller, controller.isConnected else {
+            completion?(false)
+            return
+        }
+        controller.setConfForKey("DisableNetwork", withValue: "1") { [weak self] success, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if success {
+                    self.isPaused = true
+                    self.state = .stopped
+                    self.progress = 0
+                } else {
+                    self.lastError = "Couldn't stop tor: \(error?.localizedDescription ?? "unknown error")"
+                }
+                completion?(success)
+            }
+        }
+    }
+
+    /// Brings tor back online after `pause()`, and follows its bootstrap again.
+    func resume(completion: ((Bool) -> Void)? = nil) {
+        guard let controller = controller, controller.isConnected else {
+            completion?(false)
+            return
+        }
+        state = .started
+        progress = 0
+        controller.setConfForKey("DisableNetwork", withValue: "0") { [weak self] success, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if success {
+                    self.isPaused = false
+                    self.followBootstrap()
+                } else {
+                    self.state = .stopped
+                    self.lastError = "Couldn't start tor: \(error?.localizedDescription ?? "unknown error")"
+                }
+                completion?(success)
+            }
+        }
+    }
+
+    /// New circuits for new connections, and reloads the torrc (SIGNAL RELOAD + NEWNYM).
+    func newCircuits(completion: ((Bool) -> Void)? = nil) {
+        guard let controller = controller, controller.isConnected else {
+            completion?(false)
+            return
+        }
+        controller.resetConnection { success in
+            DispatchQueue.main.async { completion?(success) }
+        }
+    }
+
+    /// Polls the bootstrap phase until tor is connected again (events may already have passed).
+    private func followBootstrap(attempt: Int = 0) {
+        guard !isPaused, attempt < 120 else { return }
+        controller?.getInfoForKeys(["status/bootstrap-phase", "status/circuit-established"]) { [weak self] values in
+            DispatchQueue.main.async {
+                guard let self = self, values.count == 2 else { return }
+                let progress = values[0].split(separator: " ")
+                    .first { $0.hasPrefix("PROGRESS=") }
+                    .flatMap { Int($0.dropFirst("PROGRESS=".count)) }
+                if let progress = progress {
+                    self.progress = progress
+                    self.showProgress?(progress)
+                }
+                if values[1].trimmingCharacters(in: .whitespaces) == "1" && (progress ?? 100) >= 100 {
+                    self.state = .connected
+                    self.progress = 100
+                    self.showProgress?(100)
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.followBootstrap(attempt: attempt + 1) }
+                }
+            }
+        }
+    }
+
+    /// The onion services in the torrc.
+    enum OnionService: CaseIterable {
+        case joinMarket, bitcoinMain, bitcoinTest, bitcoinSignet, bitcoinRegtest, bitcoinTestnet4
+
+        var directory: String {
+            switch self {
+            case .joinMarket: return "host/joinmarket"
+            case .bitcoinMain: return "host/bitcoin/rpc/main"
+            case .bitcoinTest: return "host/bitcoin/rpc/test"
+            case .bitcoinSignet: return "host/bitcoin/rpc/signet"
+            case .bitcoinRegtest: return "host/bitcoin/rpc/regtest"
+            case .bitcoinTestnet4: return "host/bitcoin/rpc/testnet4"
+            }
+        }
+
+        var port: Int {
+            switch self {
+            case .joinMarket: return 28183
+            case .bitcoinMain: return 8332
+            case .bitcoinTest: return 18332
+            case .bitcoinSignet: return 38332
+            case .bitcoinRegtest: return 18443
+            case .bitcoinTestnet4: return 48332
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .joinMarket: return "JoinMarket"
+            case .bitcoinMain: return "Bitcoin RPC · Mainnet"
+            case .bitcoinTest: return "Bitcoin RPC · Testnet3"
+            case .bitcoinSignet: return "Bitcoin RPC · Signet"
+            case .bitcoinRegtest: return "Bitcoin RPC · Regtest"
+            case .bitcoinTestnet4: return "Bitcoin RPC · Testnet4"
+            }
+        }
+
+        static func bitcoin(chain: String) -> OnionService? {
+            switch chain {
+            case "main": return .bitcoinMain
+            case "test": return .bitcoinTest
+            case "signet": return .bitcoinSignet
+            case "regtest": return .bitcoinRegtest
+            case "testnet4": return .bitcoinTestnet4
+            default: return nil
+            }
+        }
+    }
+
+    /// The service's onion address, once tor has created it.
+    func hostname(for service: OnionService) -> String? {
+        let path = "\(torPath())/\(service.directory)/hostname"
+        guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return nil }
+        let host = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return host.isEmpty ? nil : host
     }
     
     private func createTorDirectory() {
