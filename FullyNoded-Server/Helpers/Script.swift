@@ -55,11 +55,14 @@ public enum SCRIPT: String {
     //case deleteWallet
     case startBitcoin
     case mineBlocks
+    case createRelayCert
     
     var stringValue:String {
         switch self {
         case .mineBlocks:
             return "MineBlocks"
+        case .createRelayCert:
+            return "CreateRelayCert"
         case .startKnots:
             return "StartKnots"
         case .deleteWallet:

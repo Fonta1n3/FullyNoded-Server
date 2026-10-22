@@ -61,6 +61,7 @@
 		0AA692692C7F8EC700366192 /* OpenFile.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692572C7F8EC700366192 /* OpenFile.command */; };
 		0AA6926A2C7F8EC700366192 /* InstallBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692582C7F8EC700366192 /* InstallBitcoin.command */; };
 		0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692592C7F8EC700366192 /* StartBitcoin.command */; };
+		08A66D7634990243D7698983 /* CreateRelayCert.command in Resources */ = {isa = PBXBuildFile; fileRef = 9DA246D9FD701015C5920831 /* CreateRelayCert.command */; };
 		0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925A2C7F8EC700366192 /* StopBitcoin.command */; };
 		0AA6926D2C7F8EC700366192 /* Strap.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925B2C7F8EC700366192 /* Strap.command */; };
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
@@ -84,6 +85,8 @@
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
+		C5A7E0089D5CA0F02812C4A7 /* NostrConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */; };
+		A2532DFF28C8C8E18A0BBF2E /* SetupAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */; };
 		1D5002FE583407E64756D86D /* SilentPaymentHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */; };
 		3A24080E13ADD5CFEC4328D9 /* SilentPaymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */; };
 		59028E192E259CC2005BB904 /* StartKnots.command in Resources */ = {isa = PBXBuildFile; fileRef = 59028E182E259CC2005BB904 /* StartKnots.command */; };
@@ -96,6 +99,11 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
+		8635811D85315D15E02983AF /* NostrConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A651DA97A224A0D065E1AF /* NostrConnect.swift */; };
+		D0E178AD0A7005A0C32B083A /* NostrRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE96C30BF6ED0A232292C423 /* NostrRelay.swift */; };
+		A120C97208A5FEC9A271B598 /* NostrBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961C63AA260C75C1E3D3B068 /* NostrBridge.swift */; };
+		912D8835C8B6B1F97D226305 /* SetupAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */; };
+		2444B1A74506073F9E44BDA0 /* NodeInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8099434CF37A62402C3575BF /* NodeInstaller.swift */; };
 		5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */; };
 		5955E7413053A8A500C4B1E5 /* P256K in Frameworks */ = {isa = PBXBuildFile; productRef = 5955E7403053A8A500C4B1E5 /* P256K */; };
 		595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 595B518F2DC936C0002FD7E5 /* DeleteWallet.command */; };
@@ -181,6 +189,7 @@
 		0AA692572C7F8EC700366192 /* OpenFile.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = OpenFile.command; sourceTree = "<group>"; };
 		0AA692582C7F8EC700366192 /* InstallBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallBitcoin.command; sourceTree = "<group>"; };
 		0AA692592C7F8EC700366192 /* StartBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StartBitcoin.command; sourceTree = "<group>"; };
+		9DA246D9FD701015C5920831 /* CreateRelayCert.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CreateRelayCert.command; sourceTree = "<group>"; };
 		0AA6925A2C7F8EC700366192 /* StopBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StopBitcoin.command; sourceTree = "<group>"; };
 		0AA6925B2C7F8EC700366192 /* Strap.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Strap.command; sourceTree = "<group>"; };
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
@@ -204,6 +213,8 @@
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
+		FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnectView.swift; sourceTree = "<group>"; };
+		6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistantView.swift; sourceTree = "<group>"; };
 		19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentHistoryView.swift; sourceTree = "<group>"; };
 		1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		59028E182E259CC2005BB904 /* StartKnots.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartKnots.command; sourceTree = "<group>"; };
@@ -216,6 +227,11 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
+		B2A651DA97A224A0D065E1AF /* NostrConnect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnect.swift; sourceTree = "<group>"; };
+		CE96C30BF6ED0A232292C423 /* NostrRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrRelay.swift; sourceTree = "<group>"; };
+		961C63AA260C75C1E3D3B068 /* NostrBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrBridge.swift; sourceTree = "<group>"; };
+		3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistant.swift; sourceTree = "<group>"; };
+		8099434CF37A62402C3575BF /* NodeInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeInstaller.swift; sourceTree = "<group>"; };
 		5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentsScanner.swift; sourceTree = "<group>"; };
 		595B518F2DC936C0002FD7E5 /* DeleteWallet.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
 		595B51912DC93EA6002FD7E5 /* WalletPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPicker.swift; sourceTree = "<group>"; };
@@ -283,6 +299,8 @@
 				0AD202462ED1A59B006286DD /* TorLogView.swift */,
 				055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */,
 				19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */,
+				FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */,
+				6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */,
 				A272CB3732FF3D5028397F79 /* CypherTheme.swift */,
 			);
 			path = Views;
@@ -339,6 +357,11 @@
 				599E9C9D2DDED1C100BFA551 /* KnotsConf.swift */,
 				0AD202442ED1A577006286DD /* TorLogMonitor.swift */,
 				5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */,
+				961C63AA260C75C1E3D3B068 /* NostrBridge.swift */,
+				3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */,
+				8099434CF37A62402C3575BF /* NodeInstaller.swift */,
+				CE96C30BF6ED0A232292C423 /* NostrRelay.swift */,
+				B2A651DA97A224A0D065E1AF /* NostrConnect.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -404,6 +427,7 @@
 				0AA692572C7F8EC700366192 /* OpenFile.command */,
 				0AA692582C7F8EC700366192 /* InstallBitcoin.command */,
 				0AA692592C7F8EC700366192 /* StartBitcoin.command */,
+				9DA246D9FD701015C5920831 /* CreateRelayCert.command */,
 				0AA6925A2C7F8EC700366192 /* StopBitcoin.command */,
 				0AA6925B2C7F8EC700366192 /* Strap.command */,
 				0AA6925C2C7F8EC700366192 /* Verify.command */,
@@ -536,6 +560,7 @@
 				0AD7BE212CC2B1F100428D02 /* StartJm.command in Resources */,
 				59CC77F62D565E64005D5A9B /* RefreshJMConfig.command in Resources */,
 				0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */,
+				08A66D7634990243D7698983 /* CreateRelayCert.command in Resources */,
 				0AA692622C7F8EC700366192 /* InstallXcode.command in Resources */,
 				0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */,
 				0AA692692C7F8EC700366192 /* OpenFile.command in Resources */,
@@ -634,6 +659,11 @@
 				59CD1FF82D3FF13A00110A12 /* TaggedReleasesBitcoinKnotsView.swift in Sources */,
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
 				5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */,
+				A120C97208A5FEC9A271B598 /* NostrBridge.swift in Sources */,
+				912D8835C8B6B1F97D226305 /* SetupAssistant.swift in Sources */,
+				2444B1A74506073F9E44BDA0 /* NodeInstaller.swift in Sources */,
+				D0E178AD0A7005A0C32B083A /* NostrRelay.swift in Sources */,
+				8635811D85315D15E02983AF /* NostrConnect.swift in Sources */,
 				0AF736212D00D0900026FE0A /* Help.swift in Sources */,
 				599E9C982DDEC17B00BFA551 /* BitcoinKnotsEnv.swift in Sources */,
 				59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */,
@@ -678,6 +708,8 @@
 				0AD202472ED1A59B006286DD /* TorLogView.swift in Sources */,
 				3A24080E13ADD5CFEC4328D9 /* SilentPaymentsView.swift in Sources */,
 				1D5002FE583407E64756D86D /* SilentPaymentHistoryView.swift in Sources */,
+				C5A7E0089D5CA0F02812C4A7 /* NostrConnectView.swift in Sources */,
+				A2532DFF28C8C8E18A0BBF2E /* SetupAssistantView.swift in Sources */,
 				8038876417FADFF8F2D0CD60 /* CypherTheme.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
