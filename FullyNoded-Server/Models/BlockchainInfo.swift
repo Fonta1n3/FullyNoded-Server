@@ -19,13 +19,18 @@ public struct BlockchainInfo: CustomStringConvertible {
     let chain:String
     let blocks:Int
     let initialblockdownload:Bool
+    let headers:Int
+    /// Time of the tip block (unix seconds), 0 when unknown.
+    let time:Int
+    let warnings:String
     var text: String
     
     init(_ dictionary: [String: Any]) {
         network = dictionary["chain"] as? String ?? ""
         blockheight = dictionary["blocks"] as? Int ?? 0
-        difficulty = Int(dictionary["difficulty"] as! Double)
-        size_on_disk = Int(dictionary["size_on_disk"] as! UInt64)
+        // NSNumbers: a missing or oddly typed field must not crash the app.
+        difficulty = Int((dictionary["difficulty"] as? NSNumber)?.doubleValue ?? 0)
+        size_on_disk = (dictionary["size_on_disk"] as? NSNumber)?.intValue ?? 0
         progress = dictionary["progress"] as? String ?? ""
         pruned = dictionary["pruned"] as? Bool ?? false
         verificationprogress = dictionary["verificationprogress"] as? Double ?? 0.0
@@ -33,6 +38,14 @@ public struct BlockchainInfo: CustomStringConvertible {
         chain = dictionary["chain"] as? String ?? ""
         blocks = dictionary["blocks"] as? Int ?? 0
         initialblockdownload = dictionary["initialblockdownload"] as? Bool ?? false
+        headers = dictionary["headers"] as? Int ?? 0
+        time = dictionary["time"] as? Int ?? 0
+        // A string before v28, a list of strings since.
+        if let list = dictionary["warnings"] as? [String] {
+            warnings = list.joined(separator: " ")
+        } else {
+            warnings = dictionary["warnings"] as? String ?? ""
+        }
         text = ""
         for (key, value) in dictionary {
             text += "\(key): \(value)\n"

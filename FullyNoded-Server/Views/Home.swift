@@ -64,7 +64,8 @@ struct Home: View {
         }
         
         .onAppear(perform: {
-            if TorClient.sharedInstance.state != .connected && TorClient.sharedInstance.state != .started {
+            // Starts tor if it never started (a no-op once it runs); leaves it off if it was stopped.
+            if !TorClient.sharedInstance.isPaused {
                 TorClient.sharedInstance.start(delegate: nil)
             }
         })

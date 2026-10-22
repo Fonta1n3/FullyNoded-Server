@@ -264,9 +264,13 @@ final class SetupAssistant: ObservableObject {
 
     // MARK: - Start
 
+    /// When Start was tapped: until bitcoind is up, a refused RPC means "starting", not "off".
+    private var startRequested: Date?
+
     func startNode() {
         guard let env = installedEnv else { return }
         nodeStatus = .starting("Starting \(implementation.name)…")
+        startRequested = Date()
         let scriptEnv = [
             "BINARY_NAME": env.binaryName,
             "VERSION": env.version,
@@ -276,11 +280,15 @@ final class SetupAssistant: ObservableObject {
         ]
         ScriptUtil.runScript(script: implementation.startScript, env: scriptEnv, args: nil) { [weak self] _, _, errorMessage in
             DispatchQueue.main.async {
-                if let errorMessage, !errorMessage.isEmpty {
-                    self?.nodeStatus = .failed(errorMessage)
+                guard let self else { return }
+                // Launch errors are on stderr; ignore them if a bitcoind is running anyway.
+                if let errorMessage, !errorMessage.isEmpty,
+                   !NodeProcess.isRunning(dataDir: Defaults.shared.bitcoinDataDir, chain: self.chain) {
+                    self.startRequested = nil
+                    self.nodeStatus = .failed(errorMessage)
                     return
                 }
-                self?.followNode()
+                self.followNode()
             }
         }
     }
@@ -305,6 +313,7 @@ final class SetupAssistant: ObservableObject {
                 guard let self else { return }
                 if let result = result as? [String: Any] {
                     self.blockchainInfo = BlockchainInfo(result)
+                    self.startRequested = nil
                     self.nodeStatus = .running
                     return
                 }
@@ -315,9 +324,18 @@ final class SetupAssistant: ObservableObject {
                 }
                 let error = error ?? ""
                 if error.isEmpty || error.contains("Could not connect to the server") {
-                    // Not up (yet): keep saying "starting" while a start is under way.
-                    if case .starting = self.nodeStatus { return }
-                    self.nodeStatus = .stopped
+                    // Not up (yet): the RPC port also refuses while bitcoind launches, so ask the OS.
+                    switch NodeProcess.interpretUnreachable(transition: self.startRequested.map { .starting($0) },
+                                                           dataDir: Defaults.shared.bitcoinDataDir, chain: self.chain) {
+                    case .starting, .stopping:
+                        if case .starting = self.nodeStatus { return }
+                        self.nodeStatus = .starting("Starting \(self.implementation.name)…")
+                    case .failedToStart:
+                        self.startRequested = nil
+                        self.nodeStatus = .failed("\(self.implementation.name) didn't start. Its debug.log (Utilities → debug.log) says why.")
+                    case .stopped:
+                        self.nodeStatus = .stopped
+                    }
                 } else if error.contains("credentials are incorrect") || error.contains("No BitcoinRPCCreds") {
                     self.nodeStatus = .failed(error)
                 } else {

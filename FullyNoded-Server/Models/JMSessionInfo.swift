@@ -31,12 +31,16 @@ struct JMSession: CustomStringConvertible {
     let maker_running:Bool
     let session:Bool
     let wallet_name:String?
+    let nickname:String?
     
     init(_ dict: [String:Any]) {
-        coinjoin_in_process = dict["coinjoin_in_process"] as! Bool
-        maker_running = dict["maker_running"] as! Bool
-        session = dict["session"] as! Bool
-        wallet_name = dict["wallet_name"] as? String
+        coinjoin_in_process = (dict["coinjoin_in_process"] as? NSNumber)?.boolValue ?? false
+        maker_running = (dict["maker_running"] as? NSNumber)?.boolValue ?? false
+        session = (dict["session"] as? NSNumber)?.boolValue ?? false
+        // "None" (Python's) when no wallet is open.
+        let name = dict["wallet_name"] as? String
+        wallet_name = name == "None" || name?.isEmpty == true ? nil : name
+        nickname = dict["nickname"] as? String
     }
     
     public var description: String {

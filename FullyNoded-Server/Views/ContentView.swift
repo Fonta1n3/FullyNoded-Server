@@ -21,7 +21,6 @@ public struct Service: Identifiable {
 struct ContentView: View {
     @State private var useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = TorClient.sharedInstance.version ?? ""
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -45,8 +44,6 @@ struct ContentView: View {
     @State private var env: [String: String] = [:]
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
-    @State private var showTorrc = false
-    @State private var showTorLog = true
     @State private var showSetupAssistant = false
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
@@ -151,103 +148,7 @@ struct ContentView: View {
                             } else if service.name == "Nostr Connect" {
                                 NostrConnectView()
                             } else if service.name == "Tor" {
-                                FNIcon()
-                                HStack() {
-                                    if torProgress < 100.0 {
-                                        ProgressView("\(torLabel) bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
-                                            .padding([.leading, .trailing])
-                                            .frame(alignment: .topLeading)
-                                    } else {
-                                        if torRunning {
-                                            Image(systemName: "circle.fill")
-                                                .foregroundStyle(Cypher.accent)
-                                                .padding([.leading])
-                                            Text("\(torLabel) running")
-                                        } else {
-                                            Image(systemName: "circle.fill")
-                                                .foregroundStyle(Cypher.amber)
-                                                .padding([.leading])
-                                            Text("\(torLabel) stopped")
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                
-                                HStack{
-                                    switch TorClient.sharedInstance.state {
-                                    case .connected, .started, .refreshing:
-                                        Button {
-                                            TorClient.sharedInstance.resign()
-                                            torRunning = false
-                                            torProgress = 100
-                                        } label: {
-                                            Text("Stop")
-                                        }
-                                        .padding(.leading)
-                                    case .stopped:
-                                        Button {
-                                            TorClient.sharedInstance.start(delegate: nil)
-                                            torProgress = 0
-                                        } label: {
-                                            Text("Start")
-                                        }
-                                        .padding(.leading)
-                                    default:
-                                        Text("Tor state is \(TorClient.sharedInstance.state).")
-                                            .padding(.leading)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    
-                                    Button {
-                                        showTorrc = !showTorrc
-                                    } label: {
-                                        if !showTorrc {
-                                            Text("Show Tor config")
-                                        } else {
-                                            Text("Hide Tor Config")
-                                        }
-                                    }
-                                    
-                                    Button {
-                                        openTorDir()
-                                    } label: {
-                                        Text("Open Tor Directory")
-                                    }
-                                    
-                                    Button {
-                                        showTorLog = !showTorLog
-                                    } label: {
-                                        if !showTorLog {
-                                            Text("Show Tor Log")
-                                        } else {
-                                            Text("Hide Tor Log")
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                }
-                                
-                                if showTorrc {
-                                    ConfigTextView(
-                                        configString: Torrc.torrc,
-                                        title: "Torrc",
-                                        contentType: .plain
-                                    )
-                                }
-                                
-                                if showTorLog {
-                                    VStack() {
-                                        TorLogView()
-                                            .padding()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .background(Cypher.panel)
-                                            .overlay(Rectangle().stroke(Cypher.line, lineWidth: 1))
-                                    }
-                                    .padding()
-                                    
-                                }
-                                
-                                Spacer()
+                                TorView()
                             } else if service.name == "Help" {
                                 Help()
                             } else if service.name == "Settings" {
@@ -462,10 +363,6 @@ struct ContentView: View {
         }        
     }
     
-    private func openTorDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Torrc.torPath())
-    }
-    
     private func checkForXcode() {
         ScriptUtil.runScript(script: .checkXcodeSelect, env: nil, args: nil) { (output, data, errorMess) in
             guard let output = output else {
@@ -481,11 +378,6 @@ struct ContentView: View {
         }
     }
     
-    /// "Tor v0.4.9.3" once the running tor has reported its version, "Tor" until then.
-    private var torLabel: String {
-        torVersion.isEmpty ? "Tor" : "Tor v\(torVersion)"
-    }
-
     private func bootTor() {
         if TorClient.sharedInstance.state == .connected {
             torProgress = 100.0
@@ -494,12 +386,6 @@ struct ContentView: View {
         }
         TorClient.sharedInstance.showProgress = { progress in
             torProgress = Double(progress)
-        }
-        TorClient.sharedInstance.showVersion = { version in
-            torVersion = version
-        }
-        if let version = TorClient.sharedInstance.version {
-            torVersion = version
         }
         isInitialLoad = false
     }
