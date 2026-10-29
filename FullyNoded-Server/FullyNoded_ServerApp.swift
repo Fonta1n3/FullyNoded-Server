@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 @main
 struct FullyNoded_ServerApp: App {
@@ -18,6 +19,33 @@ struct FullyNoded_ServerApp: App {
     @State private var errorMessage = ""
     @State private var blockchainInfo: BlockchainInfo?
     
+    /// Another Fully Noded Server already running (often an older build left open while a new
+    /// one launches from Xcode) keeps the relay's port, so this copy's relay can't start. Asks to
+    /// quit the other copy, waits for it to exit, then continues.
+    static func resolveOtherInstances(then continueLaunch: @escaping () -> Void) {
+        let me = NSRunningApplication.current
+        let others = NSWorkspace.shared.runningApplications.filter {
+            $0.processIdentifier != me.processIdentifier &&
+            ($0.bundleIdentifier == me.bundleIdentifier || $0.executableURL?.lastPathComponent == me.executableURL?.lastPathComponent)
+        }
+        guard !others.isEmpty else { continueLaunch(); return }
+        let alert = NSAlert()
+        alert.messageText = "Fully Noded Server is already running"
+        alert.informativeText = "Another copy (pid \(others.map { String($0.processIdentifier) }.joined(separator: ", "))) is open. Only one copy can run the Nostr Connect relay and manage your nodes. Quit the other copy?"
+        alert.addButton(withTitle: "Quit the other copy")
+        alert.addButton(withTitle: "Keep both")
+        guard alert.runModal() == .alertFirstButtonReturn else { continueLaunch(); return }
+        others.forEach { $0.terminate() }
+        // Give it up to 10 s to quit (it stops its relay and saves state), then force it.
+        func wait(_ attempt: Int) {
+            if others.allSatisfy({ $0.isTerminated }) { continueLaunch(); return }
+            if attempt == 20 { others.filter { !$0.isTerminated }.forEach { $0.forceTerminate() } }
+            if attempt > 30 { continueLaunch(); return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { wait(attempt + 1) }
+        }
+        wait(0)
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -32,8 +60,11 @@ struct FullyNoded_ServerApp: App {
                     // then keep scanning if keys were imported before.
                     _ = SilentPaymentsModel.shared
                     SPConfigStore.resumeIfConfigured()
-                    // Nostr Connect: relay and bridge back on if they were.
-                    NostrConnectModel.shared.startIfConfigured()
+                    // Nostr Connect: relay and bridge back on if they were. Another running copy
+                    // holds the relay's port, so offer to quit it first.
+                    Self.resolveOtherInstances {
+                        NostrConnectModel.shared.startIfConfigured()
+                    }
                 }
                 // fnsp:// links (Fully Noded's silent payment export): fill the form and show it
                 // so the user can check it and start scanning.
@@ -55,60 +86,70 @@ struct FullyNoded_ServerApp: App {
                 }
             }
         }
+        Window("Setup Assistant", id: "SetupAssistant") {
+            SetupAssistantView {
+                NotificationCenter.default.post(name: .setupAssistantFinished, object: nil)
+            }
+            .cypherTheme()
+            .toolbarBackground(Cypher.panel, for: .windowToolbar)
+            .toolbarBackground(.visible, for: .windowToolbar)
+        }
+        .windowResizability(.contentSize)
+        .handlesExternalEvents(matching: [])
         Window("Utilities", id: "Utilities-JM") {
             JMUtilsView()
-                .cypherPage()
+                .cypherPage(.joinMarket)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("QuickConnect", id: "QuickConnect-JM") {
             JMQuickConnectView()
-                .cypherPage()
+                .cypherPage(.joinMarket)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("Utilities", id: "Utilities") {
             BtcUtilsView()
-                .cypherPage()
+                .cypherPage(.bitcoinCore)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("Utilities", id: "Utilities-Knots") {
             KnotsUtilsView()
-                .cypherPage()
+                .cypherPage(.bitcoinKnots)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("QuickConnect", id: "QuickConnect") {
             QuickConnectView()
-                .cypherPage()
+                .cypherPage(.bitcoinCore)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         // Opened from the Setup Assistant (the sidebar page is the same view).
         Window("Nostr Connect", id: "NostrConnect") {
             NostrConnectView()
-                .cypherPage()
+                .cypherPage(.nostr)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("Silent Payments", id: "SilentPayments") {
             SilentPaymentsView()
-                .cypherPage()
+                .cypherPage(.silentPayments)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])
         Window("Blockchain Info", id: "BlockchainInfo") {
             if let blockchainInfo = blockchainInfo {
                 BlockchainInfoView(blockchainInfo: blockchainInfo)
-                    .cypherPage()
+                    .cypherPage(.bitcoinCore)
                     .cypherTheme()
             }
         }
         .handlesExternalEvents(matching: [])
         Window("Silent Payment History", id: "SPHistory") {
             SPHistoryView()
-                .cypherPage()
+                .cypherPage(.silentPayments)
                 .cypherTheme()
         }
         .handlesExternalEvents(matching: [])

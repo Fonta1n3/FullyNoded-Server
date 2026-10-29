@@ -9,10 +9,14 @@
 import SwiftUI
 
 struct NodeView: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var monitor: NodeMonitor
     @Environment(\.openWindow) private var openWindow
     @Environment(\.scenePhase) private var scenePhase
     @State private var confirmStop = false
+    @State private var selectedRelease: TaggedReleaseElement?
+    @State private var confirmRelease: TaggedReleaseElement?
+    @State private var confirmInstalled: String?
 
     var body: some View {
         ScrollView {
@@ -23,6 +27,8 @@ struct NodeView: View {
                     syncCard(info)
                     statsCard(info)
                 }
+                VersionCard(monitor: monitor, installer: monitor.installer, selected: $selectedRelease,
+                            confirmRelease: $confirmRelease, confirmInstalled: $confirmInstalled)
                 logCard
             }
             .padding(20)
@@ -42,12 +48,69 @@ struct NodeView: View {
         )) {
             Button("OK", role: .cancel) {}
         }
+        .alert(confirmTitle, isPresented: Binding(
+            get: { confirmRelease != nil || confirmInstalled != nil },
+            set: { if !$0 { confirmRelease = nil; confirmInstalled = nil } }
+        )) {
+            Button(confirmButton) {
+                if let release = confirmRelease {
+                    monitor.changeVersion(to: release)
+                } else if let version = confirmInstalled {
+                    monitor.useInstalledVersion(version)
+                }
+                confirmRelease = nil
+                confirmInstalled = nil
+            }
+            Button("Cancel", role: .cancel) {
+                confirmRelease = nil
+                confirmInstalled = nil
+            }
+        } message: {
+            Text(confirmMessage)
+        }
         .alert("Stop \(monitor.kind.name)?", isPresented: $confirmStop) {
             Button("Stop", role: .destructive) { monitor.stop() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Fully Noded and anything else using this node (JoinMarket, Silent Payments) lose their connection until it's started again.")
         }
+    }
+
+    // MARK: - Version change confirmation
+
+    private var targetVersion: String? {
+        confirmRelease?.tagName.map { $0.replacingOccurrences(of: "v", with: "") } ?? confirmInstalled
+    }
+
+    private var confirmTitle: String {
+        guard let target = targetVersion else { return "" }
+        let action = VersionCard.action(from: monitor.version, to: target)
+        return action == "Reinstall" || action == "Install"
+            ? "\(action) \(monitor.kind.name) \(target)?"
+            : "\(action) \(monitor.kind.name) to \(target)?"
+    }
+
+    private var confirmButton: String {
+        guard let target = targetVersion else { return "OK" }
+        return VersionCard.action(from: monitor.version, to: target)
+    }
+
+    private var confirmMessage: String {
+        guard let target = targetVersion else { return "" }
+        var lines: [String] = []
+        let running = monitor.phase == .running || monitor.phase.isTransitioning
+        if confirmRelease != nil {
+            lines.append("FN-Server \(running ? "stops the node, " : "")downloads \(target), checks it against the release's SHA256SUMS in Terminal\(running ? " and starts it again" : ""). Your blockchain, wallets and bitcoin.conf stay as they are.")
+        } else {
+            lines.append("\(target) is already installed: \(running ? "the node is stopped and started again on it" : "it's used the next time you start the node"). Nothing is downloaded.")
+        }
+        if let current = monitor.version, VersionCard.isNewer(current, than: target) {
+            lines.append("Downgrading: an older version may not read what a newer one wrote (block index, chainstate, wallets). If it refuses to start, switch back here, or reindex.")
+        }
+        if confirmRelease?.prerelease == true {
+            lines.append("This is a release candidate: a test version, not for your main funds.")
+        }
+        return lines.joined(separator: "\n\n")
     }
 
     // MARK: - Header
@@ -132,7 +195,7 @@ struct NodeView: View {
                     .labelsHidden()
                     .frame(width: 150)
                     .disabled(monitor.phase.isTransitioning)
-                    Text("RPC port \(NodeMonitor.rpcPort(chain: monitor.chain))")
+                    Text(verbatim: "RPC port \(NodeMonitor.rpcPort(chain: monitor.chain))")
                         .font(Cypher.mono(11))
                         .foregroundStyle(Cypher.dim)
                     Spacer()
@@ -182,7 +245,7 @@ struct NodeView: View {
 
     private var statusColor: Color {
         switch monitor.phase {
-        case .running: return Cypher.accent
+        case .running: return palette.accent
         case .starting, .stopping, .unknown: return Cypher.amber
         case .stopped, .failed: return Cypher.danger
         }
@@ -287,7 +350,7 @@ struct NodeView: View {
                          detail: info.pruned && info.pruneheight > 0 ? "from block \(info.pruneheight.withCommas)" : nil)
                 StatTile(label: "Uptime", value: monitor.uptime.map { Self.duration(TimeInterval($0)) } ?? "—")
                 StatTile(label: "Tor", value: monitor.onionReachable.map { $0 ? "onion reachable" : "off" } ?? "—",
-                         valueColor: monitor.onionReachable == true ? Cypher.accent : nil)
+                         valueColor: monitor.onionReachable == true ? palette.accent : nil)
                 StatTile(label: "Version", value: monitor.subversion ?? monitor.version.map { "v\($0)" } ?? "—")
                 StatTile(label: "Network", value: NodeMonitor.networkName(monitor.chain))
             }
@@ -383,6 +446,7 @@ private struct StatusDot: View {
 
 /// Square, terminal-style progress bar.
 private struct SyncBar: View {
+    @Environment(\.cypherPalette) private var palette
     let progress: Double
 
     var body: some View {
@@ -390,7 +454,7 @@ private struct SyncBar: View {
             ZStack(alignment: .leading) {
                 Rectangle().fill(Cypher.bg)
                 Rectangle()
-                    .fill(LinearGradient(colors: [Cypher.accent.opacity(0.55), Cypher.accent],
+                    .fill(LinearGradient(colors: [palette.accent.opacity(0.55), palette.accent],
                                          startPoint: .leading, endPoint: .trailing))
                     .frame(width: geometry.size.width * min(max(progress, 0), 1))
                     .animation(.easeInOut(duration: 0.6), value: progress)
@@ -414,7 +478,7 @@ private struct StatTile: View {
                 .foregroundStyle(Cypher.dim)
             Text(value)
                 .font(Cypher.mono(13, weight: .semibold))
-                .foregroundStyle(valueColor ?? Cypher.text)
+                .foregroundStyle(valueColor.map(AnyShapeStyle.init) ?? AnyShapeStyle(Cypher.text))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .textSelection(.enabled)
@@ -428,5 +492,236 @@ private struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Cypher.bg)
         .overlay(Rectangle().stroke(Color.white.opacity(0.07), lineWidth: 1))
+    }
+}
+
+/// Installed version, newer and older releases, and already-installed versions to switch to.
+private struct VersionCard: View {
+    @Environment(\.cypherPalette) private var palette
+    @ObservedObject var monitor: NodeMonitor
+    @ObservedObject var installer: NodeInstaller
+    @Binding var selected: TaggedReleaseElement?
+    @Binding var confirmRelease: TaggedReleaseElement?
+    @Binding var confirmInstalled: String?
+    @State private var showAll = false
+
+    var body: some View {
+        GroupBox("Version") {
+            VStack(alignment: .leading, spacing: 12) {
+                summary
+                switch monitor.versionChange {
+                case .idle:
+                    if showAll { chooser }
+                case .done(let message):
+                    resultRow(message, ok: true)
+                    if showAll { chooser }
+                case .failed(let message):
+                    resultRow(message, ok: false)
+                    if showAll { chooser }
+                default:
+                    progress
+                }
+            }
+        }
+        .onAppear {
+            if installer.releases.isEmpty && !installer.isFetchingReleases {
+                installer.fetchReleases(for: monitor.implementation)
+            }
+        }
+    }
+
+    private var stable: [TaggedReleaseElement] {
+        installer.releases.filter { $0.prerelease != true }
+    }
+
+    private var latest: String? {
+        stable.first?.tagName.map { $0.replacingOccurrences(of: "v", with: "") }
+    }
+
+    private var summary: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(monitor.version.map { "\(monitor.kind.name) \($0)" } ?? monitor.kind.name)
+                    .font(Cypher.mono(13, weight: .semibold))
+                Group {
+                    if installer.isFetchingReleases {
+                        Text("Checking for releases…")
+                    } else if let error = installer.releasesError {
+                        Text(error).foregroundStyle(Cypher.amber)
+                    } else if let latest, let current = monitor.version {
+                        if Self.isNewer(latest, than: current) {
+                            Text("\(latest) is available").foregroundStyle(Cypher.accent)
+                        } else if Self.isNewer(current, than: latest) {
+                            Text("Newer than the latest release (\(latest))")
+                        } else {
+                            Text("Up to date")
+                        }
+                    }
+                }
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.dim)
+            }
+            Spacer()
+            if let latest, let current = monitor.version, Self.isNewer(latest, than: current),
+               let release = stable.first, !monitor.versionChange.isBusy {
+                Button {
+                    confirmRelease = release
+                } label: {
+                    Image(systemName: "arrow.up.circle")
+                    Text("Update to \(latest)")
+                }
+                .buttonStyle(.cypherProminent)
+            }
+            if !monitor.versionChange.isBusy {
+                Button(showAll ? "Hide versions" : "Other versions") {
+                    withAnimation { showAll.toggle() }
+                    if installer.releases.isEmpty && !installer.isFetchingReleases {
+                        installer.fetchReleases(for: monitor.implementation)
+                    }
+                }
+            }
+        }
+    }
+
+    private var chooser: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if installer.releasesError != nil {
+                Button("Try again") { installer.fetchReleases(for: monitor.implementation) }
+            } else if !installer.releases.isEmpty {
+                let releases = Array(installer.releases.prefix(20))
+                let chosen = selected ?? releases.first
+                HStack(spacing: 10) {
+                    Picker("Release", selection: Binding(get: { chosen }, set: { selected = $0 })) {
+                        ForEach(releases, id: \.self) { release in
+                            Text(label(for: release)).tag(Optional(release))
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 280)
+                    if let chosen, let tag = chosen.tagName {
+                        let version = tag.replacingOccurrences(of: "v", with: "")
+                        Button(Self.actionTitle(from: monitor.version, to: version)) {
+                            confirmRelease = chosen
+                        }
+                        if let notes = releaseNotes(chosen) {
+                            Link("Release notes", destination: notes)
+                                .font(Cypher.mono(11))
+                        }
+                    }
+                }
+                Text("Downloads from \(monitor.kind == .core ? "bitcoincore.org" : "bitcoinknots.org") and checks the release's SHA256SUMS before unpacking. Each version gets its own folder, so the one you have now stays installed.")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            let installed = NodeInstaller.installedVersions(monitor.implementation).filter { $0.version != monitor.version }
+            if !installed.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ALREADY INSTALLED")
+                        .font(Cypher.mono(9.5, weight: .bold))
+                        .foregroundStyle(Cypher.dim)
+                    ForEach(installed, id: \.prefix) { item in
+                        HStack(spacing: 10) {
+                            Text(item.version)
+                                .font(Cypher.mono(12))
+                            Spacer()
+                            Button("Switch to \(item.version)") {
+                                confirmInstalled = item.version
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var progress: some View {
+        switch monitor.versionChange {
+        case .stopping(let target):
+            progressRow("Stopping \(monitor.kind.name) before installing \(target)…")
+            Button("Cancel") { monitor.cancelVersionChange() }
+        case .installing(let target):
+            switch installer.stage {
+            case .downloading(let file, let fraction):
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView(value: fraction)
+                    Text("\(file) · \(Int(fraction * 100))%")
+                        .font(Cypher.mono(11))
+                        .foregroundStyle(Cypher.dim)
+                }
+            case .verifying:
+                progressRow("Verifying \(target) in Terminal…")
+                Text("A Terminal window compares the download's SHA-256 with SHA256SUMS, unpacks it and signs the binaries for this Mac. Close it when it says \"Installation complete\": this page continues by itself.")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Cancel") { monitor.cancelVersionChange() }
+            default:
+                progressRow("Preparing \(target)…")
+            }
+        case .starting(let target):
+            progressRow("Starting \(monitor.kind.name) \(target)…")
+        default:
+            EmptyView()
+        }
+    }
+
+    private func progressRow(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text(text)
+                .font(Cypher.mono(11))
+        }
+    }
+
+    private func resultRow(_ text: String, ok: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(ok ? palette.accent : Cypher.danger)
+            Text(text)
+                .font(Cypher.mono(11))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("OK") { monitor.dismissVersionChange() }
+        }
+    }
+
+    private func label(for release: TaggedReleaseElement) -> String {
+        let tag = release.tagName ?? ""
+        let version = tag.replacingOccurrences(of: "v", with: "")
+        var text = tag
+        if release.prerelease == true { text += " · release candidate" }
+        if version == monitor.version { text += " · installed" }
+        return text
+    }
+
+    private func releaseNotes(_ release: TaggedReleaseElement) -> URL? {
+        guard let tag = release.tagName else { return nil }
+        switch monitor.kind {
+        case .core:
+            return URL(string: "https://github.com/bitcoin/bitcoin/blob/master/doc/release-notes/release-notes-\(tag.replacingOccurrences(of: "v", with: "")).md")
+        case .knots:
+            return URL(string: "https://github.com/bitcoinknots/bitcoin/blob/\(tag)/doc/release-notes.md")
+        }
+    }
+
+    /// "Update", "Downgrade", "Reinstall" or "Install".
+    static func action(from current: String?, to target: String) -> String {
+        guard let current else { return "Install" }
+        if isNewer(target, than: current) { return "Update" }
+        if isNewer(current, than: target) { return "Downgrade" }
+        return "Reinstall"
+    }
+
+    /// "Update to 30.0", "Reinstall 30.0", …
+    static func actionTitle(from current: String?, to target: String) -> String {
+        let action = action(from: current, to: target)
+        return action == "Reinstall" || action == "Install" ? "\(action) \(target)" : "\(action) to \(target)"
+    }
+
+    static func isNewer(_ a: String, than b: String) -> Bool {
+        NodeInstaller.isNewerRelease(a, than: b)
     }
 }

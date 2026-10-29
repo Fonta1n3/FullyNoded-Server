@@ -426,6 +426,7 @@ struct SPQRScannerSheet: View {
 /// copy the text or the image, or save the QR as a PNG. The address is public; it can't
 /// spend or reveal your payments.
 struct SPAddressQRSheet: View {
+    @Environment(\.cypherPalette) private var palette
     let address: String
     let onDone: () -> Void
 
@@ -487,7 +488,7 @@ struct SPAddressQRSheet: View {
             if let message = message {
                 Label(message.text, systemImage: message.ok ? "checkmark.circle.fill" : "xmark.octagon.fill")
                     .font(.caption)
-                    .foregroundStyle(message.ok ? Cypher.accent : Cypher.danger)
+                    .foregroundStyle(message.ok ? palette.accent : Cypher.danger)
             }
         }
         .padding()
@@ -1123,6 +1124,7 @@ final class SilentPaymentsModel: ObservableObject {
 // MARK: - View
 
 struct SilentPaymentsView: View {
+    @Environment(\.cypherPalette) private var palette
     @StateObject private var model = SilentPaymentsModel.shared
     @Environment(\.openWindow) private var openWindow
 
@@ -1297,11 +1299,11 @@ struct SilentPaymentsView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(model.savedConfig == nil ? "To start scanning:" : "Unsaved changes. To apply them:")
                     .font(Cypher.mono(11, weight: .semibold))
-                    .foregroundStyle(model.savedConfig == nil ? Cypher.text : Cypher.amber)
+                    .foregroundStyle(model.savedConfig == nil ? palette.text : Cypher.amber)
                 ForEach(model.setupSteps) { step in
                     Label(step.text, systemImage: step.done ? "checkmark.circle.fill" : "circle")
                         .font(Cypher.mono(11))
-                        .foregroundStyle(step.done ? Cypher.accent : (model.setupInProgress ? Cypher.amber : Cypher.text))
+                        .foregroundStyle(step.done ? palette.accent : (model.setupInProgress ? Cypher.amber : palette.text))
                 }
                 Text(model.savedConfig == nil
                      ? "Then press Start scanning. Nothing is saved until you do."
@@ -1635,7 +1637,7 @@ struct SilentPaymentsView: View {
                 } icon: {
                     Image(systemName: line.ok == nil ? "circle.fill" : (line.ok! ? "checkmark.circle.fill" : "xmark.octagon.fill"))
                         .font(.system(size: line.ok == nil ? 5 : 11))
-                        .foregroundStyle(line.ok == nil ? Cypher.dim : (line.ok! ? Cypher.accent : Cypher.danger))
+                        .foregroundStyle(line.ok == nil ? AnyShapeStyle(Cypher.dim) : (line.ok! ? AnyShapeStyle(Cypher.accent) : AnyShapeStyle(Cypher.danger)))
                 }
             }
         }
@@ -1674,7 +1676,7 @@ struct SilentPaymentsView: View {
         if let status = status {
             Label(status.text, systemImage: status.ok ? "checkmark.circle.fill" : "xmark.octagon.fill")
                 .font(.caption)
-                .foregroundStyle(status.ok ? Cypher.accent : Cypher.danger)
+                .foregroundStyle(status.ok ? palette.accent : Cypher.danger)
         }
     }
 
@@ -1735,6 +1737,7 @@ struct SPSidebarStatusIcon: View {
 /// Sidebar badge while the scanner catches up: a ring filling with the share of blocks
 /// scanned since this run began, around a pulsing magnifying glass.
 struct SPSidebarScanRing: View {
+    @Environment(\.cypherPalette) private var palette
     let status: SilentPaymentService.Status
 
     /// nil until the tip is known (the ring then just pulses).
@@ -1761,7 +1764,7 @@ struct SPSidebarScanRing: View {
                 .trim(from: 0, to: fraction ?? 0)
                 .stroke(Cypher.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            SPPulseIcon(systemName: "magnifyingglass", color: Cypher.accent, pulsing: true, period: 1.6, size: 7)
+            SPPulseIcon(systemName: "magnifyingglass", color: palette.accent, pulsing: true, period: 1.6, size: 7)
         }
         .frame(width: 16, height: 16)
         .help(helpText)
@@ -1774,6 +1777,7 @@ struct SPSidebarScanRing: View {
 /// catching up (animated bar, blocks to go, speed and time left), rescanning the wallet,
 /// watching for new blocks, retrying after an error, or stopped.
 struct SPScanActivityView: View {
+    @Environment(\.cypherPalette) private var palette
     /// The first block scanned for these keys: progress is measured from here, not genesis.
     let startHeight: Int?
 
@@ -1808,7 +1812,7 @@ struct SPScanActivityView: View {
     private func content(_ status: SilentPaymentService.Status) -> some View {
         switch phase(status) {
         case .stopped:
-            header(icon: "pause.circle", color: Cypher.dim, title: "Not scanning",
+            header(icon: "pause.circle", color: palette.dim, title: "Not scanning",
                    detail: SPConfigStore.isConfigured ? "Press Resume to continue." : "Use Import from Fully Noded below, or enter your keys, to start.")
         case .starting:
             VStack(alignment: .leading, spacing: 8) {
@@ -1825,10 +1829,10 @@ struct SPScanActivityView: View {
             let done = max(scanned - first, 0)
             let remaining = tip - scanned
             VStack(alignment: .leading, spacing: 8) {
-                header(icon: "magnifyingglass", color: Cypher.accent,
+                header(icon: "magnifyingglass", color: palette.accent,
                        title: "Scanning block \((scanned + 1).formatted()) of \(tip.formatted())",
                        detail: catchUpDetail(remaining: remaining), pulsing: true)
-                SPScanBar(fraction: Double(done) / Double(total), color: Cypher.accent)
+                SPScanBar(fraction: Double(done) / Double(total), color: palette.accent)
                 Text("\(Int(Double(done) / Double(total) * 100))% · \(remaining.formatted()) block\(remaining == 1 ? "" : "s") to go")
                     .font(Cypher.mono(11))
                     .foregroundStyle(Cypher.dim)
@@ -1845,7 +1849,7 @@ struct SPScanActivityView: View {
             header(icon: "clock", color: Cypher.amber, title: "Wallet rescan queued from block \(from.formatted())",
                    detail: "Runs as soon as the scan has caught up.")
         case .watching(let tip):
-            header(icon: "dot.radiowaves.left.and.right", color: Cypher.accent,
+            header(icon: "dot.radiowaves.left.and.right", color: palette.accent,
                    title: "Up to date at block \(tip.formatted())",
                    detail: "Watching for new blocks.", pulsing: true, slow: true)
         }

@@ -40,10 +40,10 @@ struct TorLogView: View {
     }
 
     /// tor's levels are lowercase in brackets: "Oct 22 10:00:00.000 [warn] …".
-    static func color(for line: String) -> Color {
-        if line.contains("[err]") { return Cypher.danger }
-        if line.contains("[warn]") { return Cypher.amber }
-        if line.contains("Bootstrapped 100%") { return Cypher.accent }
-        return Cypher.dim
+    static func color(for line: String) -> AnyShapeStyle {
+        if line.contains("[err]") { return AnyShapeStyle(Cypher.danger) }
+        if line.contains("[warn]") { return AnyShapeStyle(Cypher.amber) }
+        if line.contains("Bootstrapped 100%") { return AnyShapeStyle(Cypher.accent) }
+        return AnyShapeStyle(Cypher.dim)
     }
 }

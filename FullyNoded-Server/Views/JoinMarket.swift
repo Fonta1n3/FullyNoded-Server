@@ -262,6 +262,7 @@ final class JoinMarketMonitor: ObservableObject {
 }
 
 struct JoinMarket: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject private var monitor = JoinMarketMonitor.shared
     @Environment(\.openWindow) private var openWindow
     @Environment(\.scenePhase) private var scenePhase
@@ -409,7 +410,7 @@ struct JoinMarket: View {
 
     private var statusColor: Color {
         switch monitor.phase {
-        case .running: return Cypher.accent
+        case .running: return palette.accent
         case .starting, .stopping, .unknown: return Cypher.amber
         case .stopped, .failed: return Cypher.danger
         }
@@ -480,7 +481,7 @@ struct JoinMarket: View {
                             .fixedSize(horizontal: false, vertical: true)
                     } icon: {
                         Image(systemName: check.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                            .foregroundStyle(check.ok ? Cypher.accent : Cypher.amber)
+                            .foregroundStyle(check.ok ? palette.accent : Cypher.amber)
                     }
                 }
                 HStack(spacing: 8) {

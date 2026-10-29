@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08A66D7634990243D7698983 /* CreateRelayCert.command in Resources */ = {isa = PBXBuildFile; fileRef = 9DA246D9FD701015C5920831 /* CreateRelayCert.command */; };
 		0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A0632AF2CD06B470059FAD4 /* Reindex.command */; };
 		0A573E1A2CA4715500899F84 /* TorClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E192CA4715400899F84 /* TorClient.swift */; };
 		0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E1C2CADC15400899F84 /* KillBitcoind.command */; };
 		0A573E1F2CADC5CF00899F84 /* Torrc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E1E2CADC5CF00899F84 /* Torrc.swift */; };
-		0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E222CB432D200899F84 /* LightningNodeId.command */; };
 		0A573E252CB435F200899F84 /* GetInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E242CB435F200899F84 /* GetInfo.swift */; };
 		0A573E312CB577D100899F84 /* GetRune.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A573E302CB577D100899F84 /* GetRune.command */; };
 		0A573E332CB578B300899F84 /* Rune.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A573E322CB578B300899F84 /* Rune.swift */; };
@@ -25,15 +25,11 @@
 		0A5CE8DA2C8A181D00534A8D /* BrewInstalled.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */; };
 		0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */; };
 		0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */; };
-		0A5CE8E02C8A2ADE00534A8D /* CheckForLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */; };
-		0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */; };
 		0A5CE8E42C91EA2C00534A8D /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E32C91EA2C00534A8D /* DataManager.swift */; };
 		0A5CE8E62C91EC6800534A8D /* BitcoinEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */; };
 		0A5CE8E82C91F2E500534A8D /* CoreLightning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */; };
 		0A5CE8EE2C91F9F500534A8D /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8ED2C91F9F500534A8D /* Crypto.swift */; };
 		0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */; };
-		0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F12C91FE2A00534A8D /* StartLightning.command */; };
-		0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A5CE8F52C92013900534A8D /* StopLightning.command */; };
 		0A6787592D36E119000AB105 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6787582D36E119000AB105 /* Settings.swift */; };
 		0A67875B2D380D7B000AB105 /* LatestBtcKnotsRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */; };
 		0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */ = {isa = PBXBuildFile; fileRef = 0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */; };
@@ -61,14 +57,11 @@
 		0AA692692C7F8EC700366192 /* OpenFile.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692572C7F8EC700366192 /* OpenFile.command */; };
 		0AA6926A2C7F8EC700366192 /* InstallBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692582C7F8EC700366192 /* InstallBitcoin.command */; };
 		0AA6926B2C7F8EC700366192 /* StartBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA692592C7F8EC700366192 /* StartBitcoin.command */; };
-		08A66D7634990243D7698983 /* CreateRelayCert.command in Resources */ = {isa = PBXBuildFile; fileRef = 9DA246D9FD701015C5920831 /* CreateRelayCert.command */; };
 		0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925A2C7F8EC700366192 /* StopBitcoin.command */; };
 		0AA6926D2C7F8EC700366192 /* Strap.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925B2C7F8EC700366192 /* Strap.command */; };
 		0AA6926E2C7F8EC700366192 /* Verify.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AA6925C2C7F8EC700366192 /* Verify.command */; };
 		0AA692702C7F962A00366192 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA6926F2C7F962A00366192 /* Home.swift */; };
 		0AA692722C80B01A00366192 /* BitcoinRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA692712C80B01A00366192 /* BitcoinRPC.swift */; };
-		0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */; };
-		0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */; };
 		0AD202432ED173C3006286DD /* ConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202422ED173C3006286DD /* ConfigView.swift */; };
 		0AD202452ED1A577006286DD /* TorLogMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202442ED1A577006286DD /* TorLogMonitor.swift */; };
 		0AD202472ED1A59B006286DD /* TorLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD202462ED1A59B006286DD /* TorLogView.swift */; };
@@ -85,11 +78,8 @@
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
-		B7E1A0C2D3F4051627384956 /* TorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384957 /* TorView.swift */; };
-		B7E1A0C2D3F4051627384954 /* NodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384955 /* NodeView.swift */; };
-		C5A7E0089D5CA0F02812C4A7 /* NostrConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */; };
-		A2532DFF28C8C8E18A0BBF2E /* SetupAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */; };
 		1D5002FE583407E64756D86D /* SilentPaymentHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */; };
+		2444B1A74506073F9E44BDA0 /* NodeInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8099434CF37A62402C3575BF /* NodeInstaller.swift */; };
 		3A24080E13ADD5CFEC4328D9 /* SilentPaymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */; };
 		59028E192E259CC2005BB904 /* StartKnots.command in Resources */ = {isa = PBXBuildFile; fileRef = 59028E182E259CC2005BB904 /* StartKnots.command */; };
 		590A1B5F2D52B258006393E5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 590A1B5E2D52B258006393E5 /* Assets.xcassets */; };
@@ -101,13 +91,6 @@
 		593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89242CE519B3001504F0 /* LaunchObWatcher.command */; };
 		593A89272CE51A35001504F0 /* ObWatcher.command in Resources */ = {isa = PBXBuildFile; fileRef = 593A89262CE51A35001504F0 /* ObWatcher.command */; };
 		593A89292CE6797C001504F0 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A89282CE6797C001504F0 /* Entity.swift */; };
-		8635811D85315D15E02983AF /* NostrConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A651DA97A224A0D065E1AF /* NostrConnect.swift */; };
-		D0E178AD0A7005A0C32B083A /* NostrRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE96C30BF6ED0A232292C423 /* NostrRelay.swift */; };
-		B7E1A0C2D3F4051627384950 /* NodeProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384951 /* NodeProcess.swift */; };
-		B7E1A0C2D3F4051627384952 /* NodeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384953 /* NodeMonitor.swift */; };
-		A120C97208A5FEC9A271B598 /* NostrBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961C63AA260C75C1E3D3B068 /* NostrBridge.swift */; };
-		912D8835C8B6B1F97D226305 /* SetupAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */; };
-		2444B1A74506073F9E44BDA0 /* NodeInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8099434CF37A62402C3575BF /* NodeInstaller.swift */; };
 		5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */; };
 		5955E7413053A8A500C4B1E5 /* P256K in Frameworks */ = {isa = PBXBuildFile; productRef = 5955E7403053A8A500C4B1E5 /* P256K */; };
 		595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */ = {isa = PBXBuildFile; fileRef = 595B518F2DC936C0002FD7E5 /* DeleteWallet.command */; };
@@ -131,6 +114,19 @@
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
 		59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */; };
 		8038876417FADFF8F2D0CD60 /* CypherTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A272CB3732FF3D5028397F79 /* CypherTheme.swift */; };
+		8635811D85315D15E02983AF /* NostrConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A651DA97A224A0D065E1AF /* NostrConnect.swift */; };
+		912D8835C8B6B1F97D226305 /* SetupAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */; };
+		A120C97208A5FEC9A271B598 /* NostrBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961C63AA260C75C1E3D3B068 /* NostrBridge.swift */; };
+		A2532DFF28C8C8E18A0BBF2E /* SetupAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */; };
+		B7E1A0C2D3F4051627384950 /* NodeProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384951 /* NodeProcess.swift */; };
+		B7E1A0C2D3F4051627384958 /* LightningRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384959 /* LightningRPC.swift */; };
+		B7E1A0C2D3F405162738495A /* LightningNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F405162738495B /* LightningNode.swift */; };
+		B7E1A0C2D3F405162738495C /* TailscaleFunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F405162738495D /* TailscaleFunnel.swift */; };
+		B7E1A0C2D3F4051627384952 /* NodeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384953 /* NodeMonitor.swift */; };
+		B7E1A0C2D3F4051627384954 /* NodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384955 /* NodeView.swift */; };
+		B7E1A0C2D3F4051627384956 /* TorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E1A0C2D3F4051627384957 /* TorView.swift */; };
+		C5A7E0089D5CA0F02812C4A7 /* NostrConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */; };
+		D0E178AD0A7005A0C32B083A /* NostrRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE96C30BF6ED0A232292C423 /* NostrRelay.swift */; };
 		FB827B4A45F2BAF6CBA4B33E /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
@@ -141,7 +137,6 @@
 		0A573E1B2CA47BC900899F84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0A573E1C2CADC15400899F84 /* KillBitcoind.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = KillBitcoind.command; sourceTree = "<group>"; };
 		0A573E1E2CADC5CF00899F84 /* Torrc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Torrc.swift; sourceTree = "<group>"; };
-		0A573E222CB432D200899F84 /* LightningNodeId.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LightningNodeId.command; sourceTree = "<group>"; };
 		0A573E242CB435F200899F84 /* GetInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetInfo.swift; sourceTree = "<group>"; };
 		0A573E302CB577D100899F84 /* GetRune.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = GetRune.command; sourceTree = "<group>"; };
 		0A573E322CB578B300899F84 /* Rune.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rune.swift; sourceTree = "<group>"; };
@@ -155,15 +150,11 @@
 		0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = BrewInstalled.command; sourceTree = "<group>"; };
 		0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = InstallLightning.command; sourceTree = "<group>"; };
 		0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchLightningInstall.command; sourceTree = "<group>"; };
-		0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = CheckForLightning.command; sourceTree = "<group>"; };
-		0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = IsLightningOn.command; sourceTree = "<group>"; };
 		0A5CE8E32C91EA2C00534A8D /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		0A5CE8E52C91EC6800534A8D /* BitcoinEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinEnv.swift; sourceTree = "<group>"; };
 		0A5CE8E72C91F2E500534A8D /* CoreLightning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLightning.swift; sourceTree = "<group>"; };
 		0A5CE8ED2C91F9F500534A8D /* Crypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crypto.swift; sourceTree = "<group>"; };
 		0A5CE8EF2C91FA1800534A8D /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
-		0A5CE8F12C91FE2A00534A8D /* StartLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartLightning.command; sourceTree = "<group>"; };
-		0A5CE8F52C92013900534A8D /* StopLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopLightning.command; sourceTree = "<group>"; };
 		0A6787582D36E119000AB105 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		0A67875A2D380D7B000AB105 /* LatestBtcKnotsRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestBtcKnotsRelease.swift; sourceTree = "<group>"; };
 		0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ExtractKnotsTarball.command; sourceTree = "<group>"; };
@@ -193,14 +184,11 @@
 		0AA692572C7F8EC700366192 /* OpenFile.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = OpenFile.command; sourceTree = "<group>"; };
 		0AA692582C7F8EC700366192 /* InstallBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = InstallBitcoin.command; sourceTree = "<group>"; };
 		0AA692592C7F8EC700366192 /* StartBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StartBitcoin.command; sourceTree = "<group>"; };
-		9DA246D9FD701015C5920831 /* CreateRelayCert.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CreateRelayCert.command; sourceTree = "<group>"; };
 		0AA6925A2C7F8EC700366192 /* StopBitcoin.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = StopBitcoin.command; sourceTree = "<group>"; };
 		0AA6925B2C7F8EC700366192 /* Strap.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Strap.command; sourceTree = "<group>"; };
 		0AA6925C2C7F8EC700366192 /* Verify.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Verify.command; sourceTree = "<group>"; };
 		0AA6926F2C7F962A00366192 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		0AA692712C80B01A00366192 /* BitcoinRPC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BitcoinRPC.swift; sourceTree = "<group>"; };
-		0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = UpdateLightning.command; sourceTree = "<group>"; };
-		0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchUpdateLightning.command; sourceTree = "<group>"; };
 		0AD202422ED173C3006286DD /* ConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigView.swift; sourceTree = "<group>"; };
 		0AD202442ED1A577006286DD /* TorLogMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorLogMonitor.swift; sourceTree = "<group>"; };
 		0AD202462ED1A59B006286DD /* TorLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorLogView.swift; sourceTree = "<group>"; };
@@ -217,12 +205,9 @@
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
-		B7E1A0C2D3F4051627384957 /* TorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorView.swift; sourceTree = "<group>"; };
-		B7E1A0C2D3F4051627384955 /* NodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeView.swift; sourceTree = "<group>"; };
-		FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnectView.swift; sourceTree = "<group>"; };
-		6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistantView.swift; sourceTree = "<group>"; };
 		19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentHistoryView.swift; sourceTree = "<group>"; };
 		1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistant.swift; sourceTree = "<group>"; };
 		59028E182E259CC2005BB904 /* StartKnots.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartKnots.command; sourceTree = "<group>"; };
 		590A1B5E2D52B258006393E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BtcUtilsView.swift; sourceTree = "<group>"; };
@@ -233,13 +218,6 @@
 		593A89242CE519B3001504F0 /* LaunchObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchObWatcher.command; sourceTree = "<group>"; };
 		593A89262CE51A35001504F0 /* ObWatcher.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ObWatcher.command; sourceTree = "<group>"; };
 		593A89282CE6797C001504F0 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
-		B2A651DA97A224A0D065E1AF /* NostrConnect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnect.swift; sourceTree = "<group>"; };
-		CE96C30BF6ED0A232292C423 /* NostrRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrRelay.swift; sourceTree = "<group>"; };
-		B7E1A0C2D3F4051627384951 /* NodeProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeProcess.swift; sourceTree = "<group>"; };
-		B7E1A0C2D3F4051627384953 /* NodeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeMonitor.swift; sourceTree = "<group>"; };
-		961C63AA260C75C1E3D3B068 /* NostrBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrBridge.swift; sourceTree = "<group>"; };
-		3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistant.swift; sourceTree = "<group>"; };
-		8099434CF37A62402C3575BF /* NodeInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeInstaller.swift; sourceTree = "<group>"; };
 		5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentsScanner.swift; sourceTree = "<group>"; };
 		595B518F2DC936C0002FD7E5 /* DeleteWallet.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = DeleteWallet.command; sourceTree = "<group>"; };
 		595B51912DC93EA6002FD7E5 /* WalletPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPicker.swift; sourceTree = "<group>"; };
@@ -261,9 +239,23 @@
 		59CD1FF92D400BB500110A12 /* DownloadHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadHelper.swift; sourceTree = "<group>"; };
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
 		59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnots.swift; sourceTree = "<group>"; };
+		6ACF4156BE77CB371C9FAA28 /* SetupAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAssistantView.swift; sourceTree = "<group>"; };
 		78978D98CB16B065CF1CEADC /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
+		8099434CF37A62402C3575BF /* NodeInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeInstaller.swift; sourceTree = "<group>"; };
+		961C63AA260C75C1E3D3B068 /* NostrBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrBridge.swift; sourceTree = "<group>"; };
+		9DA246D9FD701015C5920831 /* CreateRelayCert.command */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = CreateRelayCert.command; sourceTree = "<group>"; };
 		A272CB3732FF3D5028397F79 /* CypherTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CypherTheme.swift; sourceTree = "<group>"; };
+		B2A651DA97A224A0D065E1AF /* NostrConnect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnect.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F4051627384951 /* NodeProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeProcess.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F4051627384959 /* LightningRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightningRPC.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F405162738495B /* LightningNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightningNode.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F405162738495D /* TailscaleFunnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TailscaleFunnel.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F4051627384953 /* NodeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeMonitor.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F4051627384955 /* NodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeView.swift; sourceTree = "<group>"; };
+		B7E1A0C2D3F4051627384957 /* TorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorView.swift; sourceTree = "<group>"; };
+		CE96C30BF6ED0A232292C423 /* NostrRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrRelay.swift; sourceTree = "<group>"; };
 		D939958C5863682C3FC6C957 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
+		FF29ECCDA46CB0BD8F47F5EC /* NostrConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrConnectView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -368,6 +360,9 @@
 				0AD202442ED1A577006286DD /* TorLogMonitor.swift */,
 				5955E73D305083A400C4B1E5 /* SilentPaymentsScanner.swift */,
 				B7E1A0C2D3F4051627384951 /* NodeProcess.swift */,
+				B7E1A0C2D3F4051627384959 /* LightningRPC.swift */,
+				B7E1A0C2D3F405162738495B /* LightningNode.swift */,
+				B7E1A0C2D3F405162738495D /* TailscaleFunnel.swift */,
 				B7E1A0C2D3F4051627384953 /* NodeMonitor.swift */,
 				961C63AA260C75C1E3D3B068 /* NostrBridge.swift */,
 				3BDDFE0D4729427E77CA421F /* SetupAssistant.swift */,
@@ -446,12 +441,7 @@
 				0A5CE8D92C8A181D00534A8D /* BrewInstalled.command */,
 				0A5CE8DB2C8A1DAA00534A8D /* InstallLightning.command */,
 				0A5CE8DD2C8A225A00534A8D /* LaunchLightningInstall.command */,
-				0A5CE8DF2C8A2ADE00534A8D /* CheckForLightning.command */,
-				0A5CE8E12C8A2F4000534A8D /* IsLightningOn.command */,
-				0A5CE8F12C91FE2A00534A8D /* StartLightning.command */,
-				0A5CE8F52C92013900534A8D /* StopLightning.command */,
 				0A573E1C2CADC15400899F84 /* KillBitcoind.command */,
-				0A573E222CB432D200899F84 /* LightningNodeId.command */,
 				0A573E302CB577D100899F84 /* GetRune.command */,
 				0AD7BE102CBD6AA500428D02 /* InstallJoinMarket.command */,
 				0AD7BE142CBD7AC100428D02 /* LaunchJMInstaller.command */,
@@ -463,8 +453,6 @@
 				593A89202CE28400001504F0 /* LaunchIncreaseGapLimit.command */,
 				593A89242CE519B3001504F0 /* LaunchObWatcher.command */,
 				593A89262CE51A35001504F0 /* ObWatcher.command */,
-				0AC92C2A2CFE5F4600F10EC6 /* UpdateLightning.command */,
-				0AC92C2C2CFE5FC300F10EC6 /* LaunchUpdateLightning.command */,
 				0A67875E2D3828EF000AB105 /* ExtractKnotsTarball.command */,
 				59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */,
 				59CC77F52D565E64005D5A9B /* RefreshJMConfig.command */,
@@ -562,7 +550,6 @@
 				0AA692632C7F8EC700366192 /* IsProcessRunning.command in Resources */,
 				0AA692672C7F8EC700366192 /* LaunchVerifier.command in Resources */,
 				590A1B5F2D52B258006393E5 /* Assets.xcassets in Resources */,
-				0AC92C2D2CFE5FC300F10EC6 /* LaunchUpdateLightning.command in Resources */,
 				593A89272CE51A35001504F0 /* ObWatcher.command in Resources */,
 				0AA692612C7F8EC700366192 /* InstallBrew.command in Resources */,
 				0AA6926C2C7F8EC700366192 /* StopBitcoin.command in Resources */,
@@ -579,10 +566,8 @@
 				0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */,
 				0A67875F2D3828EF000AB105 /* ExtractKnotsTarball.command in Resources */,
 				0A5CE8DE2C8A225A00534A8D /* LaunchLightningInstall.command in Resources */,
-				0A5CE8F22C91FE2A00534A8D /* StartLightning.command in Resources */,
 				593A89212CE28400001504F0 /* LaunchIncreaseGapLimit.command in Resources */,
 				59028E192E259CC2005BB904 /* StartKnots.command in Resources */,
-				0A5CE8F62C92013D00534A8D /* StopLightning.command in Resources */,
 				0AD7BE112CBD6AA500428D02 /* InstallJoinMarket.command in Resources */,
 				595B51902DC936C0002FD7E5 /* DeleteWallet.command in Resources */,
 				0AA6925F2C7F8EC700366192 /* CheckXCodeSelect.command in Resources */,
@@ -590,22 +575,18 @@
 				0A5CE8DC2C8A1DAA00534A8D /* InstallLightning.command in Resources */,
 				593A89252CE519B3001504F0 /* LaunchObWatcher.command in Resources */,
 				0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */,
-				0A573E232CB432D200899F84 /* LightningNodeId.command in Resources */,
 				59A2E18F2D6E38AB00F0C194 /* LaunchJMCloner.command in Resources */,
 				0AA6926E2C7F8EC700366192 /* Verify.command in Resources */,
 				0AA692662C7F8EC700366192 /* LaunchStrap.command in Resources */,
 				0A573E1D2CADC15400899F84 /* KillBitcoind.command in Resources */,
 				0A0632B02CD06B470059FAD4 /* Reindex.command in Resources */,
 				0A6C58532EB47EE2000FB22E /* MineBlocks.command in Resources */,
-				0A5CE8E22C8A2F4000534A8D /* IsLightningOn.command in Resources */,
 				593A891F2CE28334001504F0 /* IncreaseGapLimit.command in Resources */,
 				0AA6925E2C7F8EC700366192 /* CheckForBitcoinCore.command in Resources */,
 				0A573E312CB577D100899F84 /* GetRune.command in Resources */,
 				59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */,
 				0AA692682C7F8EC700366192 /* LaunchXcodeInstall.command in Resources */,
-				0AC92C2B2CFE5F4600F10EC6 /* UpdateLightning.command in Resources */,
 				0AA692652C7F8EC700366192 /* LaunchInstaller.command in Resources */,
-				0A5CE8E02C8A2ADE00534A8D /* CheckForLightning.command in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -672,6 +653,9 @@
 				0AD7BE0F2CB980D500428D02 /* JoinMarketTaggedReleases.swift in Sources */,
 				5955E73E305083A400C4B1E5 /* SilentPaymentsScanner.swift in Sources */,
 				B7E1A0C2D3F4051627384950 /* NodeProcess.swift in Sources */,
+				B7E1A0C2D3F4051627384958 /* LightningRPC.swift in Sources */,
+				B7E1A0C2D3F405162738495A /* LightningNode.swift in Sources */,
+				B7E1A0C2D3F405162738495C /* TailscaleFunnel.swift in Sources */,
 				B7E1A0C2D3F4051627384952 /* NodeMonitor.swift in Sources */,
 				A120C97208A5FEC9A271B598 /* NostrBridge.swift in Sources */,
 				912D8835C8B6B1F97D226305 /* SetupAssistant.swift in Sources */,
@@ -873,7 +857,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.3.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.4.0 Beta";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Fully Noded Server uses the camera to scan QR codes of your silent payment keys.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -890,7 +874,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -918,7 +902,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.3.0 Beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.4.0 Beta";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Fully Noded Server uses the camera to scan QR codes of your silent payment keys.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -935,7 +919,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.FullyNoded-Server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

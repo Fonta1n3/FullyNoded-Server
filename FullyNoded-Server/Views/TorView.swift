@@ -99,6 +99,7 @@ final class TorModel: ObservableObject {
 }
 
 struct TorView: View {
+    @Environment(\.cypherPalette) private var palette
     @StateObject private var model = TorModel()
     @State private var showTorrc = false
     @State private var confirmStop = false
@@ -236,7 +237,7 @@ struct TorView: View {
 
     private var statusColor: Color {
         switch model.phase {
-        case .connected: return Cypher.accent
+        case .connected: return palette.accent
         case .starting: return Cypher.amber
         case .stopped, .failed: return Cypher.danger
         }

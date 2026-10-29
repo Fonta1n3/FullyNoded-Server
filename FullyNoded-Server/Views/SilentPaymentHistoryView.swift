@@ -57,6 +57,7 @@ final class SPImportFeed: ObservableObject {
 
 /// Success card over the main window: what was imported, and a way to the history.
 struct SPImportedCard: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var feed = SPImportFeed.shared
     @Environment(\.openWindow) private var openWindow
 
@@ -92,7 +93,7 @@ struct SPImportedCard: View {
                 .frame(maxWidth: 420)
                 .background(Cypher.panel)
                 .overlay(Rectangle().stroke(Cypher.accent, lineWidth: 1))
-                .shadow(color: Cypher.accent.opacity(0.25), radius: 24)
+                .shadow(color: palette.accent.opacity(0.25), radius: 24)
             }
             .buttonStyle(.cypher)
             .transition(.opacity)
@@ -286,6 +287,7 @@ enum SPBech32m {
 }
 
 struct SPHistoryView: View {
+    @Environment(\.cypherPalette) private var palette
     @StateObject private var model = SPHistoryModel()
 
     var body: some View {
@@ -389,11 +391,11 @@ struct SPHistoryView: View {
         if item.amount == nil || item.amount == 0 {
             (text, color) = ("not seen yet (rescan pending)", Cypher.amber)
         } else if !item.unspent {
-            (text, color) = ("spent", Cypher.dim)
+            (text, color) = ("spent", palette.dim)
         } else if confirmations == 0 {
             (text, color) = ("unconfirmed", Cypher.amber)
         } else {
-            (text, color) = ("\(confirmations) conf · unspent", Cypher.accent)
+            (text, color) = ("\(confirmations) conf · unspent", palette.accent)
         }
         return Text(text)
             .font(Cypher.mono(11, weight: .semibold))

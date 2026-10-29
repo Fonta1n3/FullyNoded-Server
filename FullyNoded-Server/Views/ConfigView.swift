@@ -40,7 +40,7 @@ struct ConfigTextView: View {
                     Pasteboard.write(configString)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .foregroundColor(Cypher.accent)
+                        .foregroundStyle(Cypher.accent)
                 }
                 .buttonStyle(.plain)
                 .help("Copy to clipboard")
