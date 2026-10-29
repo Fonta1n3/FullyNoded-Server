@@ -16,12 +16,14 @@ import AppKit
 extension Notification.Name {
     /// Opens the Setup Assistant (Help page, app menu).
     static let showSetupAssistant = Notification.Name("FNS.showSetupAssistant")
+    /// The Setup Assistant finished or was skipped: reload what depends on its settings.
+    static let setupAssistantFinished = Notification.Name("FNS.setupAssistantFinished")
 }
 
 final class SetupAssistant: ObservableObject {
 
     enum Step: Int, CaseIterable, Identifiable {
-        case welcome, check, configure, install, start, connect
+        case welcome, check, configure, install, start, lightning, connect
 
         var id: Int { rawValue }
 
@@ -32,6 +34,7 @@ final class SetupAssistant: ObservableObject {
             case .configure: return "Configure"
             case .install: return "Install"
             case .start: return "Start"
+            case .lightning: return "Lightning"
             case .connect: return "Connect"
             }
         }

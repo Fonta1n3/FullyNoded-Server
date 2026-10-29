@@ -3,7 +3,7 @@
 //  FullyNoded-Server
 //
 //  First-run Setup Assistant: welcome → check this Mac → configure the node → install →
-//  start → connect Fully Noded. Opens by itself until it's finished or skipped (when no
+//  start → Lightning (optional: Core Lightning for Plasma) → connect Fully Noded. Opens by itself until it's finished or skipped (when no
 //  node is installed yet), and again from Help or the app menu.
 //
 
@@ -12,6 +12,8 @@ import SwiftUI
 struct SetupAssistantView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var model = SetupAssistant()
+    /// So the Lightning step's button title follows the install.
+    @ObservedObject private var lightning = LightningNode.shared
     /// Called after Finish / Skip, so the main window can pick up the new settings.
     let onFinish: () -> Void
 
@@ -30,6 +32,7 @@ struct SetupAssistantView: View {
                     case .configure: ConfigureStep(model: model)
                     case .install: InstallStep(model: model, installer: model.installer)
                     case .start: StartStep(model: model)
+                    case .lightning: LightningStep()
                     case .connect: ConnectStep()
                     }
                 }
@@ -42,7 +45,7 @@ struct SetupAssistantView: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 14)
         }
-        .frame(width: 780, height: 620)
+        .frame(minWidth: 780, idealWidth: 820, minHeight: 560, idealHeight: 660)
         .background(Cypher.bg)
         .buttonStyle(.cypher)
         .groupBoxStyle(CypherGroupBoxStyle())
@@ -81,6 +84,7 @@ struct SetupAssistantView: View {
         case .welcome: return "Get started"
         case .configure: return "Save and continue"
         case .install: return model.installedEnv == nil ? "Install first" : "Continue"
+        case .lightning: return lightning.install == .installed ? "Continue" : "Skip Lightning"
         case .connect: return "Finish"
         default: return "Continue"
         }
@@ -120,6 +124,7 @@ struct SetupAssistantView: View {
 // MARK: - Step rail
 
 private struct StepRail: View {
+    @Environment(\.cypherPalette) private var palette
     let current: SetupAssistant.Step
 
     var body: some View {
@@ -132,15 +137,17 @@ private struct StepRail: View {
                         .font(Cypher.mono(11, weight: .bold))
                     Text(step.title.uppercased())
                         .font(Cypher.mono(11, weight: active ? .bold : .regular))
+                        .lineLimit(1)
                 }
-                .foregroundStyle(active ? Cypher.bg : (done ? Cypher.accent : Cypher.dim))
+                .fixedSize()
+                .foregroundStyle(active ? palette.bg : (done ? palette.accent : palette.dim))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(Rectangle().fill(active ? Cypher.accent : Color.clear))
-                .overlay(Rectangle().stroke(active ? Cypher.accent : Cypher.line.opacity(done ? 1 : 0.4), lineWidth: 1))
+                .background(Rectangle().fill(active ? palette.accent : Color.clear))
+                .overlay(Rectangle().stroke(active ? palette.accent : palette.line.opacity(done ? 1 : 0.4), lineWidth: 1))
                 if step != SetupAssistant.Step.allCases.last {
                     Rectangle()
-                        .fill(done ? Cypher.accent : Cypher.line.opacity(0.4))
+                        .fill(done ? palette.accent : palette.line.opacity(0.4))
                         .frame(height: 1)
                 }
             }
@@ -257,6 +264,8 @@ private struct WelcomeStep: View {
                         "FN-Server runs Tor, so your node gets an onion address and your wallet never needs a third-party server.")
                 feature("iphone.and.arrow.forward", "Connect Fully Noded",
                         "Over Tor from anywhere, or Nostr Connect for a faster connection at home or over a VPN.")
+                feature("bolt", "Lightning, if you want it",
+                        "Core Lightning on top of your node, paired with Plasma on your iPhone. Optional, and can be added later.")
             }
             .cypherPanel(padding: 16)
 
@@ -294,18 +303,19 @@ private struct WelcomeStep: View {
 // MARK: - 2 Check
 
 private struct CheckStep: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var model: SetupAssistant
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             StepHeader(title: "Check this Mac",
-                       detail: "Nothing here blocks setup. Items marked optional are only needed for JoinMarket.")
+                       detail: "Nothing here blocks setup. Items marked optional are only needed for JoinMarket or Core Lightning.")
 
             GroupBox("This Mac") {
                 VStack(alignment: .leading, spacing: 10) {
-                    StatusRow(color: Cypher.accent, label: "Processor",
+                    StatusRow(color: palette.accent, label: "Processor",
                               value: NodeImplementation.arch == "arm64" ? "Apple silicon" : "Intel")
-                    StatusRow(color: Cypher.accent, label: "Memory",
+                    StatusRow(color: palette.accent, label: "Memory",
                               value: "\(gigabytes(model.memoryBytes)) · half is used to speed up the first sync")
                     freeSpaceRow
                 }
@@ -315,12 +325,12 @@ private struct CheckStep: View {
                 torRow
             }
 
-            GroupBox("Optional · JoinMarket") {
+            GroupBox("Optional · JoinMarket, Core Lightning") {
                 VStack(alignment: .leading, spacing: 10) {
                     toolRow(label: "Command Line Tools", installed: model.hasCommandLineTools,
                             note: "git, used to install JoinMarket", install: model.installCommandLineTools)
                     toolRow(label: "Homebrew", installed: model.hasHomebrew,
-                            note: "JoinMarket's dependencies", install: model.installHomebrew)
+                            note: "installs Core Lightning and JoinMarket's dependencies", install: model.installHomebrew)
                 }
             }
         }
@@ -328,7 +338,7 @@ private struct CheckStep: View {
 
     private var freeSpaceRow: some View {
         let free = model.freeBytes
-        let color: Color = free.map { $0 > 100_000_000_000 ? Cypher.accent : Cypher.amber } ?? Cypher.dim
+        let color: Color = free.map { $0 > 100_000_000_000 ? palette.accent : Cypher.amber } ?? palette.dim
         return StatusRow(color: color, label: "Free space",
                          value: free.map { "\(gigabytes($0)) on the data folder's drive" } ?? "checking…")
     }
@@ -336,7 +346,7 @@ private struct CheckStep: View {
     private var torRow: some View {
         let (color, value): (Color, String) = {
             switch model.torState {
-            case .connected: return (Cypher.accent, "Connected")
+            case .connected: return (palette.accent, "Connected")
             case .started, .refreshing: return (Cypher.amber, "Connecting… (keeps going in the background)")
             case .stopped: return (Cypher.danger, "Stopped · start it from the Tor page")
             case .none: return (Cypher.amber, "Starting…")
@@ -346,7 +356,7 @@ private struct CheckStep: View {
     }
 
     private func toolRow(label: String, installed: Bool?, note: String, install: @escaping () -> Void) -> some View {
-        StatusRow(color: installed == true ? Cypher.accent : Cypher.dim,
+        StatusRow(color: installed == true ? palette.accent : palette.dim,
                   label: label,
                   value: installed == nil ? "checking…" : (installed! ? "Installed" : "Not installed · \(note)")) {
             if installed == false {
@@ -359,6 +369,7 @@ private struct CheckStep: View {
 // MARK: - 3 Configure
 
 private struct ConfigureStep: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var model: SetupAssistant
 
     var body: some View {
@@ -449,7 +460,7 @@ private struct ConfigureStep: View {
         return Label("Needs about \(gigabytes(needed))" + (free.map { " · \(gigabytes($0)) free" } ?? ""),
                      systemImage: enough ? "internaldrive" : "exclamationmark.triangle")
             .font(Cypher.mono(11))
-            .foregroundStyle(enough ? Cypher.dim : Cypher.amber)
+            .foregroundStyle(enough ? palette.dim : Cypher.amber)
             .padding(.top, 4)
     }
 
@@ -470,6 +481,7 @@ private struct ConfigureStep: View {
 // MARK: - 4 Install
 
 private struct InstallStep: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var model: SetupAssistant
     @ObservedObject var installer: NodeInstaller
     @State private var selection: TaggedReleaseElement?
@@ -484,7 +496,7 @@ private struct InstallStep: View {
             if let env = model.installedEnv, !reinstall, !installer.isBusy {
                 GroupBox("Installed") {
                     HStack {
-                        StatusRow(color: Cypher.accent, label: model.implementation.name, value: "v\(env.version)")
+                        StatusRow(color: palette.accent, label: model.implementation.name, value: "v\(env.version)")
                         Button("Install another version") { reinstall = true }
                     }
                 }
@@ -614,6 +626,7 @@ private struct InstallStep: View {
 // MARK: - 5 Start
 
 private struct StartStep: View {
+    @Environment(\.cypherPalette) private var palette
     @ObservedObject var model: SetupAssistant
 
     var body: some View {
@@ -640,10 +653,10 @@ private struct StartStep: View {
     private var statusRow: some View {
         let (color, value): (Color, String) = {
             switch model.nodeStatus {
-            case .unknown: return (Cypher.dim, "Checking…")
+            case .unknown: return (palette.dim, "Checking…")
             case .stopped: return (Cypher.danger, "Stopped")
             case .starting(let message): return (Cypher.amber, message)
-            case .running: return (Cypher.accent, "Running")
+            case .running: return (palette.accent, "Running")
             case .failed(let message): return (Cypher.danger, message)
             }
         }()
@@ -673,7 +686,138 @@ private struct StartStep: View {
     }
 }
 
-// MARK: - 6 Connect
+// MARK: - 6 Lightning (optional)
+
+private struct LightningStep: View {
+    @Environment(\.cypherPalette) private var palette
+    @ObservedObject private var node = LightningNode.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            StepHeader(title: "Add Lightning (optional)",
+                       detail: "Core Lightning runs next to your node and pairs with Plasma, the Core Lightning wallet for iPhone. Skip this if you only want on-chain: it's in the sidebar whenever you want it.")
+
+            GroupBox("Core Lightning") {
+                VStack(alignment: .leading, spacing: 12) {
+                    content
+                }
+            }
+
+            GroupBox("How it fits together") {
+                VStack(alignment: .leading, spacing: 8) {
+                    bullet("bolt.horizontal", "Plasma talks to Core Lightning directly over the Lightning protocol (lnsocket + commando), with a rune you create on its page. Same Wi-Fi, a VPN like Tailscale, or a forwarded port.")
+                    bullet("network.badge.shield.half.filled", "Core Lightning reaches other Lightning nodes through Tor, so your IP address stays private.")
+                    bullet("key", "Your node's keys are in ~/.lightning/<network>/hsm_secret. Back that file up once the node has started.")
+                }
+            }
+
+            Link(destination: LightningNode.plasmaAppStore) {
+                Label("Get Plasma on the App Store", systemImage: "arrow.up.right.square")
+                    .font(Cypher.mono(11))
+            }
+        }
+        .onAppear { node.appear() }
+        .onDisappear { node.disappear() }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch node.install {
+        case .checking:
+            ProgressView().controlSize(.small)
+        case .needsHomebrew:
+            StatusRow(color: Cypher.amber, label: "Homebrew", value: "needed to install Core Lightning") {
+                Button("Install Homebrew") { node.installHomebrew() }
+            }
+            Button("Check again") { node.checkInstall() }
+        case .notInstalled, .failed:
+            if case .failed(let reason) = node.install {
+                Text(reason)
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            StatusRow(color: palette.dim, label: "Core Lightning", value: "not installed") {
+                Button(node.install == .notInstalled ? "Install" : "Try again") { node.installOrUpdate() }
+                    .buttonStyle(.cypherProminent)
+            }
+            Text("Homebrew installs it in a Terminal window (a few minutes). FN-Server configures it for you.")
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.dim)
+                .fixedSize(horizontal: false, vertical: true)
+            if node.hasExistingNode {
+                Text("Found an existing Core Lightning node in ~/.lightning: it's used as it is.")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.accent)
+            }
+        case .installing:
+            StatusRow(color: Cypher.amber, label: "Core Lightning", value: "installing in Terminal…") {
+                ProgressView().scaleEffect(0.5).frame(width: 16, height: 16)
+            }
+        case .installed:
+            StatusRow(color: statusColor, label: "Core Lightning\(node.version.map { " v\($0)" } ?? "")", value: statusText) {
+                switch node.phase {
+                case .needsDatabaseUpgrade:
+                    Button("Back up and upgrade") { node.upgradeDatabaseAndStart() }
+                        .buttonStyle(.cypherProminent)
+                case .stopped, .failed:
+                    Button("Start") { node.start() }
+                        .buttonStyle(.cypherProminent)
+                case .starting, .stopping, .unknown:
+                    ProgressView().scaleEffect(0.5).frame(width: 16, height: 16)
+                case .running:
+                    EmptyView()
+                }
+            }
+            if case .failed(let reason) = node.phase {
+                Text(reason)
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if node.phase == .running {
+                Text("Next: open Core Lightning in the sidebar and tap Pair Plasma. Channels can be opened once your Bitcoin node has synced.")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var statusColor: Color {
+        switch node.phase {
+        case .running: return palette.accent
+        case .starting, .stopping, .unknown, .needsDatabaseUpgrade: return Cypher.amber
+        case .stopped, .failed: return Cypher.danger
+        }
+    }
+
+    private var statusText: String {
+        switch node.phase {
+        case .unknown: return "checking…"
+        case .stopped: return "installed · stopped"
+        case .starting(let message): return message
+        case .stopping: return "stopping…"
+        case .running: return node.info?.warnings.first ?? "running"
+        case .failed: return "didn't start"
+        case .needsDatabaseUpgrade: return "needs a one-way database upgrade (backed up first)"
+        }
+    }
+
+    private func bullet(_ icon: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(Cypher.accent)
+                .frame(width: 18)
+            Text(text)
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.dim)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+// MARK: - 7 Connect
 
 private struct ConnectStep: View {
     @Environment(\.openWindow) private var openWindow
@@ -698,6 +842,13 @@ private struct ConnectStep: View {
                        lines: ["Works from anywhere, through your node's onion address. Slower to connect.",
                                "In Fully Noded: Node Manager → + → Scan QR, then authorize its RPC user here."],
                        button: "Show Quick Connect QR") { openWindow(id: "QuickConnect") }
+            }
+
+            if LightningNode.shared.install == .installed {
+                Text("Using Core Lightning? Pair Plasma from the Core Lightning page in the sidebar once it's running.")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.dim)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Text("Don't have Fully Noded yet? Find it in the App Store, or under Help → Download Links.")

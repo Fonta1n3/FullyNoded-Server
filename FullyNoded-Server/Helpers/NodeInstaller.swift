@@ -149,8 +149,10 @@ final class NodeInstaller: NSObject, ObservableObject {
     }
 
     /// A new bitcoin.conf takes prune / txindex from UserDefaults (Defaults.shared); an
-    /// existing one keeps its own settings.
-    func install(_ release: TaggedReleaseElement, implementation: NodeImplementation) {
+    /// existing one keeps its own settings. `writeConfig: false` (updates and downgrades) leaves
+    /// bitcoin.conf alone: a fresh rpcauth would replace FN-Server's saved RPC password before
+    /// the running bitcoind has loaded it.
+    func install(_ release: TaggedReleaseElement, implementation: NodeImplementation, writeConfig: Bool = true) {
         guard !isBusy else { return }
         guard let files = Self.files(for: release, implementation: implementation) else {
             stage = .failed("That release has no version tag.")
@@ -162,7 +164,8 @@ final class NodeInstaller: NSObject, ObservableObject {
             ? ConfigureCore.checkForExistingConf
             : ConfigureKnots.checkForExistingConf
 
-        configure(nil) { [weak self] configured in
+        let prepare: (@escaping (Bool) -> Void) -> Void = writeConfig ? { configure(nil, $0) } : { $0(true) }
+        prepare { [weak self] configured in
             guard let self else { return }
             guard configured else {
                 self.fail("Couldn't write bitcoin.conf to \(Defaults.shared.bitcoinDataDir).")
@@ -295,6 +298,66 @@ final class NodeInstaller: NSObject, ObservableObject {
                 DispatchQueue.main.async { self.stage = .installed(version: version) }
             }
         }
+    }
+
+    /// Versions of `implementation` already unpacked in FN-Server's folder, newest first
+    /// (each install keeps its own folder, so switching back needs no download).
+    static func installedVersions(_ implementation: NodeImplementation) -> [(version: String, prefix: String)] {
+        let folder = "\(Defaults.shared.fnDataDir)/\(implementation.folder)"
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? []
+        return names
+            .filter { $0.hasPrefix("bitcoin-") && FileManager.default.fileExists(atPath: implementation.bitcoindPath(prefix: $0)) }
+            .map { (String($0.dropFirst("bitcoin-".count)), $0) }
+            .sorted { isNewerRelease($0.version, than: $1.version) }
+    }
+
+    /// Release order: numeric parts ("28.1.knots20250305" → 28, 1, 20250305), and a release
+    /// candidate ("30.0rc2") before its release.
+    static func isNewerRelease(_ a: String, than b: String) -> Bool {
+        func split(_ s: String) -> (numbers: [Int], rc: Int?) {
+            let lower = s.lowercased()
+            var base = Substring(lower)
+            var rc: Int?
+            if let range = lower.range(of: "rc") {
+                base = lower[..<range.lowerBound]
+                rc = Int(lower[range.upperBound...].prefix { $0.isNumber }) ?? 0
+            }
+            return (base.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }, rc)
+        }
+        let x = split(a), y = split(b)
+        for i in 0..<max(x.numbers.count, y.numbers.count) {
+            let l = i < x.numbers.count ? x.numbers[i] : 0, r = i < y.numbers.count ? y.numbers[i] : 0
+            if l != r { return l > r }
+        }
+        switch (x.rc, y.rc) {
+        case (nil, .some): return true
+        case (.some(let l), .some(let r)): return l > r
+        default: return false
+        }
+    }
+
+    /// Makes an installed version the one FN-Server runs.
+    func useInstalled(version: String, implementation: NodeImplementation) {
+        guard !isBusy else { return }
+        let prefix = "bitcoin-\(version)"
+        guard FileManager.default.fileExists(atPath: implementation.bitcoindPath(prefix: prefix)) else {
+            stage = .failed("\(implementation.name) \(version) isn't installed anymore.")
+            return
+        }
+        let binaryName = "bitcoin-\(version)-\(NodeImplementation.arch)-apple-darwin.tar.gz"
+        if implementation == .core {
+            let ud = UserDefaults.standard
+            ud.set(prefix, forKey: "binaryPrefix")
+            ud.set(binaryName, forKey: "macosBinary")
+            ud.set(version, forKey: "version")
+        }
+        stage = .preparing
+        saveEnv(implementation: implementation, version: version, prefix: prefix, binaryName: binaryName)
+    }
+
+    func reset() {
+        guard !isBusy else { return }
+        stage = .idle
     }
 
     /// Stops waiting for Terminal (e.g. it was closed before it finished).
