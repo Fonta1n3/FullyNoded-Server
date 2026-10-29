@@ -2,7 +2,8 @@
 //  NostrBridge.swift
 //  FullyNoded-Server
 //
-//  Nostr Connect bridge: answers Fully Noded's RPC requests that arrive over nostr relays.
+//  Nostr Connect bridge: answers Fully Noded's RPC requests that arrive over nostr relays, and
+//  Plasma's Core Lightning RPC requests (a pairing made from the Core Lightning page).
 //
 //  For every relay (this Mac's own relay and any public relays added) it subscribes to events of
 //  NostrEvent.rpcKind addressed to the bridge key. A request from a paired device is decrypted
@@ -26,6 +27,14 @@ final class NostrBridge: NSObject {
         let chain: String
         let created: Date
         var lastSeen: Date?
+        /// "cln": a Plasma pairing, answered by Core Lightning. nil: Bitcoin Core (Fully Noded).
+        var service: String? = nil
+        /// Core Lightning pairings: the rune each request is sent to clnrest with (clnrest checks
+        /// it), so a read-only pairing stays read-only.
+        var rune: String? = nil
+        var readOnly: Bool? = nil
+
+        var isLightning: Bool { service == "cln" }
     }
 
     enum RelayState: Equatable {
@@ -128,6 +137,20 @@ final class NostrBridge: NSObject {
             changed()
             return NostrConnectURI(bridgePubkey: keys.publicKey, relays: urls, clientSecret: client.secretHex,
                                    label: label.isEmpty ? nil : label, chain: chain, certSHA256: pin).string
+        }
+    }
+
+    /// A Plasma pairing: its requests go to Core Lightning on `chain`, checked against `rune`.
+    /// Returns the nostr+plasma:// link to show once.
+    func pairLightning(label: String, chain: String, rune: String, readOnly: Bool, relays urls: [String], pin: String? = nil) -> String? {
+        queue.sync {
+            guard let keys = keys, let client = NostrKeys.generate(), !urls.isEmpty else { return nil }
+            pairings.append(Pairing(pubkey: client.publicKey, label: label, chain: chain, created: Date(), lastSeen: nil,
+                                    service: "cln", rune: rune, readOnly: readOnly))
+            savePairings()
+            changed()
+            return NostrConnectURI(bridgePubkey: keys.publicKey, relays: urls, clientSecret: client.secretHex,
+                                   label: label.isEmpty ? nil : label, chain: chain, certSHA256: pin, lightning: true).string
         }
     }
 
@@ -294,7 +317,10 @@ final class NostrBridge: NSObject {
         let method = request?["method"] as? String ?? "?"
         log("→ \(method)\(first.path.map { $0.isEmpty ? "" : " \($0)" } ?? "") from \(pairing.label) on \(pairing.chain) via \(relay.url.absoluteString) (\(first.total) frame\(first.total == 1 ? "" : "s")\(first.deflate == true ? ", compressed" : "")) params: \(request?["params"] ?? "none")")
         #endif
-        forward(body: body, path: first.path ?? "", timeout: first.timeout ?? 60, chain: pairing.chain) { [weak self] status, response, error in
+        let answer: (Data, @escaping (Int, Data, String?) -> Void) -> Void = pairing.isLightning
+            ? { body, done in Self.forwardLightning(body: body, pairing: pairing, completion: done) }
+            : { [weak self] body, done in self?.forward(body: body, path: first.path ?? "", timeout: first.timeout ?? 60, chain: pairing.chain, completion: done) }
+        answer(body) { [weak self] status, response, error in
             guard let self = self else { return }
             #if DEBUG
             let ms = Int(Date().timeIntervalSince(started) * 1000)
@@ -398,6 +424,70 @@ final class NostrBridge: NSObject {
         #if DEBUG
         print("[nostr-bridge] \(message())")
         #endif
+    }
+
+    // MARK: Core Lightning
+
+    /// Runs a Plasma request on Core Lightning's REST API (clnrest, on 127.0.0.1 for the
+    /// pairing's network) with the pairing's rune: clnrest checks the rune, so a read-only
+    /// pairing stays read-only. Answers with the JSON-RPC body Plasma expects ({"id", "result"}
+    /// or {"id", "error"}), status 200.
+    private static func forwardLightning(body: Data, pairing: Pairing, completion: @escaping (Int, Data, String?) -> Void) {
+        guard let request = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any],
+              let method = request["method"] as? String,
+              !method.isEmpty, method.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" }) else {
+            completion(0, Data(), "Not a JSON-RPC request.")
+            return
+        }
+        let id = request["id"] ?? NSNull()
+        func reply(_ object: [String: Any]) {
+            var object = object
+            object["jsonrpc"] = "2.0"
+            object["id"] = id
+            completion(200, (try? JSONSerialization.data(withJSONObject: object)) ?? Data(), nil)
+        }
+        func fail(_ code: Int, _ message: String) {
+            reply(["error": ["code": code, "message": message]])
+        }
+        guard let rune = pairing.rune else {
+            fail(-32600, "This pairing has no rune. Pair Plasma again.")
+            return
+        }
+        // clnrest takes named parameters only.
+        let params: [String: Any]
+        if let named = request["params"] as? [String: Any] {
+            params = named
+        } else if request["params"] == nil || (request["params"] as? [Any])?.isEmpty == true {
+            params = [:]
+        } else {
+            fail(-32602, "Core Lightning's REST API needs named parameters for \(method).")
+            return
+        }
+        let network = LightningNode.network(chain: pairing.chain)
+        guard let url = URL(string: "http://127.0.0.1:\(LightningNode.restPort(network: network))/v1/\(method)"),
+              let httpBody = try? JSONSerialization.data(withJSONObject: params) else {
+            fail(-32603, "Couldn't build the request.")
+            return
+        }
+        var http = URLRequest(url: url)
+        http.httpMethod = "POST"
+        http.timeoutInterval = 300 // pay, waitinvoice…
+        http.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        http.setValue(rune, forHTTPHeaderField: "Rune")
+        http.httpBody = httpBody
+        URLSession.shared.dataTask(with: http) { data, response, error in
+            guard let status = (response as? HTTPURLResponse)?.statusCode else {
+                fail(-1, "Core Lightning's REST server (clnrest) isn't answering on \(NodeMonitor.networkName(pairing.chain)). Check that Core Lightning is running in Fully Noded Server. (\(error?.localizedDescription ?? "no response"))")
+                return
+            }
+            let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) }
+            if (200..<300).contains(status) {
+                reply(["result": json ?? [:]])
+            } else {
+                let error = json as? [String: Any]
+                fail(error?["code"] as? Int ?? status, error?["message"] as? String ?? "Core Lightning answered with HTTP \(status).")
+            }
+        }.resume()
     }
 
     // MARK: Bitcoin Core

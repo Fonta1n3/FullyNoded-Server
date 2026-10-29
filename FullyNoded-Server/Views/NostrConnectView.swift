@@ -15,9 +15,6 @@ final class NostrConnectModel: ObservableObject {
     @Published var relayEnabled: Bool { didSet { UserDefaults.standard.set(relayEnabled, forKey: Self.enabledKey) } }
     @Published var port: UInt16 { didSet { UserDefaults.standard.set(Int(port), forKey: Self.portKey) } }
     @Published var extraRelays: [String] { didSet { UserDefaults.standard.set(extraRelays, forKey: Self.extraKey) } }
-    /// Addresses of this Mac's relay from outside the network (ngrok, VPN, port forward). Only
-    /// put in pairing links: the bridge itself always uses loopback.
-    @Published var outsideURLs: [String] { didSet { UserDefaults.standard.set(outsideURLs, forKey: Self.outsideKey) } }
     @Published private(set) var vpnAddresses: [String] = []
     @Published private(set) var relayStatus = NostrRelay.shared.status()
     @Published private(set) var relayStates: [String: NostrBridge.RelayState] = [:]
@@ -33,16 +30,29 @@ final class NostrConnectModel: ObservableObject {
     private static let enabledKey = "nostrConnectRelayEnabled"
     private static let portKey = "nostrConnectRelayPort"
     private static let extraKey = "nostrConnectExtraRelays"
+    /// Outside addresses from before Tailscale Funnel replaced them (cleared at launch).
     private static let outsideKey = "nostrConnectOutsideURLs"
     private static let tlsKey = "nostrConnectRelayTLS"
+    /// Set once the default public relays have been added (so a removed one stays removed).
+    private static let defaultRelaysKey = "nostrConnectDefaultRelaysAdded"
     static let defaultPort: UInt16 = 7777
+    /// Public relays included by default, so a pairing still works when this Mac's relay can't be
+    /// reached from outside (Tailscale Funnel's ingress has been seen to stop forwarding). Each
+    /// accepts the ~40 KB RPC frames with no auth or payment; they only see ciphertext.
+    static let defaultPublicRelays = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"]
 
     private init() {
         relayEnabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
         let stored = UserDefaults.standard.integer(forKey: Self.portKey)
         port = (1024...65535).contains(stored) ? UInt16(stored) : Self.defaultPort
-        extraRelays = UserDefaults.standard.stringArray(forKey: Self.extraKey) ?? []
-        outsideURLs = UserDefaults.standard.stringArray(forKey: Self.outsideKey) ?? []
+        var relays = UserDefaults.standard.stringArray(forKey: Self.extraKey) ?? []
+        if !UserDefaults.standard.bool(forKey: Self.defaultRelaysKey) {
+            relays += Self.defaultPublicRelays.filter { !relays.contains($0) }
+            UserDefaults.standard.set(relays, forKey: Self.extraKey)
+            UserDefaults.standard.set(true, forKey: Self.defaultRelaysKey)
+        }
+        extraRelays = relays
+        UserDefaults.standard.removeObject(forKey: Self.outsideKey)
         // wss:// by default for a new setup; existing ws:// pairings keep working until changed.
         if let stored = UserDefaults.standard.object(forKey: Self.tlsKey) as? Bool {
             useTLS = stored && RelayTLS.isSupported
@@ -58,6 +68,7 @@ final class NostrConnectModel: ObservableObject {
     /// At launch: bring up whatever was on before.
     func startIfConfigured() {
         apply()
+        TailscaleFunnel.shared.startMonitoring()
     }
 
     func refresh() {
@@ -99,7 +110,8 @@ final class NostrConnectModel: ObservableObject {
         } else if relayStatus.isRunning {
             NostrRelay.shared.stop()
         }
-        let urls = bridgeRelays
+        // Public relays only matter once something is paired: don't connect out to them before.
+        let urls = relayEnabled || !NostrBridge.shared.allPairings.isEmpty ? bridgeRelays : []
         if urls.isEmpty {
             NostrBridge.shared.stop()
         } else {
@@ -129,57 +141,21 @@ final class NostrConnectModel: ObservableObject {
         (relayEnabled ? ["\(relayScheme)://127.0.0.1:\(port)"] : []) + extraRelays
     }
 
-    /// Where a paired device connects: this Mac's relay on the local network, over a VPN or a
-    /// tunnel, then public relays. The device tries them all and uses whichever answers.
+    /// Where a paired device connects. With Tailscale Funnel serving this relay: its public
+    /// address only (reachable from anywhere, so local and VPN addresses would only add
+    /// connections that fail away from home), then public relays. Without it: this Mac's relay on
+    /// the local network and VPN, then public relays. The device uses whichever answers first.
     var pairingRelays: [String] {
         guard relayEnabled else { return extraRelays }
+        if let funnelURL = funnelURL { return [funnelURL] + extraRelays }
         return lanAddresses.map { "\(relayScheme)://\($0):\(port)" } + vpnAddresses.map { "\(relayScheme)://\($0):\(port)" }
-            + outsideURLs + extraRelays
+            + extraRelays
     }
 
-    func addOutsideURL(_ raw: String) -> Bool {
-        var url = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        // ngrok prints https:// forwarding URLs; the same tunnel carries the WebSocket.
-        if url.lowercased().hasPrefix("https://") { url = "wss://" + url.dropFirst(8) }
-        if url.lowercased().hasPrefix("http://") { url = "ws://" + url.dropFirst(7) }
-        if url.hasSuffix("/") { url.removeLast() }
-        guard let u = URL(string: url), ["ws", "wss"].contains(u.scheme?.lowercased() ?? ""), u.host != nil else {
-            alertMessage = "Enter the address as wss://host (or ws://host:port)."
-            return false
-        }
-        if !outsideURLs.contains(url) { outsideURLs.append(url) }
-        return true
+    /// wss://<mac>.<tailnet>.ts.net while Tailscale Funnel serves this relay.
+    var funnelURL: String? {
+        relayEnabled ? TailscaleFunnel.shared.relayURL(port: port, tls: useTLS) : nil
     }
-
-    func removeOutsideURL(_ url: String) {
-        outsideURLs.removeAll { $0 == url }
-    }
-
-    /// Reads ngrok's local API (http://127.0.0.1:4040) for a tunnel to the relay port.
-    func detectNgrok() {
-        let port = self.port
-        guard let url = URL(string: "http://127.0.0.1:4040/api/tunnels") else { return }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            let tunnels = (data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] })?["tunnels"] as? [[String: Any]] ?? []
-            let match = tunnels.first { tunnel in
-                let addr = (tunnel["config"] as? [String: Any])?["addr"] as? String ?? ""
-                return addr.hasSuffix(":\(port)") || addr == "\(port)"
-            }
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                if let publicURL = match?["public_url"] as? String {
-                    if self.addOutsideURL(publicURL) { self.alertMessage = "Added \(self.outsideURLs.last ?? publicURL). Pair devices again so their link includes it." }
-                } else if tunnels.isEmpty {
-                    self.alertMessage = "ngrok isn't running. Start it with:\n\n\(self.ngrokCommand)\n\nthen press Detect ngrok again."
-                } else {
-                    self.alertMessage = "ngrok is running, but not for port \(port). Start it with:\n\n\(self.ngrokCommand)"
-                }
-            }
-        }.resume()
-    }
-
-    /// ngrok forwards to the relay over TLS when it serves wss://.
-    var ngrokCommand: String { useTLS ? "ngrok http https://localhost:\(port)" : "ngrok http \(port)" }
 
     func addRelay(_ raw: String) -> Bool {
         let url = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -205,6 +181,15 @@ final class NostrConnectModel: ObservableObject {
         }
         let link = NostrBridge.shared.pair(label: label, chain: chain, relays: relays, pin: relayPin)
         if link == nil { alertMessage = "Couldn't create a pairing." }
+        apply()
+        return link
+    }
+
+    /// A Plasma pairing for Core Lightning (made from the Core Lightning page).
+    func pairPlasma(label: String, chain: String, rune: String, readOnly: Bool, relays: [String]) -> String? {
+        guard !relays.isEmpty else { return nil }
+        let link = NostrBridge.shared.pairLightning(label: label, chain: chain, rune: rune, readOnly: readOnly,
+                                                    relays: relays, pin: relayPin)
         apply()
         return link
     }
@@ -235,7 +220,7 @@ final class NostrConnectModel: ObservableObject {
 struct NostrConnectView: View {
     @ObservedObject private var model = NostrConnectModel.shared
     @State private var newRelay = ""
-    @State private var newOutside = ""
+    @ObservedObject private var funnel = TailscaleFunnel.shared
     @State private var portText = ""
     @State private var pairLabel = ""
     @State private var pairChain = Defaults.shared.chain
@@ -355,7 +340,7 @@ struct NostrConnectView: View {
                       systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Cypher.accent)
                 ForEach(model.lanAddresses, id: \.self) { ip in
-                    Text("\(s.tls ? "wss" : "ws")://\(ip):\(s.port)")
+                    Text(verbatim: "\(s.tls ? "wss" : "ws")://\(ip):\(s.port)")
                         .font(Cypher.mono(11))
                         .foregroundStyle(Cypher.text)
                         .textSelection(.enabled)
@@ -381,39 +366,125 @@ struct NostrConnectView: View {
                 ForEach(model.vpnAddresses, id: \.self) { ip in
                     HStack {
                         Image(systemName: "network.badge.shield.half.filled").foregroundStyle(Cypher.accent)
-                        Text("\(model.relayScheme)://\(ip):\(model.port)").font(Cypher.mono(12)).textSelection(.enabled)
-                        Text("VPN (e.g. Tailscale), added automatically").font(Cypher.mono(11)).foregroundStyle(Cypher.dim)
+                        Text(verbatim: "\(model.relayScheme)://\(ip):\(model.port)").font(Cypher.mono(12)).textSelection(.enabled)
+                        Text("VPN, added automatically").font(Cypher.mono(11)).foregroundStyle(Cypher.dim)
                     }
                 }
-                ForEach(model.outsideURLs, id: \.self) { url in
-                    HStack {
-                        Image(systemName: "globe").foregroundStyle(Cypher.accent)
-                        Text(url).font(Cypher.mono(12)).textSelection(.enabled)
-                        Spacer()
-                        Button("Remove") { model.removeOutsideURL(url) }
-                    }
-                }
-                HStack {
-                    TextField("wss://your-tunnel.ngrok-free.app", text: $newOutside)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit(addOutside)
-                    Button("Add", action: addOutside)
-                        .disabled(newOutside.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button("Detect ngrok") { model.detectNgrok() }
-                        .disabled(!model.relayEnabled)
-                }
-                Text("To use this Mac's relay away from home, give it an address that reaches port \(model.port):\n• ngrok: run \"\(model.ngrokCommand)\" and press Detect ngrok (or paste its https:// address).\n• Tailscale or another VPN: install it on this Mac and your phone; its address appears above.\n• A router port forward: add \(model.relayScheme)://<your public IP>:\(model.port).\nThen pair devices again so their link includes it. Traffic stays end-to-end encrypted, and only paired devices can publish; a free ngrok address changes on restart, so re-pair after that.")
-                    .font(Cypher.mono(11))
-                    .foregroundStyle(Cypher.dim)
-                    .fixedSize(horizontal: false, vertical: true)
+                funnelSection
             }
         } label: {
-            Text("Reach this relay from outside your network")
+            Text("Reach this relay from anywhere · Tailscale Funnel")
+        }
+        .onAppear { funnel.refresh() }
+    }
+
+    @ViewBuilder
+    private var funnelSection: some View {
+        Text("Tailscale Funnel gives this Mac's relay a public wss:// address with a trusted certificate. Fully Noded and Plasma then reach it from any network, with nothing to install on the phone, no port forward and no ngrok. Only this Mac needs Tailscale (and Fully Noded Server running). Everything stays end-to-end encrypted, and only paired devices can publish.")
+            .font(Cypher.mono(11))
+            .foregroundStyle(Cypher.dim)
+            .fixedSize(horizontal: false, vertical: true)
+
+        if !funnel.status.installed {
+            HStack(spacing: 8) {
+                Link("Get Tailscale for Mac", destination: TailscaleFunnel.downloadURL)
+                Button("Check again") { funnel.refresh() }
+            }
+        } else if !funnel.status.running || funnel.status.host == nil {
+            Label("Tailscale isn't connected. Open it, sign in and turn it on.", systemImage: "exclamationmark.triangle.fill")
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.amber)
+            HStack(spacing: 8) {
+                Button("Open Tailscale") { funnel.openTailscale() }
+                Button("Check again") { funnel.refresh() }
+            }
+        } else if !model.relayEnabled {
+            Text("Turn on \"Run a relay on this Mac\" above first.")
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.dim)
+        } else if let url = model.funnelURL {
+            HStack(spacing: 8) {
+                Image(systemName: "globe").foregroundStyle(Cypher.accent)
+                Text(url).font(Cypher.mono(12, weight: .semibold)).textSelection(.enabled)
+                Spacer()
+                Button("Turn off") { funnel.turnOff { model.refresh() } }
+                    .disabled(funnel.busy)
+            }
+            funnelReachability
+            Text("Checked from the internet every few minutes; if it stops answering, Funnel is turned off and on. New pairings use only this address (plus any public relays): it works on every network. Pair devices again to switch them to it.")
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.dim)
+        } else {
+            if funnel.status.funnelOn, let target = funnel.status.target {
+                Label("Funnel is on, but serves \(target) instead of this relay\(model.useTLS ? " (wss://)" : "").", systemImage: "exclamationmark.triangle.fill")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    funnel.turnOn(port: model.port, tls: model.useTLS) { model.refresh() }
+                } label: {
+                    Image(systemName: "globe")
+                    Text(funnel.status.funnelOn ? "Point Funnel at this relay" : "Turn on Funnel")
+                }
+                .buttonStyle(.cypherProminent)
+                .disabled(funnel.busy)
+                if funnel.busy {
+                    ProgressView().controlSize(.small)
+                    Button("Cancel") { funnel.cancel() }
+                }
+                Text("https://\(funnel.status.host ?? "")")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.dim)
+            }
+            if let approval = funnel.approvalURL {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Tailscale needs HTTPS certificates and Funnel allowed for this Mac (once). Approve it in the browser; Funnel turns on by itself afterwards.")
+                        .font(Cypher.mono(11))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Approve in Tailscale") { NSWorkspace.shared.open(approval) }
+                        .buttonStyle(.cypherProminent)
+                }
+            }
+        }
+
+        if let error = funnel.error {
+            Text(error)
+                .font(Cypher.mono(11))
+                .foregroundStyle(Cypher.danger)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private func addOutside() {
-        if model.addOutsideURL(newOutside) { newOutside = "" }
+    @ViewBuilder
+    private var funnelReachability: some View {
+        HStack(spacing: 8) {
+            switch funnel.reachability {
+            case .reachable(let date):
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Cypher.accent)
+                Text("Reachable from anywhere · checked \(date.formatted(date: .omitted, time: .shortened))")
+                    .font(Cypher.mono(11))
+            case .unknown, .checking:
+                Image(systemName: "globe").foregroundStyle(Cypher.dim)
+                Text("Verifying public access…").font(Cypher.mono(11)).foregroundStyle(Cypher.dim)
+            case .repairing:
+                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Cypher.dim)
+                Text("Reconnecting Funnel…").font(Cypher.mono(11)).foregroundStyle(Cypher.dim)
+            case .unreachable(let reason):
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Cypher.amber)
+                Text("Funnel isn't answering from outside: paired devices use the public relays meanwhile. \(reason)")
+                    .font(Cypher.mono(11))
+                    .foregroundStyle(Cypher.amber)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if case .unreachable = funnel.reachability {
+                Button("Reconnect") { funnel.repair() }.disabled(funnel.busy)
+            }
+        }
     }
 
     private var publicRelaysCard: some View {
@@ -440,7 +511,7 @@ struct NostrConnectView: View {
                         Text("This Mac's relay").font(Cypher.mono(12))
                     }
                 }
-                Text("To reach your node away from home, add a public relay; pair (or re-pair) devices afterwards so their link includes it. The relay operator sees that two keys exchange messages and when, never the contents.")
+                Text("Public relays let paired devices reach your node from anywhere, even when this Mac's relay can't be reached from outside. A few are included by default. Pair (or re-pair) devices after changing them so their link includes them. A relay operator sees that two keys exchange messages and when, never the contents.")
                     .font(Cypher.mono(11))
                     .foregroundStyle(Cypher.dim)
                     .fixedSize(horizontal: false, vertical: true)
@@ -516,7 +587,8 @@ struct NostrConnectView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(pairing.label).font(Cypher.mono(12, weight: .semibold))
-                            Text("\(NostrConnectModel.networkName(pairing.chain)) · " +
+                            Text((pairing.isLightning ? "Plasma · Core Lightning\(pairing.readOnly == true ? " (read-only)" : "") · " : "") +
+                                 "\(NostrConnectModel.networkName(pairing.chain)) · " +
                                  (pairing.lastSeen.map { "last seen \($0.formatted(date: .abbreviated, time: .shortened))" } ?? "not used yet"))
                                 .font(Cypher.mono(11)).foregroundStyle(Cypher.dim)
                         }
@@ -566,11 +638,19 @@ struct NostrConnectView: View {
 /// The sidebar icon for the Nostr Connect row.
 struct NostrConnectSidebarIcon: View {
     @ObservedObject private var model = NostrConnectModel.shared
+    @ObservedObject private var funnel = TailscaleFunnel.shared
+
+    /// Funnel serves the relay but doesn't answer from the internet.
+    private var funnelDown: Bool {
+        guard model.funnelURL != nil else { return false }
+        if case .unreachable = funnel.reachability { return true }
+        return false
+    }
 
     var body: some View {
-        if model.isConnected {
+        if model.isConnected && !funnelDown {
             Image(systemName: "checkmark").foregroundStyle(Cypher.accent)
-        } else if model.relayEnabled || !model.extraRelays.isEmpty {
+        } else if model.relayEnabled || !model.pairings.isEmpty {
             Image(systemName: "exclamationmark.triangle").foregroundStyle(Cypher.amber)
         } else {
             Image(systemName: "xmark").foregroundStyle(Cypher.dim)

@@ -106,7 +106,12 @@ final class NostrRelay {
             guard let self = self else { return }
             switch state {
             case .failed(let error):
-                self.lastError = "Relay stopped: \(error.localizedDescription)"
+                if case .posix(.EADDRINUSE) = error {
+                    self.lastError = "Relay stopped: port \(self.port) is already in use" + (Self.portHolder(self.port).map { " by \($0)" } ?? "") +
+                        ". Quit it, or choose another port."
+                } else {
+                    self.lastError = "Relay stopped: \(error.localizedDescription)"
+                }
                 self.listener = nil
                 self.log("stopped: \(error.localizedDescription)")
             case .ready:
@@ -124,6 +129,24 @@ final class NostrRelay {
             self.lastError = nil
         }
         listener.start(queue: queue)
+    }
+
+    /// "another copy of Fully Noded Server (pid 788)" or "nginx (pid 312)": who listens on `port`.
+    static func portHolder(_ port: UInt16) -> String? {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        task.arguments = ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN", "-Fpc"]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        guard (try? task.run()) != nil else { return nil }
+        let output = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        task.waitUntilExit()
+        let lines = output.split(separator: "\n")
+        guard let pid = lines.first(where: { $0.hasPrefix("p") }).map({ String($0.dropFirst()) }),
+              Int32(pid) != ProcessInfo.processInfo.processIdentifier else { return nil }
+        let name = lines.first(where: { $0.hasPrefix("c") }).map { String($0.dropFirst()) } ?? "another app"
+        return name.hasPrefix("FullyNode") ? "another copy of Fully Noded Server (pid \(pid))" : "\(name) (pid \(pid))"
     }
 
     func stop() {
@@ -150,7 +173,7 @@ final class NostrRelay {
     // MARK: Connections (on `queue`)
 
     /// Enough for a few devices and the bridge; refuses floods once the port is reachable from
-    /// the internet (ngrok, port forwarding).
+    /// the internet (Tailscale Funnel).
     private static let maxConnections = 64
 
     private func accept(_ connection: NWConnection) {
