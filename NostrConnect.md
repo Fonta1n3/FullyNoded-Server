@@ -8,6 +8,10 @@ like Tailscale, or anywhere through a public relay.
 Your node's RPC port is never exposed: everything is end-to-end encrypted between Fully Noded and
 this Mac, and the relay only passes on ciphertext.
 
+**Plasma uses it too.** A Plasma pairing, made on the Core Lightning page, uses the same relays
+and bridge (wss:// relays only), and its commands go to Core Lightning's REST API (clnrest) instead
+of Bitcoin Core, with the pairing's rune. See [CoreLightning.md](./CoreLightning.md#anywhere-nostr-connect).
+
 ## How it works
 
 ```
@@ -43,16 +47,16 @@ Fully Noded  ──encrypted event──▶  nostr relay  ──▶  Fully Noded
 
 Messages are end-to-end encrypted either way. With **Encrypt connections (wss://)** on (the default
 for a new setup on macOS 15 and later), this Mac's relay also uses TLS, so others on the network (the
-same Wi-Fi, your ISP on a port forward) can't see which keys talk, or when.
+same Wi-Fi, a VPN) can't see which keys talk, or when.
 
 - The first time, FNS runs `Scripts/CreateRelayCert.command`, which uses macOS's `/usr/bin/openssl`
   to make an EC P-256 key and a self-signed certificate (10 years). The PKCS#12 bundle is stored
   encrypted in FNS's Keychain entry and loaded into memory only (`kSecImportToMemoryOnly`, macOS 15).
 - The certificate's SHA-256 goes in the pairing link (`&cert=…`). Fully Noded accepts exactly that
   certificate for the Mac's relay, and normal CA-validated TLS for public `wss://` relays. No
-  hostname is checked, so the same certificate works on the LAN IP, a Tailscale IP or a port forward.
+  hostname is checked, so the same certificate works on the LAN IP and a VPN IP.
 - Turning it on or off changes the relay's addresses: pair devices again.
-- ngrok: forward to the TLS relay with `ngrok http https://localhost:<port>`.
+- Tailscale Funnel's public address uses Tailscale's own, publicly trusted certificate (see below).
 
 ## Using it
 
@@ -61,14 +65,49 @@ same Wi-Fi, your ISP on a port forward) can't see which keys talk, or when.
    - **Run a relay on this Mac** (port 7777 by default). Its LAN address is listed, plus a
      Tailscale/VPN address when there is one. macOS may ask once to allow incoming connections.
      Leave **Encrypt connections (wss://)** on (see above).
-   - **Reach this relay from outside your network:** an ngrok address (**Detect ngrok**), or a router
-     port forward (`wss://<public IP>:7777`, or `ws://` with encryption off).
-   - **Relays the bridge listens on:** add public relays (`wss://…`) to reach the node from anywhere
-     without exposing this Mac.
+   - **Reach this relay from anywhere · Tailscale Funnel:** publish the relay at
+     `wss://<mac>.<tailnet>.ts.net` (see below). Nothing to install on the phone.
+   - **Relays the bridge listens on:** public relays (`wss://…`) reach the node from anywhere
+     without exposing this Mac. `wss://relay.damus.io`, `wss://nos.lol` and `wss://relay.primal.net`
+     are included by default (added once; remove any you don't want). The bridge only connects to
+     them once something is paired.
 3. Pick the **network** and tap **Pair Fully Noded**. Scan the QR in Fully Noded (welcome guide ›
    **Nostr Connect**, or Node Manager › **+** › **Scan QR**). The QR is shown once: anyone with it
    can use your node.
 4. **Paired devices** lists each device with when it was last seen. **Remove** revokes it.
+
+### Tailscale Funnel
+
+[Funnel](https://tailscale.com/kb/1223/funnel) gives this Mac's relay a public HTTPS address,
+`wss://<mac>.<tailnet>.ts.net` on port 443, with a publicly trusted certificate. Fully Noded and
+Plasma reach it from any network with nothing installed on the phone: no Tailscale there, no port
+forward, no ngrok. Only this Mac runs Tailscale (and Fully Noded Server).
+
+- **Turn on Funnel** runs `tailscale funnel --bg https+insecure://localhost:<port>` (or
+  `http://localhost:<port>` with encryption off). Tailscale terminates the public TLS and forwards to
+  the relay. It can't check the relay's self-signed certificate, hence `+insecure`; that hop stays
+  on this Mac.
+- The first time, Tailscale needs HTTPS certificates and Funnel allowed for this Mac. The CLI prints
+  a login.tailscale.com link and waits; FNS shows it as **Approve in Tailscale**, and Funnel turns on
+  once it's approved.
+- While Funnel serves the relay, new pairing links carry only its address (plus any public relays),
+  not the local or VPN ones: it works on every network, and addresses that only work at home would
+  just be extra connections failing away from it. Pair devices again after turning it on.
+- When it's first turned on, public DNS can take a few minutes to find the new `ts.net` name.
+- **Turn off** runs `tailscale funnel --https=443 off`, so other `tailscale serve` settings stay.
+- Tailscale (the company) relays the traffic but only sees NIP-44 ciphertext, like any relay.
+- **Reachability:** "on" doesn't prove it works. Tailscale's ingress has been seen to stop forwarding
+  to this Mac (TLS dropped mid-handshake, no ingress node connected) while everything here looks
+  fine, until Funnel is turned off and on. So while Funnel is on, FNS checks the public address
+  every 3 minutes the way a phone away from home reaches it: public DNS (DNS-over-HTTPS to
+  1.1.1.1, then dns.google, since MagicDNS would give the tailnet address), then a TLS handshake
+  with each ingress address. TLS ends on this Mac, so a finished handshake means the ingress
+  forwards here. The card shows **Reachable from the internet** or **Not reachable** with the
+  reason, and the sidebar shows a warning while it's down.
+- **Auto-repair:** two failed checks in a row turn Funnel off and on (at most every 10 minutes, and
+  not in the first 3 minutes after turning it on, while public DNS catches up). **Turn off and on**
+  and **Check now** do the same by hand. Keep public relays in the pairing so devices fall back to
+  them meanwhile.
 
 Set up relays, and choose wss:// or ws://, before pairing: the link includes the relays and the
 certificate pin configured at that moment, so pair again after changing either.
