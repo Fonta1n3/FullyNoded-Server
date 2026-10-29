@@ -108,6 +108,10 @@ class Torrc {
     HiddenServiceDir \(torPath())/host/cln/rpc/
     HiddenServiceVersion 3
     HiddenServicePort 18765 127.0.0.1:18765
+    HiddenServicePort 18766 127.0.0.1:18766
+    HiddenServicePort 18767 127.0.0.1:18767
+    HiddenServicePort 18768 127.0.0.1:18768
+    HiddenServicePort 18769 127.0.0.1:18769
 
     ################ This section is just for relays #####################
     #

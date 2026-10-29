@@ -292,7 +292,7 @@ class TorClient: NSObject, URLSessionDelegate {
 
     /// The onion services in the torrc.
     enum OnionService: CaseIterable {
-        case joinMarket, bitcoinMain, bitcoinTest, bitcoinSignet, bitcoinRegtest, bitcoinTestnet4
+        case joinMarket, bitcoinMain, bitcoinTest, bitcoinSignet, bitcoinRegtest, bitcoinTestnet4, coreLightning
 
         var directory: String {
             switch self {
@@ -302,6 +302,7 @@ class TorClient: NSObject, URLSessionDelegate {
             case .bitcoinSignet: return "host/bitcoin/rpc/signet"
             case .bitcoinRegtest: return "host/bitcoin/rpc/regtest"
             case .bitcoinTestnet4: return "host/bitcoin/rpc/testnet4"
+            case .coreLightning: return "host/cln/rpc"
             }
         }
 
@@ -313,6 +314,7 @@ class TorClient: NSObject, URLSessionDelegate {
             case .bitcoinSignet: return 38332
             case .bitcoinRegtest: return 18443
             case .bitcoinTestnet4: return 48332
+            case .coreLightning: return LightningNode.restPort(network: "bitcoin")
             }
         }
 
@@ -324,6 +326,7 @@ class TorClient: NSObject, URLSessionDelegate {
             case .bitcoinSignet: return "Bitcoin RPC · Signet"
             case .bitcoinRegtest: return "Bitcoin RPC · Regtest"
             case .bitcoinTestnet4: return "Bitcoin RPC · Testnet4"
+            case .coreLightning: return "Core Lightning REST"
             }
         }
 
