@@ -13,6 +13,7 @@
 
 import Foundation
 import AppKit
+import Combine
 
 final class NodeMonitor: ObservableObject {
 
@@ -44,6 +45,24 @@ final class NodeMonitor: ObservableObject {
         }
     }
 
+    /// Changing the installed version: stop the node, install (or switch), start it again.
+    enum VersionChange: Equatable {
+        case idle
+        case stopping(to: String)
+        /// Downloading / verifying: see `installer.stage`.
+        case installing(to: String)
+        case starting(to: String)
+        case done(String)
+        case failed(String)
+
+        var isBusy: Bool {
+            switch self {
+            case .stopping, .installing, .starting: return true
+            default: return false
+            }
+        }
+    }
+
     struct Peers: Equatable { let inbound: Int; let outbound: Int }
     struct Mempool: Equatable { let count: Int; let bytes: Int }
 
@@ -68,8 +87,16 @@ final class NodeMonitor: ObservableObject {
     @Published private(set) var timeLeft: TimeInterval?
     @Published private(set) var isRefreshing = false
     @Published var alert: String?
+    @Published private(set) var versionChange: VersionChange = .idle
+    /// Downloads and verifies releases (the Setup Assistant's installer).
+    let installer = NodeInstaller()
+
+    var implementation: NodeImplementation { kind == .core ? .core : .knots }
 
     private var env: [String: String] = [:]
+    private var installerObservation: AnyCancellable?
+    private var restartAfterChange = false
+    private var stopWaitTimer: Timer?
     private var transition: NodeTransition?
     private var timer: Timer?
     private var visible = false
@@ -84,6 +111,116 @@ final class NodeMonitor: ObservableObject {
         self.kind = kind
         // Core and Knots share the RPC port setting, so they share the network setting too.
         chain = UserDefaults.standard.string(forKey: "chain") ?? "main"
+        installerObservation = installer.$stage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] stage in self?.installerChanged(stage) }
+    }
+
+    // MARK: - Version
+
+    /// Installs `release` (update, downgrade or reinstall). A running node is stopped first and
+    /// started again on the new version.
+    func changeVersion(to release: TaggedReleaseElement) {
+        guard let tag = release.tagName else { return }
+        let version = tag.replacingOccurrences(of: "v", with: "")
+        beginChange(to: version) { [weak self] in
+            guard let self else { return }
+            self.versionChange = .installing(to: version)
+            self.installer.install(release, implementation: self.implementation, writeConfig: false)
+        }
+    }
+
+    /// Switches to a version that's already installed (no download).
+    func useInstalledVersion(_ version: String) {
+        beginChange(to: version) { [weak self] in
+            guard let self else { return }
+            self.versionChange = .installing(to: version)
+            self.installer.useInstalled(version: version, implementation: self.implementation)
+        }
+    }
+
+    private func beginChange(to version: String, then install: @escaping () -> Void) {
+        guard !versionChange.isBusy, !installer.isBusy else { return }
+        installer.reset()
+        restartAfterChange = processRunning || phase == .running || phase.isTransitioning && phase != .unknown
+        guard processRunning else {
+            install()
+            return
+        }
+        versionChange = .stopping(to: version)
+        if phase != .stopping { stop() }
+        // Wait for bitcoind to exit (flushing its state can take a minute or two).
+        let started = Date()
+        stopWaitTimer?.invalidate()
+        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            if !self.processRunning {
+                timer.invalidate()
+                install()
+            } else if Date().timeIntervalSince(started) > 600 {
+                timer.invalidate()
+                self.versionChange = .failed("\(self.kind.name) didn't stop within 10 minutes, so nothing was changed.")
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        stopWaitTimer = timer
+    }
+
+    private func installerChanged(_ stage: NodeInstaller.Stage) {
+        guard case .installing(let target) = versionChange else { return }
+        switch stage {
+        case .installed(let version):
+            reloadEnv { [weak self] in
+                guard let self else { return }
+                if self.restartAfterChange {
+                    self.versionChange = .starting(to: version)
+                    self.start()
+                    self.versionChange = .done("Now running \(self.kind.name) \(version).")
+                } else {
+                    self.versionChange = .done("\(self.kind.name) \(version) is installed. Start it when you're ready.")
+                }
+            }
+        case .failed(let message):
+            // The saved version is unchanged: bring back what was running.
+            versionChange = .failed("Couldn't install \(target): \(message)\(restartAfterChange ? " Your previous version was started again." : "")")
+            if restartAfterChange { start() }
+        case .idle:
+            // Verification cancelled.
+            versionChange = .failed("Install of \(target) cancelled.\(restartAfterChange ? " Your previous version was started again." : "")")
+            if restartAfterChange { start() }
+        default:
+            break
+        }
+    }
+
+    func cancelVersionChange() {
+        if case .installing = versionChange, installer.stage == .verifying {
+            installer.cancelVerification()
+        } else if case .stopping = versionChange {
+            stopWaitTimer?.invalidate()
+            versionChange = .idle
+        }
+    }
+
+    func dismissVersionChange() {
+        if !versionChange.isBusy { versionChange = .idle }
+    }
+
+    /// Re-reads the saved env (version, prefix) after the installed version changed.
+    private func reloadEnv(completion: @escaping () -> Void) {
+        DataManager.retrieve(entityName: kind.entity) { [weak self] env in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let env {
+                    let version = env["version"] as? String ?? ""
+                    self.version = version.isEmpty ? nil : version
+                    self.env["BINARY_NAME"] = env["binaryName"] as? String ?? ""
+                    self.env["VERSION"] = version
+                    self.env["PREFIX"] = env["prefix"] as? String ?? ""
+                }
+                completion()
+            }
+        }
     }
 
     // MARK: - Page lifecycle

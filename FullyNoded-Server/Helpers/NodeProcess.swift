@@ -47,15 +47,20 @@ enum NodeProcess {
 
     /// The pid of the bitcoind using this data folder and network, if it's running.
     static func runningPID(dataDir: String, chain: String) -> pid_t? {
-        let pidFile = networkDirectory(dataDir: dataDir, chain: chain) + "/bitcoind.pid"
+        runningPID(pidFile: networkDirectory(dataDir: dataDir, chain: chain) + "/bitcoind.pid", executable: "bitcoind")
+    }
+
+    /// The pid in `pidFile` if that process is alive and is `executable` (a stale pid file left by
+    /// a crash may name a pid now used by something else).
+    static func runningPID(pidFile: String, executable: String) -> pid_t? {
         guard let text = try? String(contentsOfFile: pidFile, encoding: .utf8),
               let pid = pid_t(text.trimmingCharacters(in: .whitespacesAndNewlines)), pid > 0 else { return nil }
-        // Alive (EPERM also means it exists), and really a bitcoind (pids are reused).
+        // Alive (EPERM also means it exists).
         guard kill(pid, 0) == 0 || errno == EPERM else { return nil }
         var buffer = [CChar](repeating: 0, count: 4096)
         guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { return nil }
         let path = String(cString: buffer)
-        return (path as NSString).lastPathComponent == "bitcoind" ? pid : nil
+        return (path as NSString).lastPathComponent == executable ? pid : nil
     }
 
     static func isRunning(dataDir: String, chain: String) -> Bool {
