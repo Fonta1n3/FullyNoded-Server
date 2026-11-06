@@ -112,7 +112,7 @@ A silent payment address (`sp1…`) is one static address you can share anywhere
 unlinkable Taproot output. Finding those payments means checking every transaction with your *scan key*. FNS does that 
 with your own node, so no third party ever learns which payments are yours.
 
-1. In **Fully Noded** open the wallet you'll spend from, go to its *Silent payments* section and tap **FN-SERVER LINK** 
+1. In **Fully Noded** open the wallet you'll spend from, go to its **Receive** screen, pick *Silent payment* and tap **FN-Server link** 
 (authentication required). It's one QR / `fnsp://` link with your silent payment address, your scan private key and the 
 wallet's name on your node. (From a signer: *SP Scan Private Key* → *Fully Noded Server QR*.)
 2. In **FNS** open **Silent Payments** (sidebar, or Bitcoin Core → Utilities):
