@@ -59,6 +59,7 @@ struct ContentView: View {
     private let bitcoinKnots = Service(name: "Bitcoin Knots", id: UUID())
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
+    private let blockExplorer = Service(name: "Block Explorer", id: UUID())
     private let silentPayments = Service(name: "Silent Payments", id: UUID())
     private let nostrConnect = Service(name: "Nostr Connect", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
@@ -73,6 +74,7 @@ struct ContentView: View {
         case "Bitcoin Knots": return .bitcoinKnots
         case "Core Lightning": return .lightning
         case "Join Market": return .joinMarket
+        case "Block Explorer": return .explorer
         case "Silent Payments": return .silentPayments
         case "Nostr Connect": return .nostr
         case "Tor": return .tor
@@ -99,6 +101,7 @@ struct ContentView: View {
         case "Bitcoin Core", "Bitcoin Knots": return "Your bitcoin node"
         case "Core Lightning": return "Your lightning node, for Plasma"
         case "Join Market": return "Coinjoins"
+        case "Block Explorer": return "Every block and transaction, from your own node"
         case "Silent Payments": return "Scan for private payments"
         case "Nostr Connect": return "Reach your node from Fully Noded and Plasma"
         case "Tor": return "Onion services"
@@ -113,6 +116,7 @@ struct ContentView: View {
         case "Bitcoin Core", "Bitcoin Knots": return "bitcoinsign.circle"
         case "Core Lightning": return "bolt"
         case "Join Market": return "arrow.triangle.merge"
+        case "Block Explorer": return "cube"
         case "Silent Payments": return "eye.slash"
         case "Nostr Connect": return "antenna.radiowaves.left.and.right"
         case "Tor": return "network.badge.shield.half.filled"
@@ -171,6 +175,8 @@ struct ContentView: View {
                                         jmTaggedReleases: jmTaggedReleases
                                     )
                                 }
+                            } else if service.name == "Block Explorer" {
+                                BlockExplorerView()
                             } else if service.name == "Silent Payments" {
                                 SilentPaymentsView()
                             } else if service.name == "Nostr Connect" {
@@ -451,9 +457,9 @@ struct ContentView: View {
     
     private func rebuildServices() {
         if useKnots {
-            services = [bitcoinKnots, coreLightning, joinMarket, silentPayments, nostrConnect, tor, settings, help]
+            services = [bitcoinKnots, coreLightning, blockExplorer, joinMarket, silentPayments, nostrConnect, tor, settings, help]
         } else {
-            services = [bitcoinCore, coreLightning, joinMarket, silentPayments, nostrConnect, tor, settings, help]
+            services = [bitcoinCore, coreLightning, blockExplorer, joinMarket, silentPayments, nostrConnect, tor, settings, help]
         }
     }
     

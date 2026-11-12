@@ -26,24 +26,16 @@ class DataManager: NSObject {
     }
     
     class func retrieve(entityName: Entity, completion: @escaping (([String:Any]?)) -> Void) {
-        let context = DataManager.shared.container.viewContext
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName.rawValue)
         fetchRequest.returnsObjectsAsFaults = false
         fetchRequest.resultType = .dictionaryResultType
         
-        Task.detached {
-            do {
-                if let results = try context.fetch(fetchRequest) as? [[String:Any]], results.count > 0 {
-                    completion(results[0])
-                } else {
-                    completion(nil)
-                }
-                
-            } catch {
-                completion(nil)
-            }
+        // Its own context each time: every RPC call comes through here, often several at once, and a
+        // context isn't safe to use from more than one thread.
+        DataManager.shared.container.performBackgroundTask { context in
+            let results = (try? context.fetch(fetchRequest)) as? [[String:Any]]
+            completion(results?.first)
         }
-        
     }
     
     

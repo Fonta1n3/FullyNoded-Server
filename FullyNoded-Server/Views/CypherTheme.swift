@@ -72,6 +72,7 @@ struct CypherPalette: Equatable {
     static let bitcoinKnots = CypherPalette(0.34, 0.82, 0.96)    // toward cyan
     static let lightning = CypherPalette(0.48, 0.70, 1.0)        // cornflower
     static let joinMarket = CypherPalette(0.30, 0.86, 0.90)      // aqua
+    static let explorer = CypherPalette(0.42, 0.80, 0.98)        // ice blue
     static let nostr = CypherPalette(0.56, 0.68, 1.0)            // periwinkle
     static let tor = CypherPalette(0.60, 0.64, 1.0)              // blue-lavender
     static let settings = CypherPalette(0.50, 0.66, 0.92)        // slate blue

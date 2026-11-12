@@ -11,7 +11,7 @@ import Foundation
 class BitcoinRPC {
     
     static let shared = BitcoinRPC()
-    lazy var session = URLSession(configuration: .default)
+    let session = URLSession(configuration: .default)
     
     func command(method: String, params: [String: Any], completion: @escaping ((result: Any?, error: String?)) -> Void) {
         let port = UserDefaults.standard.string(forKey: "port") ?? "8332"

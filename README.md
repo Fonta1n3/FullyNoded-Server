@@ -39,6 +39,7 @@ installed locally you can connect to them with one click, or scan the QR code to
 - ⚡ **Core Lightning for Plasma**: installs Core Lightning with Homebrew, runs it next to your node and pairs it with 
 [Plasma](https://github.com/Fonta1n3/Plasma) on your iPhone with a QR code. Plasma talks to it through Nostr Connect 
 (end-to-end encrypted, any network), other wallets over Tor (see [Core Lightning](#core-lightning)).
+- 🔍 A **block explorer and transaction analyzer** that only ever asks your own node: every block read whole, a privacy rating and decoded data for any transaction, raw transactions and PSBTs checked before broadcast (see [Block explorer](#block-explorer)).
 - 🧪 Scans your node for **silent payments** (BIP352) sent to you and imports them, watch-only, into your Fully Noded 
 wallet so Fully Noded can see and spend them (experimental, see [Silent Payments](#silent-payments-bip352)).
 
@@ -79,6 +80,16 @@ and does not do anything at all unless you click one of the menu bar app options
     - [Downloading and configuring](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Views/JoinMarketTaggedReleases.swift)
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
+## Block explorer
+Sitting next to your node, FNS can read whole blocks, your whole UTXO set and your mempool as a block arrives, and
+nothing you look at leaves your Mac. Search for any height, hash, txid, address, raw transaction or PSBT, see what every
+transaction in a block is doing, find where any output was spent without an index, and check a transaction's flow,
+privacy and whether your node would accept it before it's broadcast.
+
+<img src="./Images/explorer/blocks.png" alt="Block explorer" width="800"/>
+
+Full guide: [BlockExplorer.md](./BlockExplorer.md).
+
 ## Nostr Connect
 
 A fast alternative to Tor for Fully Noded. Fully Noded encrypts each RPC call to this Mac (NIP-44) and publishes it as an 
