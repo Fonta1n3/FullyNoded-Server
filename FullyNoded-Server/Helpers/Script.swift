@@ -15,8 +15,6 @@ public enum SCRIPT: String {
     case cloneJmMaster
     case launchExtractKnots
     case extractKnots
-    case launchUpdateLightning
-    case updateLightning
     case obWatcher
     case launchObWatcher
     case launchIncreaseGapLimit
@@ -27,15 +25,8 @@ public enum SCRIPT: String {
     case startJm
     case launchJMInstaller
     case installJoinMarket
-    case getRune
-    case lightningNodeId
     case killBitcoind
-    case stopLightning
-    case startLightning
-    case lightingRunning
-    case lightningInstalled
     case launchLightningInstall
-    case installLightning
     case checkForBrew
     case launchVerifier
     case launchInstaller
@@ -55,11 +46,14 @@ public enum SCRIPT: String {
     //case deleteWallet
     case startBitcoin
     case mineBlocks
+    case createRelayCert
     
     var stringValue:String {
         switch self {
         case .mineBlocks:
             return "MineBlocks"
+        case .createRelayCert:
+            return "CreateRelayCert"
         case .startKnots:
             return "StartKnots"
         case .deleteWallet:
@@ -72,10 +66,6 @@ public enum SCRIPT: String {
             return "LaunchKnotsExtractor"
         case .extractKnots:
             return "ExtractKnotsTarball"
-        case .launchUpdateLightning:
-            return "LaunchUpdateLightning"
-        case .updateLightning:
-            return "UpdateLightning"
         case .obWatcher:
             return "ObWatcher"
         case .launchObWatcher:
@@ -96,24 +86,10 @@ public enum SCRIPT: String {
             return "LaunchJMInstaller"
         case .installJoinMarket:
             return "InstallJoinMarket"
-        case .getRune:
-            return "GetRune"
-        case .lightningNodeId:
-            return "LightningNodeId"
         case .killBitcoind:
             return "KillBitcoind"
-        case .stopLightning:
-            return "StopLightning"
-        case.startLightning:
-            return "StartLightning"
-        case .lightingRunning:
-            return "IsLightningOn"
-        case .lightningInstalled:
-            return "CheckForLightning"
         case .launchLightningInstall:
             return "LaunchLightningInstall"
-        case .installLightning:
-            return "InstallLightning"
         case .checkForBrew:
             return "BrewInstalled"
         case .launchVerifier:

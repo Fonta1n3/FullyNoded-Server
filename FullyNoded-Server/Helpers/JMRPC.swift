@@ -4,128 +4,78 @@
 //
 //  Created by Peter Denton on 10/14/24.
 //
+//  Talks to this Mac's JoinMarket wallet daemon (jmwalletd) over its REST API on
+//  https://localhost:28183. Completions run on the main queue and are always called.
+//
 
 import Foundation
 
 class JMRPC: NSObject, URLSessionDelegate {
     
     static let sharedInstance = JMRPC()
-    //let torClient = TorClient.sharedInstance
-   // private var attempts = 0
-    private var token:String?
-    //private var isNostr = false
-    private lazy var sessionConfiguration: URLSessionConfiguration = .default
+    static let port = 28183
 
-    // The tor client url session including the tor configuration.
-    lazy var session = URLSession(configuration: sessionConfiguration)
+    /// One session for the app's lifetime (a session per call was never invalidated, so each
+    /// poll leaked one along with its delegate).
+    private lazy var session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 10
+        return URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
+    }()
     
     private override init() {}
     
     func command(method: JM_REST, param: [String:Any]?, completion: @escaping ((response: Any?, errorDesc: String?)) -> Void) {
-        //attempts += 1
-        
-        //var paramToUse:[String:Any] = [:]
-        //        if let param = param {
-        //            paramToUse = param
-        //        }
-        
-        session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: .main)
-        
-        let walletUrl = "https://localhost:28183/\(method.stringValue)"
-        
-        guard let url = URL(string: walletUrl) else {
-            completion((nil, "url error"))
+        guard let url = URL(string: "https://localhost:\(Self.port)/\(method.stringValue)") else {
+            DispatchQueue.main.async { completion((nil, "url error")) }
             return
         }
         
         var request = URLRequest(url: url)
-        let timeout = 10.0
-        let httpMethod = "GET"
-        
-        //            if !paramToUse.isEmpty {
-        //                guard let jsonData = try? JSONSerialization.data(withJSONObject: paramToUse) else {
-        //                    completion((nil, "Unable to encode your params into json data."))
-        //                    return
-        //                }
-        //                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        //                request.setValue("\(jsonData.count)", forHTTPHeaderField: "Content-Length")
-        //                request.httpBody = jsonData
-        //            }
-        
-        request.timeoutInterval = timeout
-        request.httpMethod = httpMethod
-        request.url = url
+        request.timeoutInterval = 10
+        request.httpMethod = "GET"
         
 #if DEBUG
-        print("url = \(url)")
-        print("httpMethod = \(String(describing: httpMethod))")
-        print("self.token = \(String(describing: self.token))")
-        //print("httpBody = \(paramToUse)")
+        print("[jm] GET \(url)")
 #endif
         
-        
-        let task = session.dataTask(with: request as URLRequest) { [weak self] (data, response, error) in
-            guard let _ = self else { return }
-            
-            guard let urlContent = data else {
-                guard let error = error else {
-                    completion((nil, "Unknown error."))
-                    return
-                }
-                
+        let task = session.dataTask(with: request) { (data, response, error) in
+            if let error = error {
 #if DEBUG
-                print("error: \(error.localizedDescription)")
+                print("[jm] error: \(error.localizedDescription)")
 #endif
                 completion((nil, error.localizedDescription))
                 return
             }
-            
-            guard let json = try? JSONSerialization.jsonObject(with: urlContent, options: .mutableLeaves) as? [String: Any] else {
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("httpResponse.statusCode: \(httpResponse.statusCode)")
-                } else {
-                    completion((nil, "Unable to decode the response..."))
-                }
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data, options: .mutableLeaves) as? [String: Any] else {
+                completion((nil, status == 0 ? "Unable to decode the response..." : "JoinMarket answered with HTTP \(status)."))
                 return
             }
             
 #if DEBUG
-            print("json: \(json)")
+            print("[jm] json: \(json)")
 #endif
             
-            guard let message = json["message"] as? String else {
-                completion((json, nil))
+            if let message = json["message"] as? String, !(200..<300).contains(status) || json.count == 1 {
+                completion((nil, message))
                 return
             }
-            completion((nil, message))
+            completion((json, nil))
         }
         task.resume()
     }
     
+    /// jmwalletd uses a self-signed certificate (made by StartJm.command): trust it for this
+    /// Mac's own daemon only.
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        guard let trust = challenge.protectionSpace.serverTrust else {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              challenge.protectionSpace.host == "localhost" || challenge.protectionSpace.host == "127.0.0.1",
+              let trust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
             return
         }
-        
-        let credential = URLCredential(trust: trust)
-        
-//        if let certData = self.cert,
-//            let remoteCert = SecTrustGetCertificateAtIndex(trust, 0) {
-//            let remoteCertData = SecCertificateCopyData(remoteCert) as NSData
-//            let certData = Data(base64Encoded: certData)
-//
-//            if let pinnedCertData = certData,
-//                remoteCertData.isEqual(to: pinnedCertData as Data) {
-//                print("using cert")
-//                completionHandler(.useCredential, credential)
-//            } else {
-//                completionHandler(.rejectProtectionSpace, nil)
-//            }
-//        } else {
-//            print("using cert")
-//            completionHandler(.useCredential, credential)
-//        }
-        
-        completionHandler(.useCredential, credential)
+        completionHandler(.useCredential, URLCredential(trust: trust))
     }
 }

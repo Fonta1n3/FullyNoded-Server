@@ -19,7 +19,7 @@ shasum -a 256 FullyNoded-Server.dmg
 
 ## What does it do?
 - It first checks for xcode command line tools and brew, if either do not exist you will be prompted to install them.
-- Install any version of Bitcoin Core, Join Market and Tor, allowing you to very easily manage and connect to your servers remotely 
+- Install any version of Bitcoin Core, Join Market, Core Lightning and Tor, allowing you to very easily manage and connect to your servers remotely 
 or locally to power Bitcoin wallets.
 - GPG verifies the Bitcoin Core download files and verifies hashes of the binary during the installation process (it automates a 
 secure installation).
@@ -34,6 +34,12 @@ directories.
 - Easily connect local and remote wallets with the Quick Connect button. If Fully Noded, Unify, FN-Join Market (the wallets) are 
 installed locally you can connect to them with one click, or scan the QR code to connect remotely.
 - In the help section there are links for installing all Fully Noded apps/wallets which can be used with FNS.
+- ⚡ **Nostr Connect**: the fast way to connect Fully Noded. Its RPC calls travel end-to-end encrypted through a nostr relay 
+(built in, or a public one) instead of Tor, so connections take about a second (see [Nostr Connect](#nostr-connect)).
+- ⚡ **Core Lightning for Plasma**: installs Core Lightning with Homebrew, runs it next to your node and pairs it with 
+[Plasma](https://github.com/Fonta1n3/Plasma) on your iPhone with a QR code. Plasma talks to it through Nostr Connect 
+(end-to-end encrypted, any network), other wallets over Tor (see [Core Lightning](#core-lightning)).
+- 🔍 A **block explorer and transaction analyzer** that only ever asks your own node: every block read whole, a privacy rating and decoded data for any transaction, raw transactions and PSBTs checked before broadcast (see [Block explorer](#block-explorer)).
 - 🧪 Scans your node for **silent payments** (BIP352) sent to you and imports them, watch-only, into your Fully Noded 
 wallet so Fully Noded can see and spend them (experimental, see [Silent Payments](#silent-payments-bip352)).
 
@@ -74,6 +80,42 @@ and does not do anything at all unless you click one of the menu bar app options
     - [Downloading and configuring](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Views/JoinMarketTaggedReleases.swift)
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
+## Block explorer
+Sitting next to your node, FNS can read whole blocks, your whole UTXO set and your mempool as a block arrives, and
+nothing you look at leaves your Mac. Search for any height, hash, txid, address, raw transaction or PSBT, see what every
+transaction in a block is doing, find where any output was spent without an index, and check a transaction's flow,
+privacy and whether your node would accept it before it's broadcast.
+
+<img src="./Images/explorer/blocks.png" alt="Block explorer" width="800"/>
+
+Full guide: [BlockExplorer.md](./BlockExplorer.md).
+
+## Nostr Connect
+
+A fast alternative to Tor for Fully Noded. Fully Noded encrypts each RPC call to this Mac (NIP-44) and publishes it as an 
+ephemeral nostr event; FNS's bridge decrypts it, asks your local Bitcoin Core and sends the encrypted answer back. Run the 
+built-in relay for your local network or VPN (e.g. Tailscale), or add a public relay to reach your node from anywhere. Relays 
+only ever see ciphertext, and only devices you pair can use your node. With **Encrypt connections (wss://)** on (macOS 15+), 
+the built-in relay uses TLS with a self-signed certificate made by openssl and pinned in the pairing link.
+
+Open **Nostr Connect** in the sidebar, set up a relay, tap **Pair Fully Noded** and scan the QR in Fully Noded.
+
+Full details: [NostrConnect.md](./NostrConnect.md).
+
+## Core Lightning
+
+A Lightning node next to your Bitcoin node, made for [Plasma](https://github.com/Fonta1n3/Plasma), the Core Lightning 
+wallet for iPhone. Install it from the Setup Assistant's **Lightning** step or from **Core Lightning** in the sidebar: 
+Homebrew installs it, and FNS configures it for your node's network, connects it to peers through Tor and leaves any 
+existing node in `~/.lightning` as it is.
+
+Tap **Pair Plasma** and scan the QR in Plasma. Plasma connects through Nostr Connect: each command is end-to-end 
+encrypted through a wss:// relay to FNS, which runs it on Core Lightning's REST API (clnrest) with the pairing's rune. It 
+works on any network with no open port or VPN, and a read-only pairing can't spend. Wallets that support CLNRest 
+(Zeus, for example) can connect over Tor instead.
+
+Full details: [CoreLightning.md](./CoreLightning.md).
+
 ## Silent Payments (BIP352)
 > 🧪 Experimental, in development on the `Silent-Payments` branch. Test with small amounts.
 
@@ -81,7 +123,7 @@ A silent payment address (`sp1…`) is one static address you can share anywhere
 unlinkable Taproot output. Finding those payments means checking every transaction with your *scan key*. FNS does that 
 with your own node, so no third party ever learns which payments are yours.
 
-1. In **Fully Noded** open the wallet you'll spend from, go to its *Silent payments* section and tap **FN-SERVER LINK** 
+1. In **Fully Noded** open the wallet you'll spend from, go to its **Receive** screen, pick *Silent payment* and tap **FN-Server link** 
 (authentication required). It's one QR / `fnsp://` link with your silent payment address, your scan private key and the 
 wallet's name on your node. (From a signer: *SP Scan Private Key* → *Fully Noded Server QR*.)
 2. In **FNS** open **Silent Payments** (sidebar, or Bitcoin Core → Utilities):
@@ -130,6 +172,8 @@ config will be commented out, of course this can easily be overridden by opening
 - Bitcoin Core
     - Installation.
     - GPG Verification.
+    - Update or downgrade to any release (stops the node, verifies the download against SHA256SUMS, starts it again), 
+      or switch back to a version that's already installed without downloading it.
     - Start/Stop.
     - Switch networks.
     - Reachable via JSON RPC HTTP REST over Tor.
@@ -140,10 +184,18 @@ config will be commented out, of course this can easily be overridden by opening
     - Reindex.
     - Silent payments scanner (experimental): import keys, background scanning, status.
     
+- Core Lightning
+    - Installation and updates with Homebrew.
+    - Start/Stop, following the Bitcoin node's network.
+    - Pair Plasma over Nostr Connect (wss:// relays → clnrest) with full access or read-only runes; revoke all runes.
+    - CLNRest over Tor for other wallets.
+    - Peers over Tor, node ID, channels, funds, deposit address, log.
+
 - Join Market
     - Installation.
     - Automatic configuration (auto creates jm_wallet.dat for example).
     - Start/Stop.
+    - Checks joinmarket.cfg's network and RPC port against your node, with a one-click fix.
     - Open config.
     - Quick Connect for Fully Noded - Join Market.
     - Increase gap limit.
@@ -151,7 +203,8 @@ config will be commented out, of course this can easily be overridden by opening
     
 - Tor
     - Tor is integrated, a green check will display if its running.
-    - More coming soon for the Tor UI.
+    - Stop/Start, new circuits, bootstrap progress, live log.
+    - Lists every onion service with its address.
     - Hidden services are automatically configured. Your torrc can be found [here](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Helpers/Torrc.swift).
     ```
     HiddenServiceDir .../host/joinmarket/

@@ -9,18 +9,35 @@ import Foundation
 
 enum ConfigureJM {
     
-    static func configureNetwork() {
-        var chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
-        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
+    static let confPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
+
+    /// joinmarket.cfg's `network` for a bitcoind chain (JoinMarket runs regtest as "testnet").
+    static func jmNetwork(chain: String) -> String {
         switch chain {
-        case "main": chain = "mainnet"
-        case "regtest": chain = "testnet"
-        case "test": chain = "testnet"
-        default:
-            break
+        case "main": return "mainnet"
+        case "regtest", "test", "testnet4": return "testnet"
+        default: return chain
         }
-        updateConf(key: "network", value: chain)
+    }
+
+    /// Points JoinMarket at the node's current network and RPC port.
+    static func configureNetwork() {
+        let chain = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
+        let port = UserDefaults.standard.object(forKey: "port") as? String ?? "8332"
+        updateConf(key: "network", value: jmNetwork(chain: chain))
         updateConf(key: "rpc_port", value: port)
+    }
+
+    /// The (uncommented) value of `key` in joinmarket.cfg.
+    static func confValue(_ key: String) -> String? {
+        guard let data = FileManager.default.contents(atPath: confPath),
+              let conf = String(data: data, encoding: .utf8) else { return nil }
+        for line in conf.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("\(key) =") || trimmed.hasPrefix("\(key)=") else { continue }
+            return trimmed.split(separator: "=", maxSplits: 1).last.map { $0.trimmingCharacters(in: .whitespaces) }
+        }
+        return nil
     }
     
     static func configureJm(completion: @escaping ((configured: Bool, error: String?)) -> Void) {
@@ -33,6 +50,7 @@ enum ConfigureJM {
             try FileManager.default.createDirectory(atPath: tempDirPath.path(), withIntermediateDirectories: true, attributes: nil)
         } catch {
             completion((false, error.localizedDescription))
+            return
         }
         
         let cookie = "/Users/\(NSUserName())/.fullynoded/JoinMarket/.temp/.cookie"
@@ -57,6 +75,7 @@ enum ConfigureJM {
             try cookieContents.write(to: cookieUrl, atomically: true, encoding: String.Encoding.utf8)
         } catch {
             completion((false, error.localizedDescription))
+            return
         }
         
         
@@ -98,25 +117,27 @@ enum ConfigureJM {
         }
     }
     
+    /// Sets `key = value` in joinmarket.cfg (uncommenting it if needed) and comments out
+    /// rpc_user / rpc_password: JoinMarket uses the cookie file. The file is rewritten once, line by
+    /// line, so one change can't undo another (as writing per matching line did before).
     static func updateConf(key: String, value: String) {
-        let jmConfPath = "/Users/\(NSUserName())/Library/Application Support/joinmarket/joinmarket.cfg"
-        guard fileExists(path: jmConfPath) else { return }
-        guard let conf = try? Data(contentsOf: URL(fileURLWithPath: jmConfPath)) else {
-            return
-        }
-        guard let string = String(data: conf, encoding: .utf8) else {
-            return
-        }
-        let arr = string.split(separator: "\n")
-        for item in arr {
-            let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
-            if item.hasPrefix("\(key) =") || item.hasPrefix("#\(key) =") {
-                let newConf = string.replacingOccurrences(of: item, with: uncommentedKey + " = " + value)
-                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
-            } else if item.hasPrefix("rpc_password = ") || item.hasPrefix("rpc_user = ") {
-                let newConf = string.replacingOccurrences(of: item, with: "#\(item)")
-                try? newConf.write(to: URL(fileURLWithPath: jmConfPath), atomically: false, encoding: .utf8)
+        guard let data = FileManager.default.contents(atPath: confPath),
+              let conf = String(data: data, encoding: .utf8) else { return }
+        let uncommentedKey = key.replacingOccurrences(of: "#", with: "")
+        var updated = false
+        let lines = conf.components(separatedBy: "\n").map { line -> String in
+            if !updated && (line.hasPrefix("\(uncommentedKey) =") || line.hasPrefix("#\(uncommentedKey) =")) {
+                updated = true
+                return uncommentedKey + " = " + value
             }
+            if line.hasPrefix("rpc_password = ") || line.hasPrefix("rpc_user = ") {
+                return "#" + line
+            }
+            return line
+        }
+        let newConf = lines.joined(separator: "\n")
+        if newConf != conf {
+            try? newConf.write(toFile: confPath, atomically: true, encoding: .utf8)
         }
     }
     

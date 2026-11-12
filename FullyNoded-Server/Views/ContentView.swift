@@ -19,34 +19,28 @@ public struct Service: Identifiable {
 }
 
 struct ContentView: View {
+    @Environment(\.openWindow) private var openWindow
     @State private var useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = TorClient.sharedInstance.version ?? ""
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
-    @State private var isInstallingLightning = false
     @State private var torProgress = 0.0
     @State private var showError = false
     @State private var message = ""
     @State private var services: [Service] = []
     @State private var bitcoinCoreInstalled = false
-    @State private var lightningInstalled = false
     @State private var joinMarketInstalled = false
     @State private var promptToInstallXcode = false
     @State private var promptToInstallBitcoin = false
     @State private var startCheckingForBitcoinInstall = false
-    @State private var startCheckingForLightningInstall = false
     @State private var bitcoinInstallSuccess = false
     @State private var timeRemaining = 90
     @State private var promptToInstallBrew = false
-    @State private var promptToInstallLightning = false
     @State private var torRunning = false
     @State private var showingBitcoinReleases = false
     @State private var env: [String: String] = [:]
     @State private var jmTaggedReleases: TaggedReleases = []
     @State private var taggedReleases: TaggedReleases? = nil
-    @State private var showTorrc = false
-    @State private var showTorLog = true
     @State private var bitcoinEnvValues: BitcoinEnvValues = .init(dictionary: [
         "binaryName": "bitcoin-27.2-arm64-apple-darwin.tar.gz",
         "version": "27.2",
@@ -59,23 +53,85 @@ struct ContentView: View {
     
     private let timerForBitcoinKnotsInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForBitcoinInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    private let timerForLightningInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForJMInstall = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let timerForTor = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     private let bitcoinCore = Service(name: "Bitcoin Core", id: UUID())
     private let bitcoinKnots = Service(name: "Bitcoin Knots", id: UUID())
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
+    private let blockExplorer = Service(name: "Block Explorer", id: UUID())
     private let silentPayments = Service(name: "Silent Payments", id: UUID())
+    private let nostrConnect = Service(name: "Nostr Connect", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
     private let help = Service(name: "Help", id: UUID())
     private let settings = Service(name: "Settings", id: UUID())
     
 
+    /// Each service's page has its own colour (CypherPalette).
+    static func palette(for service: String) -> CypherPalette {
+        switch service {
+        case "Bitcoin Core": return .bitcoinCore
+        case "Bitcoin Knots": return .bitcoinKnots
+        case "Core Lightning": return .lightning
+        case "Join Market": return .joinMarket
+        case "Block Explorer": return .explorer
+        case "Silent Payments": return .silentPayments
+        case "Nostr Connect": return .nostr
+        case "Tor": return .tor
+        case "Settings": return .settings
+        case "Help": return .help
+        default: return .standard
+        }
+    }
+
+    /// The sidebar's sections: the node, what runs on it, then the app itself.
+    static func groups(_ services: [Service]) -> [(title: String, services: [Service])] {
+        let nodes = ["Bitcoin Core", "Bitcoin Knots", "Core Lightning"]
+        let app = ["Settings", "Help"]
+        return [
+            ("NODE", services.filter { nodes.contains($0.name) }),
+            ("SERVICES", services.filter { !nodes.contains($0.name) && !app.contains($0.name) }),
+            ("APP", services.filter { app.contains($0.name) })
+        ].filter { !$0.1.isEmpty }.map { (title: $0.0, services: $0.1) }
+    }
+
+    /// The window subtitle under each page's title.
+    static func tagline(for service: String) -> String {
+        switch service {
+        case "Bitcoin Core", "Bitcoin Knots": return "Your bitcoin node"
+        case "Core Lightning": return "Your lightning node, for Plasma"
+        case "Join Market": return "Coinjoins"
+        case "Block Explorer": return "Every block and transaction, from your own node"
+        case "Silent Payments": return "Scan for private payments"
+        case "Nostr Connect": return "Reach your node from Fully Noded and Plasma"
+        case "Tor": return "Onion services"
+        case "Settings": return "Configuration"
+        case "Help": return "Support & links"
+        default: return ""
+        }
+    }
+
+    static func symbol(for service: String) -> String {
+        switch service {
+        case "Bitcoin Core", "Bitcoin Knots": return "bitcoinsign.circle"
+        case "Core Lightning": return "bolt"
+        case "Join Market": return "arrow.triangle.merge"
+        case "Block Explorer": return "cube"
+        case "Silent Payments": return "eye.slash"
+        case "Nostr Connect": return "antenna.radiowaves.left.and.right"
+        case "Tor": return "network.badge.shield.half.filled"
+        case "Settings": return "gearshape"
+        case "Help": return "questionmark.circle"
+        default: return "circle"
+        }
+    }
+
     var body: some View {
             NavigationView {
                 List {
-                    ForEach(services) { service in
+                    ForEach(Self.groups(services), id: \.title) { group in
+                    Section {
+                    ForEach(group.services) { service in
                         NavigationLink {
                         Group {
                             if service.name == "Bitcoin Core" {
@@ -102,33 +158,8 @@ struct ContentView: View {
                                         jmTaggedReleases: []
                                     )
                                 }
-                                
-                                
-//                            } else if service.name == "Core Lightning" {
-//                                if isInstallingLightning {
-//                                    HStack() {
-//                                        ProgressView()
-//                                            .scaleEffect(0.5)
-//                                        Text("Installing and configuring Core Lightning. (wait for the terminal script to complete)")
-//                                    }
-//                                    .frame(maxWidth: .infinity, alignment: .topLeading)
-//                                    .padding([.leading, .top])
-//                                    
-//                                } else if lightningInstalled {
-//                                    CoreLightning()
-//                                } else {
-//                                    FNIcon()
-//                                    Spacer()
-//                                    if bitcoinCoreInstalled {
-//                                        Button("Install Core Lightning") {
-//                                            installLightning()
-//                                        }
-//                                        Spacer()
-//                                    } else {
-//                                        Text("First install Bitcoin Core.")
-//                                    }
-//                                }
-                                
+                            } else if service.name == "Core Lightning" {
+                                CoreLightning()
                             } else if service.name == "Join Market" {
                                 if joinMarketInstalled {
                                     JoinMarket()
@@ -144,115 +175,31 @@ struct ContentView: View {
                                         jmTaggedReleases: jmTaggedReleases
                                     )
                                 }
+                            } else if service.name == "Block Explorer" {
+                                BlockExplorerView()
                             } else if service.name == "Silent Payments" {
                                 SilentPaymentsView()
+                            } else if service.name == "Nostr Connect" {
+                                NostrConnectView()
                             } else if service.name == "Tor" {
-                                FNIcon()
-                                HStack() {
-                                    if torProgress < 100.0 {
-                                        ProgressView("\(torLabel) bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
-                                            .padding([.leading, .trailing])
-                                            .frame(alignment: .topLeading)
-                                    } else {
-                                        if torRunning {
-                                            Image(systemName: "circle.fill")
-                                                .foregroundStyle(Cypher.accent)
-                                                .padding([.leading])
-                                            Text("\(torLabel) running")
-                                        } else {
-                                            Image(systemName: "circle.fill")
-                                                .foregroundStyle(Cypher.amber)
-                                                .padding([.leading])
-                                            Text("\(torLabel) stopped")
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                
-                                HStack{
-                                    switch TorClient.sharedInstance.state {
-                                    case .connected, .started, .refreshing:
-                                        Button {
-                                            TorClient.sharedInstance.resign()
-                                            torRunning = false
-                                            torProgress = 100
-                                        } label: {
-                                            Text("Stop")
-                                        }
-                                        .padding(.leading)
-                                    case .stopped:
-                                        Button {
-                                            TorClient.sharedInstance.start(delegate: nil)
-                                            torProgress = 0
-                                        } label: {
-                                            Text("Start")
-                                        }
-                                        .padding(.leading)
-                                    default:
-                                        Text("Tor state is \(TorClient.sharedInstance.state).")
-                                            .padding(.leading)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    
-                                    Button {
-                                        showTorrc = !showTorrc
-                                    } label: {
-                                        if !showTorrc {
-                                            Text("Show Tor config")
-                                        } else {
-                                            Text("Hide Tor Config")
-                                        }
-                                    }
-                                    
-                                    Button {
-                                        openTorDir()
-                                    } label: {
-                                        Text("Open Tor Directory")
-                                    }
-                                    
-                                    Button {
-                                        showTorLog = !showTorLog
-                                    } label: {
-                                        if !showTorLog {
-                                            Text("Show Tor Log")
-                                        } else {
-                                            Text("Hide Tor Log")
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                }
-                                
-                                if showTorrc {
-                                    ConfigTextView(
-                                        configString: Torrc.torrc,
-                                        title: "Torrc",
-                                        contentType: .plain
-                                    )
-                                }
-                                
-                                if showTorLog {
-                                    VStack() {
-                                        TorLogView()
-                                            .padding()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .background(Cypher.panel)
-                                            .overlay(Rectangle().stroke(Cypher.line, lineWidth: 1))
-                                    }
-                                    .padding()
-                                    
-                                }
-                                
-                                Spacer()
+                                TorView()
                             } else if service.name == "Help" {
                                 Help()
                             } else if service.name == "Settings" {
                                 Settings(bitcoinEnvValues: bitcoinEnvValues, knotsEnvValues: knotsEnvValues)
                             }
                         }
-                        .cypherPage()
+                        .modifier(PageChrome(service: service.name))
                         } label: {
-                            HStack() {
+                            HStack(spacing: 10) {
+                                Image(systemName: Self.symbol(for: service.name))
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Cypher.accent)
+                                    .frame(width: 20)
+                                Text(service.name)
+                                    .font(Cypher.mono(13, weight: .medium))
+                                    .foregroundStyle(Cypher.text)
+                                Spacer(minLength: 8)
                                 if service.name == "Bitcoin Core" {
                                     if bitcoinCoreInstalled {
                                         Image(systemName: "checkmark")
@@ -300,23 +247,9 @@ struct ContentView: View {
                                     }
                                 }
                                 
-//                                if service.name == "Core Lightning" {
-//                                    if lightningInstalled {
-//                                        Image(systemName: "checkmark")
-//                                            .foregroundStyle(Cypher.accent)
-//                                    } else {
-//                                        Image(systemName: "xmark")
-//                                            .foregroundStyle(Cypher.dim)
-//                                        EmptyView()
-//                                            .onReceive(timerForLightningInstall) { _ in
-//                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
-//                                                    lightningInstalled = true
-//                                                    isInstallingLightning = false
-//                                                    self.timerForLightningInstall.upstream.connect().cancel()
-//                                                }
-//                                            }
-//                                    }
-//                                }
+                                if service.name == "Core Lightning" {
+                                    LightningSidebarIcon()
+                                }
                                 
                                 if service.name == "Join Market" {
                                     if joinMarketInstalled {
@@ -342,6 +275,10 @@ struct ContentView: View {
                                 if service.name == "Silent Payments" {
                                     SPSidebarStatusIcon()
                                 }
+
+                                if service.name == "Nostr Connect" {
+                                    NostrConnectSidebarIcon()
+                                }
                                 
                                 if service.name == "Tor" {
                                     if torProgress < 100.0 {
@@ -365,34 +302,46 @@ struct ContentView: View {
                                         }
                                 }
                                 
-                                if service.name == "Help" {
-                                    Image(systemName: "questionmark.circle")
-                                        .foregroundStyle(.secondary)
-                                    Text(service.name)
-                                        .foregroundStyle(.secondary)
-                                } else if service.name == "Settings" {
-                                    Image(systemName: "gearshape")
-                                        .foregroundStyle(.secondary)
-                                    Text(service.name)
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Text(service.name)
-                                }
                             }
-                            
+                            .font(.system(size: 11, weight: .semibold))
+                            .padding(.vertical, 3)
                         }
                     }
+                    } header: {
+                        Text(group.title)
+                            .font(Cypher.mono(10, weight: .bold))
+                            .foregroundStyle(Cypher.dim)
+                            .padding(.top, 6)
+                    }
+                    }
                 }
-                .padding()
+                .padding(.vertical)
                 .listStyle(.sidebar)
+                .frame(minWidth: 250)
                 .background(Cypher.panel)
                 .safeAreaInset(edge: .top) {
-                    HStack {
-                        CypherCaption("FN-Server")
+                    HStack(spacing: 10) {
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("FULLY NODED")
+                                .font(Cypher.mono(12, weight: .bold))
+                                .foregroundStyle(Cypher.accent)
+                            Text("SERVER")
+                                .font(Cypher.mono(10, weight: .semibold))
+                                .foregroundStyle(Cypher.dim)
+                                .kerning(3)
+                        }
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(Cypher.line).frame(height: 1).padding(.horizontal, 16)
+                    }
                 }
                 VStack(spacing: 8) {
                     CypherCaption("Fully Noded Server")
@@ -401,30 +350,37 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Cypher.bg)
+                .navigationTitle("Fully Noded Server")
             }
+            .modifier(MainToolbar(useKnots: useKnots))
         
         .onAppear(perform: {
-            if isInitialLoad {
-                bootTor()
-            }
-            checkForXcode()
+            guard isInitialLoad else { return }
+            bootTor()
+            // The sidebar doesn't wait for the developer tool checks (only JoinMarket needs them).
+            getSavedValues()
+            presentSetupAssistantIfNeeded()
         })
-//        .alert("Install Core Lightning?", isPresented: $promptToInstallLightning) {
-//            Button("OK") {
-//                installLightning()
-//            }
-//            Button("Cancel", role: .cancel) {}
-//        }
+        // Its own window (a sheet was taller than the main window and got clipped).
+        .onReceive(NotificationCenter.default.publisher(for: .showSetupAssistant)) { _ in
+            openWindow(id: "SetupAssistant")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .setupAssistantFinished)) { _ in
+            // New implementation / network / install: reload what the sidebar shows.
+            useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
+            getSavedValues()
+        }
         .alert(message, isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
         .alert("Python 3.10-3.12 is a Join Market dependency. Would you like to see a guide on how to easily install it?", isPresented: $promptToShowPythonGuide) {
                     Link("Open Python install guide", destination: URL(string: "https://www.codingforentrepreneurs.com/guides/install-python-on-macos")!)
         }
-        .alert("Install Brew? Core Lightning and Join Market installation relies on Brew.", isPresented: $promptToInstallBrew) {
-            Button("OK", role: .cancel) {
+        .alert("Install Homebrew? Join Market's installation relies on it.", isPresented: $promptToInstallBrew) {
+            Button("Install Homebrew") {
                 ScriptUtil.runScript(script: .installHomebrew, env: nil, args: nil) { (_, _, _) in }
             }
+            Button("Not now", role: .cancel) {}
         }
         .alert("Install Xcode Command Line Tools? This is required for Fully Noded - Server to function.", isPresented: $promptToInstallXcode, actions: {
             Button("OK", role: .cancel) {
@@ -439,10 +395,6 @@ struct ContentView: View {
         .alert("A terminal should have launched to install Bitcoin Core, close the terminal window when it says its finished.", isPresented: $startCheckingForBitcoinInstall) {
             Button("OK", role: .cancel) {}
         }        
-    }
-    
-    private func openTorDir() {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Torrc.torPath())
     }
     
     private func checkForXcode() {
@@ -460,11 +412,6 @@ struct ContentView: View {
         }
     }
     
-    /// "Tor v0.4.9.3" once the running tor has reported its version, "Tor" until then.
-    private var torLabel: String {
-        torVersion.isEmpty ? "Tor" : "Tor v\(torVersion)"
-    }
-
     private func bootTor() {
         if TorClient.sharedInstance.state == .connected {
             torProgress = 100.0
@@ -473,12 +420,6 @@ struct ContentView: View {
         }
         TorClient.sharedInstance.showProgress = { progress in
             torProgress = Double(progress)
-        }
-        TorClient.sharedInstance.showVersion = { version in
-            torVersion = version
-        }
-        if let version = TorClient.sharedInstance.version {
-            torVersion = version
         }
         isInitialLoad = false
     }
@@ -489,59 +430,38 @@ struct ContentView: View {
                 promptToInstallBrew = true
                 return
             }
-            getSavedValues()
         }
     }
     
-//    private func installLightning() {
-//        isInstallingLightning = true
-//        DataManager.retrieve(entityName: .rpcCreds) { bitcoinRPCCreds in
-//            guard let bitcoinRPCCreds = bitcoinRPCCreds else {
-//                isInstallingLightning = false
-//                showMessage(message: "NO Bitcoin RPC Creds, create them?")
-//                return
-//            }
-//            
-//            guard let encryptedRpcPass = bitcoinRPCCreds["password"] as? Data else {
-//                isInstallingLightning = false
-//                showMessage(message: "Unable to get encrypted rpc password.")
-//                return
-//            }
-//            
-//            guard let decryptedRpcPass = Crypto.decrypt(encryptedRpcPass) else {
-//                isInstallingLightning = false
-//                showMessage(message: "Decrypting rpc password failed.")
-//                return
-//            }
-//            
-//            guard let rpcPass = String(data: decryptedRpcPass, encoding: .utf8) else {
-//                isInstallingLightning = false
-//                showMessage(message: "Encoding rpc password data as utf8 failed.")
-//                return
-//            }
-//            
-//            var lightningEnv: [String: String] = [:]
-//            lightningEnv["RPC_USER"] = UserDefaults.standard.string(forKey: "rpcuser")
-//            lightningEnv["RPC_PASSWORD"] = rpcPass
-//            lightningEnv["DATA_DIR"] = Defaults.shared.bitcoinCoreDataDir.replacingOccurrences(of: " ", with: "*")
-//            lightningEnv["PREFIX"] = bitcoinEnvValues.prefix
-//            var network = "bitcoin"
-//            if Defaults.shared.chain != "main" {
-//                 network = Defaults.shared.chain
-//            }
-//            lightningEnv["NETWORK"] = network
-//            
-//            ScriptUtil.runScript(script: .launchLightningInstall, env: lightningEnv, args: nil) { (output, rawData, errorMessage) in
-//                guard errorMessage == nil else {
-//                    if errorMessage != "" {
-//                        showMessage(message: errorMessage!)
-//                    }
-//                    return
-//                }
-//                return
-//            }
-//        }
-//    }
+    /// First run (setup never finished or skipped, and no node installed): open the Setup
+    /// Assistant, which covers the developer tools too. Otherwise the usual tool prompts.
+    private func presentSetupAssistantIfNeeded() {
+        guard !SetupAssistant.isComplete else {
+            checkForXcode()
+            return
+        }
+        NodeImplementation.core.installedEnv { coreEnv in
+            NodeImplementation.knots.installedEnv { knotsEnv in
+                DispatchQueue.main.async {
+                    if coreEnv == nil && knotsEnv == nil {
+                        openWindow(id: "SetupAssistant")
+                    } else {
+                        // Set up before the assistant existed: don't open it by itself.
+                        SetupAssistant.isComplete = true
+                        checkForXcode()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func rebuildServices() {
+        if useKnots {
+            services = [bitcoinKnots, coreLightning, blockExplorer, joinMarket, silentPayments, nostrConnect, tor, settings, help]
+        } else {
+            services = [bitcoinCore, coreLightning, blockExplorer, joinMarket, silentPayments, nostrConnect, tor, settings, help]
+        }
+    }
     
     private func getSavedValues() {
         DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
@@ -568,12 +488,7 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    if useKnots {
-                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    } else {
-                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-                    }
+                    rebuildServices()
                     checkForBitcoin()
                 }
                 
@@ -591,13 +506,7 @@ struct ContentView: View {
                 "CHAIN": self.bitcoinEnvValues.chain
             ]
             
-            if useKnots {
-                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
-            } else {
-                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
-            }
-                        
-            
+            rebuildServices()
             checkForBitcoin()
         }
     }
@@ -645,7 +554,6 @@ struct ContentView: View {
         } else {
             bitcoinCoreInstalled = false
             promptToInstallBitcoin = true
-            lightningInstalled = false
         }
     }
     
@@ -687,6 +595,116 @@ private let itemFormatter: DateFormatter = {
     formatter.timeStyle = .medium
     return formatter
 }()
+
+/// A sidebar page: its palette, and its name and tagline in the window's title bar.
+private struct PageChrome: ViewModifier {
+    let service: String
+
+    func body(content: Content) -> some View {
+        content
+            .cypherPage(ContentView.palette(for: service))
+            .navigationTitle(service)
+            .navigationSubtitle(ContentView.tagline(for: service))
+    }
+}
+
+/// The main window's toolbar: status chips and the Setup Assistant.
+private struct MainToolbar: ViewModifier {
+    let useKnots: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                // The square status chips sit on the bar itself: macOS 26 would otherwise put
+                // them on a rounded glass capsule that clips their corners.
+                if #available(macOS 26.0, *) {
+                    ToolbarItem(placement: .primaryAction) {
+                        ToolbarStatus(useKnots: useKnots)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .primaryAction) {
+                        ToolbarStatus(useKnots: useKnots)
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        NotificationCenter.default.post(name: .showSetupAssistant, object: nil)
+                    } label: {
+                        Label("Setup Assistant", systemImage: "wand.and.stars")
+                    }
+                    .help("Setup Assistant")
+                }
+            }
+            .toolbarBackground(Cypher.panel, for: .windowToolbar)
+            .toolbarBackground(.visible, for: .windowToolbar)
+    }
+}
+
+/// Window toolbar: network, the node, Tor and Nostr Connect at a glance (each a dot and a word).
+private struct ToolbarStatus: View {
+    let useKnots: Bool
+    @ObservedObject private var core = NodeMonitor.core
+    @ObservedObject private var knots = NodeMonitor.knots
+    @ObservedObject private var nostr = NostrConnectModel.shared
+
+    var body: some View {
+        // Tor isn't observable: re-read it every few seconds.
+        TimelineView(.periodic(from: .now, by: 3)) { _ in
+            HStack(spacing: 6) {
+                chip(NodeMonitor.networkName(Defaults.shared.chain).uppercased(), state: nil,
+                     help: "Bitcoin network")
+                chip(useKnots ? "KNOTS" : "CORE", state: nodeState, help: nodeHelp)
+                chip("TOR", state: TorClient.sharedInstance.state == .connected ? .ok
+                        : (TorClient.sharedInstance.state == .started || TorClient.sharedInstance.state == .refreshing ? .pending : .off),
+                     help: "Tor")
+                if nostr.relayEnabled || !nostr.pairings.isEmpty {
+                    chip("NOSTR", state: nostr.isConnected ? .ok : .pending, help: "Nostr Connect")
+                }
+            }
+        }
+    }
+
+    private enum ChipState { case ok, pending, off }
+
+    private var monitor: NodeMonitor { useKnots ? knots : core }
+
+    private var nodeState: ChipState? {
+        switch monitor.phase {
+        case .running: return .ok
+        case .starting, .stopping: return .pending
+        case .stopped, .failed: return .off
+        default: return nil
+        }
+    }
+
+    private var nodeHelp: String {
+        switch monitor.phase {
+        case .running: return "Node running"
+        case .starting, .stopping: return "Node changing state"
+        case .stopped: return "Node stopped"
+        case .failed(let reason): return "Node failed: \(reason)"
+        default: return "Node status: open its page to check"
+        }
+    }
+
+    private func chip(_ title: String, state: ChipState?, help: String) -> some View {
+        HStack(spacing: 5) {
+            if let state {
+                Circle()
+                    .fill(state == .ok ? AnyShapeStyle(Cypher.accent) : AnyShapeStyle(state == .pending ? Cypher.amber : Cypher.danger))
+                    .frame(width: 6, height: 6)
+            }
+            Text(verbatim: title)
+                .font(Cypher.mono(10, weight: .bold))
+                .foregroundStyle(state == nil ? AnyShapeStyle(Cypher.dim) : AnyShapeStyle(Cypher.text))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .overlay(Rectangle().stroke(Cypher.line, lineWidth: 1))
+        .help(help)
+    }
+}
 
 #Preview {
     ContentView()

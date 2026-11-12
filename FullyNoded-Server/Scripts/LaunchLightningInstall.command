@@ -3,13 +3,12 @@
 #  LaunchLightningInstall.command
 #  FullyNoded-Server
 #
-#  Created by Peter Denton on 9/5/24.
-#
+#  Runs InstallLightning.command in a Terminal window, so Homebrew's progress (and any password
+#  prompt) is visible.
 
-INSTALL_SCRIPT_PATH="/Users/$(whoami)/.fullynoded/installLightning.sh"
-LOG="/Users/$(whoami)/.fullynoded/fullynoded.log"
-touch $INSTALL_SCRIPT_PATH
-echo "\"$(cd "$(dirname "$0")"; pwd)/InstallLightning.command\" $RPC_USER $RPC_PASSWORD $DATA_DIR $PREFIX $NETWORK | tee -a $LOG" > $INSTALL_SCRIPT_PATH
-chmod +x $INSTALL_SCRIPT_PATH
-open -a Terminal $INSTALL_SCRIPT_PATH
-exit 1
+SCRIPT_PATH="$HOME/.fullynoded/installLightning.sh"
+mkdir -p "$HOME/.fullynoded"
+echo "\"$(cd "$(dirname "$0")"; pwd)/InstallLightning.command\"" > "$SCRIPT_PATH"
+chmod +x "$SCRIPT_PATH"
+open -a Terminal "$SCRIPT_PATH"
+exit 0
