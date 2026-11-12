@@ -15,7 +15,7 @@ struct StatusView: View {
     var body: some View {
         HStack {
             Image(systemName: statusImage)
-                .foregroundStyle(isActive ? .green : .red)
+                .foregroundStyle(isActive ? Cypher.accent : Cypher.danger)
             Text(statusText)
                 .foregroundStyle(isActive ? .primary : .secondary)
         }

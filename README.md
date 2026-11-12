@@ -34,6 +34,8 @@ directories.
 - Easily connect local and remote wallets with the Quick Connect button. If Fully Noded, Unify, FN-Join Market (the wallets) are 
 installed locally you can connect to them with one click, or scan the QR code to connect remotely.
 - In the help section there are links for installing all Fully Noded apps/wallets which can be used with FNS.
+- 🧪 Scans your node for **silent payments** (BIP352) sent to you and imports them, watch-only, into your Fully Noded 
+wallet so Fully Noded can see and spend them (experimental, see [Silent Payments](#silent-payments-bip352)).
 
 
 ## How?
@@ -72,6 +74,38 @@ and does not do anything at all unless you click one of the menu bar app options
     - [Downloading and configuring](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Views/JoinMarketTaggedReleases.swift)
     - [GPG verify and install](https://github.com/Fonta1n3/FullyNoded-Server/blob/master/FullyNoded-Server/Scripts/InstallJoinMarket.command)
     
+## Silent Payments (BIP352)
+> 🧪 Experimental, in development on the `Silent-Payments` branch. Test with small amounts.
+
+A silent payment address (`sp1…`) is one static address you can share anywhere, yet every payment to it lands on a new, 
+unlinkable Taproot output. Finding those payments means checking every transaction with your *scan key*. FNS does that 
+with your own node, so no third party ever learns which payments are yours.
+
+1. In **Fully Noded** open the wallet you'll spend from, go to its *Silent payments* section and tap **FN-SERVER LINK** 
+(authentication required). It's one QR / `fnsp://` link with your silent payment address, your scan private key and the 
+wallet's name on your node. (From a signer: *SP Scan Private Key* → *Fully Noded Server QR*.)
+2. In **FNS** open **Silent Payments** (sidebar, or Bitcoin Core → Utilities):
+    - *Import from Fully Noded*: *Paste link* (Copy Text in Fully Noded; Universal Clipboard brings it to your Mac), 
+    *QR image…* or *Scan QR*. That fills the address, scan key and wallet. You can also enter them one by one (camera QR, 
+    QR image or paste); the spend public key is read from the address and the scan key is checked against it;
+    - check the network, choose a start height (the first block that could contain a payment to you, or *Earliest 
+    available*) and click *Start scanning*.
+3. FNS follows the chain in the background (one block fetched ahead, each block's transactions checked in parallel), 
+imports every payment to you as a watch-only `rawtr()` descriptor, shows a card for each one and rescans the wallet once 
+caught up. It resumes automatically when FNS launches. The icon on the sidebar's Silent Payments row shows the scanner's 
+state; *History* lists every payment imported, *Rescan* scans again, and *Check a transaction* explains whether a given 
+transaction pays you.
+4. To spend, use that wallet in **Fully Noded** as usual: its transaction verifier recognises the silent payment inputs and 
+signs them with your spend key, which never leaves Fully Noded.
+
+What FNS holds: the scan private key, your address, the wallet and network, encrypted in the Keychain (*Forget keys* 
+deletes them), and scan progress (block heights) in its settings. It never stores which outputs it found and never has 
+your spend key, so it can see payments but can't spend them. Requires Bitcoin Core 25+ and the blocks from your start 
+height onward (a pruned node works if it still has them). The camera is only used to scan QR codes and macOS asks for 
+permission the first time.
+
+Full technical details: [SilentPayments.md](./SilentPayments.md).
+
 ## Security
 If connecting to a remote wallet usage of Tor is recommended, Fully Noded apps allow you to generate Tor authentication keys which
 make your remote connection more secure.
@@ -104,6 +138,7 @@ config will be commented out, of course this can easily be overridden by opening
     - Open debug.log.
     - Quick Connect for Fully Noded and Unify - Payjoin Wallet.
     - Reindex.
+    - Silent payments scanner (experimental): import keys, background scanning, status.
     
 - Join Market
     - Installation.

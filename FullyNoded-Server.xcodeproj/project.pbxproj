@@ -84,6 +84,8 @@
 		0AD7BE232CC2B47400428D02 /* LaunchJMStarter.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */; };
 		0AD7BE252CC2BCEF00428D02 /* StopJm.command in Resources */ = {isa = PBXBuildFile; fileRef = 0AD7BE242CC2BCEF00428D02 /* StopJm.command */; };
 		0AF736212D00D0900026FE0A /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF736202D00D0900026FE0A /* Help.swift */; };
+		1D5002FE583407E64756D86D /* SilentPaymentHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */; };
+		3A24080E13ADD5CFEC4328D9 /* SilentPaymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */; };
 		59028E192E259CC2005BB904 /* StartKnots.command in Resources */ = {isa = PBXBuildFile; fileRef = 59028E182E259CC2005BB904 /* StartKnots.command */; };
 		590A1B5F2D52B258006393E5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 590A1B5E2D52B258006393E5 /* Assets.xcassets */; };
 		590EA1B72D2DCEA30000BB1A /* BtcUtilsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590EA1B62D2DCEA30000BB1A /* BtcUtilsView.swift */; };
@@ -116,10 +118,12 @@
 		59CD1FFA2D400BB500110A12 /* DownloadHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FF92D400BB500110A12 /* DownloadHelper.swift */; };
 		59CD1FFE2D40209600110A12 /* LaunchKnotsExtractor.command in Resources */ = {isa = PBXBuildFile; fileRef = 59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */; };
 		59CD20002D44923200110A12 /* BitcoinKnots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */; };
+		8038876417FADFF8F2D0CD60 /* CypherTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A272CB3732FF3D5028397F79 /* CypherTheme.swift */; };
 		FB827B4A45F2BAF6CBA4B33E /* Pods_FullyNoded_Server.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentsView.swift; sourceTree = "<group>"; };
 		0A0632AF2CD06B470059FAD4 /* Reindex.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Reindex.command; sourceTree = "<group>"; };
 		0A573E192CA4715400899F84 /* TorClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorClient.swift; sourceTree = "<group>"; };
 		0A573E1B2CA47BC900899F84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -200,6 +204,7 @@
 		0AD7BE222CC2B47400428D02 /* LaunchJMStarter.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchJMStarter.command; sourceTree = "<group>"; };
 		0AD7BE242CC2BCEF00428D02 /* StopJm.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StopJm.command; sourceTree = "<group>"; };
 		0AF736202D00D0900026FE0A /* Help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
+		19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPaymentHistoryView.swift; sourceTree = "<group>"; };
 		1BD3487589B2CFE9927D1141 /* Pods_FullyNoded_Server.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FullyNoded_Server.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		59028E182E259CC2005BB904 /* StartKnots.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = StartKnots.command; sourceTree = "<group>"; };
 		590A1B5E2D52B258006393E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -233,6 +238,7 @@
 		59CD1FFD2D40209600110A12 /* LaunchKnotsExtractor.command */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = LaunchKnotsExtractor.command; sourceTree = "<group>"; };
 		59CD1FFF2D44923200110A12 /* BitcoinKnots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinKnots.swift; sourceTree = "<group>"; };
 		78978D98CB16B065CF1CEADC /* Pods-FullyNoded-Server.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.release.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.release.xcconfig"; sourceTree = "<group>"; };
+		A272CB3732FF3D5028397F79 /* CypherTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CypherTheme.swift; sourceTree = "<group>"; };
 		D939958C5863682C3FC6C957 /* Pods-FullyNoded-Server.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FullyNoded-Server.debug.xcconfig"; path = "Target Support Files/Pods-FullyNoded-Server/Pods-FullyNoded-Server.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -275,6 +281,9 @@
 				0A6C58542EB49770000FB22E /* DropDownAlert.swift */,
 				0AD202422ED173C3006286DD /* ConfigView.swift */,
 				0AD202462ED1A59B006286DD /* TorLogView.swift */,
+				055EEDC705AE36B61E832D39 /* SilentPaymentsView.swift */,
+				19614CCE2B384BE16B6D560B /* SilentPaymentHistoryView.swift */,
+				A272CB3732FF3D5028397F79 /* CypherTheme.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -667,6 +676,9 @@
 				0AD202452ED1A577006286DD /* TorLogMonitor.swift in Sources */,
 				59CC77F22D551A1B005D5A9B /* JMUtilsView.swift in Sources */,
 				0AD202472ED1A59B006286DD /* TorLogView.swift in Sources */,
+				3A24080E13ADD5CFEC4328D9 /* SilentPaymentsView.swift in Sources */,
+				1D5002FE583407E64756D86D /* SilentPaymentHistoryView.swift in Sources */,
+				8038876417FADFF8F2D0CD60 /* CypherTheme.swift in Sources */,
 				0A5CE8C82C89EB2400534A8D /* ConfigureBitcoinCore.swift in Sources */,
 				0A5CE8F02C91FA1800534A8D /* KeyChain.swift in Sources */,
 				0AA6923A2C7F831D00366192 /* FullyNoded_Server.xcdatamodeld in Sources */,
@@ -814,6 +826,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.3.0 Beta";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Fully Noded Server uses the camera to scan QR codes of your silent payment keys.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -857,6 +871,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FullyNoded-Server/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Fully Noded Server - v0.3.0 Beta";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Fully Noded Server uses the camera to scan QR codes of your silent payment keys.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

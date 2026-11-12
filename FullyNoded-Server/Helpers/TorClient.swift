@@ -29,6 +29,11 @@ class TorClient: NSObject, URLSessionDelegate {
     
     public var showProgress: (((Int)) -> Void)?
     public var torConnected: (((Bool)) -> Void)?
+    /// Called on the main queue with the running tor's version (e.g. "0.4.9.3"), read from
+    /// the control port, so it always matches the bundled tor.
+    public var showVersion: ((String) -> Void)?
+    /// The running tor's version, once known.
+    public private(set) var version: String?
     
     static let sharedInstance = TorClient()
     private var config: TorConfiguration = TorConfiguration()
@@ -111,7 +116,18 @@ class TorClient: NSObject, URLSessionDelegate {
                         print("error = \(error.localizedDescription)")
                         return
                     }
-                    
+
+                    // "GETINFO version" → e.g. "0.4.9.3 (git-…)": keep the version number.
+                    controller?.getInfoForKeys(["version"]) { [weak self] values in
+                        guard let self = self,
+                              let version = values.first?.split(separator: " ").first.map(String.init),
+                              !version.isEmpty else { return }
+                        DispatchQueue.main.async {
+                            self.version = version
+                            self.showVersion?(version)
+                        }
+                    }
+
                     var progressObs: Any? = nil
                     progressObs = controller?.addObserver(forStatusEvents: { [weak self]
                         (type: String, severity: String, action: String, arguments: [String : String]?) -> Bool in
@@ -137,13 +153,37 @@ class TorClient: NSObject, URLSessionDelegate {
                             state = .connected
                             weakDelegate?.torConnFinished()
                             controller?.removeObserver(observer)
-                            
+
                         } else if state == .refreshing {
                             state = .connected
                             weakDelegate?.torConnFinished()
                             controller?.removeObserver(observer)
                         }
                     })
+
+                    // The observers only see events from now on, but with a cached consensus tor
+                    // can finish bootstrapping in the second before the controller connects. Ask
+                    // where it is, so the UI doesn't sit at 0% waiting for an event already sent.
+                    controller?.getInfoForKeys(["status/bootstrap-phase", "status/circuit-established"]) { [weak self] values in
+                        guard let self = self, values.count == 2 else { return }
+                        // e.g. "NOTICE BOOTSTRAP PROGRESS=100 TAG=done SUMMARY=\"Done\"".
+                        let progress = values[0].split(separator: " ")
+                            .first { $0.hasPrefix("PROGRESS=") }
+                            .flatMap { Int($0.dropFirst("PROGRESS=".count)) }
+                        let established = values[1].trimmingCharacters(in: .whitespaces) == "1"
+                        DispatchQueue.main.async {
+                            if let progress = progress {
+                                self.showProgress?(progress)
+                                weakDelegate?.torConnProgress(progress)
+                                if progress >= 100 { self.controller?.removeObserver(progressObs) }
+                            }
+                            if established, self.state != .connected {
+                                self.state = .connected
+                                weakDelegate?.torConnFinished()
+                                self.controller?.removeObserver(observer)
+                            }
+                        }
+                    }
                 }
             } catch {
                 weakDelegate?.torConnDifficulties()

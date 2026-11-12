@@ -21,7 +21,7 @@ public struct Service: Identifiable {
 struct ContentView: View {
     @State private var useKnots = UserDefaults.standard.value(forKey: "useKnots") as? Bool ?? false
     @State private var bitcoinKnotsInstalled = false
-    @State private var torVersion = "v0.4.8.21"
+    @State private var torVersion = TorClient.sharedInstance.version ?? ""
     @State private var promptToShowPythonGuide = false
     @State private var isInitialLoad = true
     @State private var isInstallingLightning = false
@@ -66,6 +66,7 @@ struct ContentView: View {
     private let bitcoinKnots = Service(name: "Bitcoin Knots", id: UUID())
     private let coreLightning = Service(name: "Core Lightning", id: UUID())
     private let joinMarket = Service(name: "Join Market", id: UUID())
+    private let silentPayments = Service(name: "Silent Payments", id: UUID())
     private let tor = Service(name: "Tor", id: UUID())
     private let help = Service(name: "Help", id: UUID())
     private let settings = Service(name: "Settings", id: UUID())
@@ -76,6 +77,7 @@ struct ContentView: View {
                 List {
                     ForEach(services) { service in
                         NavigationLink {
+                        Group {
                             if service.name == "Bitcoin Core" {
                                 if bitcoinCoreInstalled {
                                     BitcoinCore()
@@ -142,24 +144,26 @@ struct ContentView: View {
                                         jmTaggedReleases: jmTaggedReleases
                                     )
                                 }
+                            } else if service.name == "Silent Payments" {
+                                SilentPaymentsView()
                             } else if service.name == "Tor" {
                                 FNIcon()
                                 HStack() {
                                     if torProgress < 100.0 {
-                                        ProgressView("Tor \(torVersion) bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
+                                        ProgressView("\(torLabel) bootstrapping \(Int(torProgress))% complete…", value: torProgress, total: 100)
                                             .padding([.leading, .trailing])
                                             .frame(alignment: .topLeading)
                                     } else {
                                         if torRunning {
                                             Image(systemName: "circle.fill")
-                                                .foregroundStyle(.green)
+                                                .foregroundStyle(Cypher.accent)
                                                 .padding([.leading])
-                                            Text("Tor \(torVersion) running")
+                                            Text("\(torLabel) running")
                                         } else {
                                             Image(systemName: "circle.fill")
-                                                .foregroundStyle(.orange)
+                                                .foregroundStyle(Cypher.amber)
                                                 .padding([.leading])
-                                            Text("Tor \(torVersion) stopped")
+                                            Text("\(torLabel) stopped")
                                         }
                                     }
                                 }
@@ -232,9 +236,8 @@ struct ContentView: View {
                                         TorLogView()
                                             .padding()
                                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .background(Color.black.opacity(0.9))
-                                            .cornerRadius(12)
-                                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
+                                            .background(Cypher.panel)
+                                            .overlay(Rectangle().stroke(Cypher.line, lineWidth: 1))
                                     }
                                     .padding()
                                     
@@ -246,15 +249,17 @@ struct ContentView: View {
                             } else if service.name == "Settings" {
                                 Settings(bitcoinEnvValues: bitcoinEnvValues, knotsEnvValues: knotsEnvValues)
                             }
+                        }
+                        .cypherPage()
                         } label: {
                             HStack() {
                                 if service.name == "Bitcoin Core" {
                                     if bitcoinCoreInstalled {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(.green)
+                                            .foregroundStyle(Cypher.accent)
                                     } else {
                                         Image(systemName: "xmark")
-                                            .foregroundStyle(.gray)
+                                            .foregroundStyle(Cypher.dim)
                                         EmptyView()
                                             .onReceive(timerForBitcoinInstall) { _ in
                                                 DataManager.retrieve(entityName: .bitcoinEnv) { bitcoinEnv in
@@ -275,10 +280,10 @@ struct ContentView: View {
                                 if service.name == "Bitcoin Knots" {
                                     if bitcoinKnotsInstalled {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(.green)
+                                            .foregroundStyle(Cypher.accent)
                                     } else {
                                         Image(systemName: "xmark")
-                                            .foregroundStyle(.gray)
+                                            .foregroundStyle(Cypher.dim)
                                         EmptyView()
                                             .onReceive(timerForBitcoinKnotsInstall) { _ in
                                                 DataManager.retrieve(entityName: .bitcoinKnotsEnv) { bitcoinKnotsEnv in
@@ -298,10 +303,10 @@ struct ContentView: View {
 //                                if service.name == "Core Lightning" {
 //                                    if lightningInstalled {
 //                                        Image(systemName: "checkmark")
-//                                            .foregroundStyle(.green)
+//                                            .foregroundStyle(Cypher.accent)
 //                                    } else {
 //                                        Image(systemName: "xmark")
-//                                            .foregroundStyle(.gray)
+//                                            .foregroundStyle(Cypher.dim)
 //                                        EmptyView()
 //                                            .onReceive(timerForLightningInstall) { _ in
 //                                                if FileManager.default.fileExists(atPath: "/opt/homebrew/Cellar/core-lightning/24.11/bin/lightningd") {
@@ -316,10 +321,10 @@ struct ContentView: View {
                                 if service.name == "Join Market" {
                                     if joinMarketInstalled {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(.green)
+                                            .foregroundStyle(Cypher.accent)
                                     } else {
                                         Image(systemName: "xmark")
-                                            .foregroundStyle(.gray)
+                                            .foregroundStyle(Cypher.dim)
                                         EmptyView()
                                             .onReceive(timerForJMInstall) { _ in
                                                 if let tagName = UserDefaults.standard.string(forKey: "tagName") {
@@ -334,6 +339,10 @@ struct ContentView: View {
                                     }
                                 }
                                 
+                                if service.name == "Silent Payments" {
+                                    SPSidebarStatusIcon()
+                                }
+                                
                                 if service.name == "Tor" {
                                     if torProgress < 100.0 {
                                         ProgressView()
@@ -343,10 +352,10 @@ struct ContentView: View {
                                     } else {
                                         if torRunning {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(.green)
+                                                .foregroundStyle(Cypher.accent)
                                         } else {
                                             Image(systemName: "xmark")
-                                                .foregroundStyle(.gray)
+                                                .foregroundStyle(Cypher.dim)
                                         }
                                     }
                                     
@@ -373,9 +382,25 @@ struct ContentView: View {
                             
                         }
                     }
-                }.padding()
-                Text("Select a service.")
-                    .foregroundStyle(.secondary)
+                }
+                .padding()
+                .listStyle(.sidebar)
+                .background(Cypher.panel)
+                .safeAreaInset(edge: .top) {
+                    HStack {
+                        CypherCaption("FN-Server")
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                }
+                VStack(spacing: 8) {
+                    CypherCaption("Fully Noded Server")
+                    Text("Select a service.")
+                        .foregroundStyle(Cypher.dim)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Cypher.bg)
             }
         
         .onAppear(perform: {
@@ -435,6 +460,11 @@ struct ContentView: View {
         }
     }
     
+    /// "Tor v0.4.9.3" once the running tor has reported its version, "Tor" until then.
+    private var torLabel: String {
+        torVersion.isEmpty ? "Tor" : "Tor v\(torVersion)"
+    }
+
     private func bootTor() {
         if TorClient.sharedInstance.state == .connected {
             torProgress = 100.0
@@ -443,6 +473,12 @@ struct ContentView: View {
         }
         TorClient.sharedInstance.showProgress = { progress in
             torProgress = Double(progress)
+        }
+        TorClient.sharedInstance.showVersion = { version in
+            torVersion = version
+        }
+        if let version = TorClient.sharedInstance.version {
+            torVersion = version
         }
         isInitialLoad = false
     }
@@ -532,11 +568,11 @@ struct ContentView: View {
                         "CHAIN": self.bitcoinEnvValues.chain
                     ]
                     
-                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                    //services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
                     if useKnots {
-                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+                        services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
                     } else {
-                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                        services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
                     }
                     checkForBitcoin()
                 }
@@ -556,9 +592,9 @@ struct ContentView: View {
             ]
             
             if useKnots {
-                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, tor, settings, help]
+                services = [/*bitcoinCore, */bitcoinKnots, /*coreLightning, */joinMarket, silentPayments, tor, settings, help]
             } else {
-                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, tor, settings, help]
+                services = [bitcoinCore, /*bitcoinKnots, coreLightning, */joinMarket, silentPayments, tor, settings, help]
             }
                         
             

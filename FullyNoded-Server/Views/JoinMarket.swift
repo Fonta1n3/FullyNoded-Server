@@ -79,7 +79,7 @@ struct JoinMarket: View {
                 if isRunning {
                     if isAnimating {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Cypher.amber)
                         
                         Text(statusText)
                             .onAppear {
@@ -87,7 +87,7 @@ struct JoinMarket: View {
                             }
                     } else {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Cypher.accent)
                         
                         Text("Running")
                             .onAppear {
@@ -98,13 +98,13 @@ struct JoinMarket: View {
                 } else {
                     if isAnimating {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Cypher.amber)
                         
                         Text(statusText)
                             
                     } else {
                         Image(systemName: "circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Cypher.danger)
                         Text("Stopped")
                     }
                 
@@ -152,10 +152,9 @@ struct JoinMarket: View {
             }
         }
         .padding()
-        .cornerRadius(8)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
+            Rectangle()
+                .stroke(Cypher.line, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding([.leading, .trailing])
         )

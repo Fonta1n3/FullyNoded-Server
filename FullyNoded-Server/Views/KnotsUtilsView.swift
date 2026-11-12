@@ -98,10 +98,9 @@ struct KnotsUtilsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
-        .cornerRadius(8)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary, lineWidth: 1)
+            Rectangle()
+                .stroke(Cypher.line, lineWidth: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding([.leading, .trailing])
         )

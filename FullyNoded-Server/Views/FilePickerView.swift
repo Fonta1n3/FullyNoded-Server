@@ -22,7 +22,7 @@ struct FilePickerView: View {
             
             Text(selectedPath ?? "No directory selected")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(Cypher.dim)
                 .padding()
             
             Button(action: {
@@ -30,9 +30,8 @@ struct FilePickerView: View {
             }) {
                 Text(buttonLabel)
                     .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .background(Cypher.accent)
+                    .foregroundColor(Cypher.bg)
             }
         }
         .sheet(isPresented: $isShowingPicker) {
